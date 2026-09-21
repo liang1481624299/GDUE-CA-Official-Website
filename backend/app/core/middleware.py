@@ -38,6 +38,31 @@ def _ip_hit_rule(ip: str, rule: str) -> bool:
         return False
 
 
+def _normalize_ip(ip: str) -> str:
+    """规范化 IP：IPv4-mapped IPv6（::ffff:a.b.c.d）转为点分 IPv4，其余保持原样。"""
+    try:
+        obj = ipaddress.ip_address(ip)
+        if isinstance(obj, ipaddress.IPv6Address) and obj.ipv4_mapped:
+            return str(obj.ipv4_mapped)
+        return str(obj)
+    except ValueError:
+        return ip
+
+
+def get_client_ip(request: Request) -> str | None:
+    """
+    获取真实客户端 IP，用于表单提交留痕 / 审计。
+    优先级：X-Forwarded-For（取最左侧）→ X-Real-IP → 直连地址。
+    支持内网（192.168.x 等）、公网、IPv6；IPv4-mapped IPv6 自动规范化。
+    """
+    for header in ("x-forwarded-for", "x-real-ip"):
+        ip = _ip_to_str(request.headers.get(header, ""))
+        if ip:
+            return _normalize_ip(ip)
+    raw = request.client.host if request.client else None
+    return _normalize_ip(raw) if raw else None
+
+
 async def ip_blacklist_middleware(
     request: Request,
     call_next: Callable[[Request], Awaitable[Response]],

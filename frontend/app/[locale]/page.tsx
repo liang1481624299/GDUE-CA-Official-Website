@@ -10,8 +10,12 @@ import { EventsPreview } from "@/components/home/EventsPreview";
 /**
  * 首页 - 社团简介横幅、最新公告、活动预览、项目卡片、快速导航
  */
-export default async function HomePage() {
-  const dict = await getDictionary();
+export default async function HomePage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const dict = await getDictionary((await params).locale);
   const projects = getAllProjects();
   const events = getAllEvents().slice(0, 4);
 

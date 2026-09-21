@@ -19,7 +19,7 @@ import {
   updateSystemSettings,
 } from "@/lib/api/system";
 import type { SystemSettings } from "@/types/api";
-import { Loader2, Plus, Trash2, Check } from "lucide-react";
+import { Loader2, Plus, Trash2, Check, QrCode } from "lucide-react";
 
 export default function SettingsPage() {
   const { t } = useI18n();
@@ -29,6 +29,7 @@ export default function SettingsPage() {
   const [allowedHosts, setAllowedHosts] = useState("");
   const [siteName, setSiteName] = useState("");
   const [footer, setFooter] = useState("");
+  const [clubCheckinOpen, setClubCheckinOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -43,6 +44,7 @@ export default function SettingsPage() {
       setAllowedHosts((s.allowed_hosts ?? []).join("\n"));
       setSiteName(s.site_name ?? "");
       setFooter(s.footer ?? "");
+      setClubCheckinOpen(!!s.club_checkin_open);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Load failed");
     } finally {
@@ -70,6 +72,17 @@ export default function SettingsPage() {
       setIpList(res.blacklist ?? []);
     } catch (e) {
       alert(e instanceof Error ? e.message : "Remove failed");
+    }
+  }
+
+  // 切换社团报名签到开关（立即生效，无需保存）
+  async function toggleClubCheckin() {
+    try {
+      const next = !clubCheckinOpen;
+      await updateSystemSettings({ club_checkin_open: next });
+      setClubCheckinOpen(next);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Update failed");
     }
   }
 
@@ -133,6 +146,25 @@ export default function SettingsPage() {
               ))}
             </ul>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">{t("admin.settings.clubCheckin")}</CardTitle>
+          <p className="text-sm text-muted-foreground">{t("admin.settings.clubCheckinDesc")}</p>
+        </CardHeader>
+        <CardContent>
+          <Button
+            variant={clubCheckinOpen ? "default" : "outline"}
+            className={clubCheckinOpen ? "" : "text-muted-foreground"}
+            onClick={toggleClubCheckin}
+          >
+            <QrCode className="h-4 w-4 mr-1" />
+            {clubCheckinOpen
+              ? t("admin.activities.checkinOpen")
+              : t("admin.activities.checkinClosed")}
+          </Button>
         </CardContent>
       </Card>
 

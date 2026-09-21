@@ -143,6 +143,8 @@ class RegistrationType(str, Enum):
 
 class RegistrationOut(BaseModel):
     id: int
+    receipt_code: str
+    content_lang: str
     registration_type: RegistrationType
     activity_id: int | None
     name: str
@@ -156,6 +158,8 @@ class RegistrationOut(BaseModel):
     introduction: str | None
     status: RegistrationStatus
     remark: str | None
+    submit_ip: str | None
+    checked_in_at: datetime | None
     submitted_at: datetime
 
     model_config = {"from_attributes": True}

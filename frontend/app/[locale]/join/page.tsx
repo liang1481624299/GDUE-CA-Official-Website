@@ -2,19 +2,20 @@
 
 /**
  * /[locale]/join 报名入口页
- * 顶部两个卡片按钮：活动报名 vs 社团报名
- * 点击切换到对应表单
+ * 顶部三个卡片按钮：活动报名 / 社团报名 / 查询报名结果
+ * 点击切换到对应表单或查询界面
  */
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CalendarDays, Users } from "lucide-react";
+import { CalendarDays, Users, Search } from "lucide-react";
 import { useI18n } from "@/i18n/provider";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { EventJoinForm } from "@/components/join/EventJoinForm";
 import { ClubJoinForm } from "@/components/join/ClubJoinForm";
+import { ReceiptQuery } from "@/components/shared/ReceiptQuery";
 
-type FormMode = "event" | "club";
+type FormMode = "event" | "club" | "query";
 
 export default function RegisterPage() {
   const { t } = useI18n();
@@ -29,7 +30,7 @@ export default function RegisterPage() {
           <p className="text-muted-foreground">{t("register.subtitle")}</p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-3 gap-6">
           {/* 活动报名卡片 */}
           <button
             className="text-left group"
@@ -69,38 +70,60 @@ export default function RegisterPage() {
               </CardContent>
             </Card>
           </button>
+
+          {/* 查询报名结果卡片 */}
+          <button
+            className="text-left group"
+            onClick={() => setMode("query")}
+          >
+            <Card className="h-full hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer border-2 hover:border-violet-500">
+              <CardContent className="p-6 space-y-4">
+                <div className="inline-flex h-14 w-14 items-center justify-center rounded-xl bg-violet-500/10 text-violet-600 group-hover:bg-violet-500 group-hover:text-white transition-colors">
+                  <Search className="h-7 w-7" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold mb-2">{t("register.queryTitle")}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {t("register.queryDesc")}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </button>
         </div>
       </div>
     );
   }
 
-  // 表单填写界面
+  // 表单 / 查询界面
   return (
     <div className="container mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-12 space-y-6">
       <div className="flex items-center justify-between">
         <Button variant="ghost" onClick={() => setMode(null)} size="sm">
           ← {t("common.back")}
         </Button>
-        <div className="flex gap-2">
-          <Button
-            variant={mode === "event" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setMode("event")}
-          >
-            {t("register.eventTitle")}
-          </Button>
-          <Button
-            variant={mode === "club" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setMode("club")}
-          >
-            {t("register.clubTitle")}
-          </Button>
-        </div>
+        {mode !== "query" && (
+          <div className="flex gap-2">
+            <Button
+              variant={mode === "event" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setMode("event")}
+            >
+              {t("register.eventTitle")}
+            </Button>
+            <Button
+              variant={mode === "club" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setMode("club")}
+            >
+              {t("register.clubTitle")}
+            </Button>
+          </div>
+        )}
       </div>
 
       <AnimatePresence mode="wait">
-        {mode === "event" ? (
+        {mode === "event" && (
           <motion.div
             key="event"
             initial={{ opacity: 0, y: 8 }}
@@ -110,7 +133,8 @@ export default function RegisterPage() {
           >
             <EventJoinForm />
           </motion.div>
-        ) : (
+        )}
+        {mode === "club" && (
           <motion.div
             key="club"
             initial={{ opacity: 0, y: 8 }}
@@ -119,6 +143,21 @@ export default function RegisterPage() {
             transition={{ duration: 0.2 }}
           >
             <ClubJoinForm />
+          </motion.div>
+        )}
+        {mode === "query" && (
+          <motion.div
+            key="query"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+          >
+            <Card className="max-w-2xl mx-auto">
+              <CardContent className="p-6 sm:p-8">
+                <ReceiptQuery />
+              </CardContent>
+            </Card>
           </motion.div>
         )}
       </AnimatePresence>

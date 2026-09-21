@@ -4,8 +4,13 @@ import { PageHeader } from "@/components/shared/PageHeader";
 /**
  * 免责声明页 - 学生社团非官方公益站点
  */
-export default async function DisclaimerPage() {
-  const dict = await getDictionary();
+export default async function DisclaimerPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  const dict = await getDictionary(locale);
   const page = dict.disclaimer;
 
   return (

@@ -24,7 +24,7 @@ import {
   updateActivity,
 } from "@/lib/api/activities";
 import type { Activity, ActivityStatus } from "@/types/api";
-import { Loader2, Plus, Pencil, Trash2 } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2, QrCode } from "lucide-react";
 
 const STATUSES: ActivityStatus[] = [
   "draft",
@@ -72,6 +72,16 @@ export default function ActivitiesPage() {
     }
   }
 
+  // 开放 / 关闭现场签到（报名者凭回执码在查询页签到）
+  async function toggleCheckin(a: Activity) {
+    try {
+      await updateActivity(a.id, { checkin_open: !a.checkin_open });
+      await refresh();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Update failed");
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -109,6 +119,19 @@ export default function ActivitiesPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-1">
+                  {/* 签到开关：开放后报名者可凭回执码签到 */}
+                  <Button
+                    variant={a.checkin_open ? "default" : "outline"}
+                    size="sm"
+                    className={a.checkin_open ? "" : "text-muted-foreground"}
+                    onClick={() => toggleCheckin(a)}
+                    title={a.checkin_open ? t("admin.activities.checkinOpenHint") : t("admin.activities.checkinClosedHint")}
+                  >
+                    <QrCode className="h-4 w-4 mr-1" />
+                    {a.checkin_open
+                      ? t("admin.activities.checkinOpen")
+                      : t("admin.activities.checkinClosed")}
+                  </Button>
                   <Button variant="ghost" size="icon" onClick={() => openEdit(a)} aria-label="Edit">
                     <Pencil className="h-4 w-4" />
                   </Button>

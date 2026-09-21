@@ -36,7 +36,8 @@
     "publishedOn": "Published on",
     "participants": "Participants",
     "techStack": "Tech Stack",
-    "members": "Team Members"
+    "members": "Team Members",
+    "cancel": "Cancel"
   },
   "home": {
     "hero": {
@@ -245,6 +246,8 @@
     "eventDesc": "Sign up for a specific event — lecture, competition, workshop, etc.",
     "clubTitle": "Club Membership",
     "clubDesc": "Join the Computer Society and pick your preferred department",
+    "queryTitle": "Check Your Result",
+    "queryDesc": "Enter the receipt code you received when submitting to see if you passed",
     "selectEvent": "Select an activity",
     "selectPosition": "Select a department",
     "noPosition": "Club registration requires a department selection",
@@ -299,7 +302,7 @@
     "subtitle": "We value your privacy. Here's how we collect, use, and protect your information",
     "updatedAt": "Last updated: September 2026",
     "items": [
-      { "title": "Information We Collect", "content": "When you submit an activity registration, we collect your name, college, major, student ID, phone number, and email. Bug reports collect the contact information you provide." },
+      { "title": "Information We Collect", "content": "When you submit an activity registration, we collect your name, college, major, student ID, phone number, and email. Bug reports collect the contact information you provide. We also automatically record the source IP address (private, public, or IPv6) at submission time, solely for security auditing and abuse prevention; it is never made public." },
       { "title": "How We Use It", "content": "Used solely for registration review, activity notifications, bug follow-up, and site maintenance. We do not sell or rent your information to third parties." },
       { "title": "Data Storage", "content": "Data is stored on club-managed servers, accessible only to club administrators. After an activity ends, data is retained or purged according to club rules." },
       { "title": "Your Rights", "content": "You may contact club administrators to request access to or deletion of your submitted records." },
@@ -326,6 +329,10 @@
     "backHome": "Back to Home"
   },
   "admin": {
+    "trans": {
+      "showOriginal": "Show Original",
+      "hideOriginal": "Show Translation"
+    },
     "login": {
       "title": "Admin Login",
       "subtitle": "Computer Society Admin Console",
@@ -400,6 +407,15 @@
       "adminNotePlaceholder": "Handling note (optional)",
       "save": "Save",
       "empty": "No requests",
+      "selectAll": "Select All",
+      "selectRow": "Select this request",
+      "selected": "{count} selected",
+      "batchHandled": "Mark All Handled",
+      "batchRejected": "Reject All",
+      "batchConfirm": {
+        "handled": "Mark all {count} selected requests as handled?",
+        "rejected": "Reject all {count} selected requests?"
+      },
       "statuses": {
         "pending": "Pending",
         "handled": "Handled",
@@ -465,6 +481,10 @@
       "cancel": "Cancel",
       "delete": "Delete",
       "deleteConfirm": "Delete this activity?",
+      "checkinOpen": "Close Check-in",
+      "checkinClosed": "Open Check-in",
+      "checkinOpenHint": "Check-in is open — approved attendees can check in with their receipt code; click to close",
+      "checkinClosedHint": "Click to open check-in — approved attendees can check in with their receipt code",
       "statuses": {
         "upcoming": "Upcoming",
         "ongoing": "Ongoing",
@@ -498,6 +518,19 @@
       "colEmail": "Email",
       "colStatus": "Status",
       "colSubmittedAt": "Submitted At",
+      "checkedInAt": "Checked-in At",
+      "submitIp": "Submit IP",
+      "selectAll": "Select All",
+      "selectRow": "Select this record",
+      "checkedInLock": "Checked-in records can no longer be re-reviewed",
+      "selected": "{count} selected",
+      "batchApprove": "Approve All",
+      "batchReject": "Reject All",
+      "batchSkipped": "{count} checked-in records were skipped",
+      "batchConfirm": {
+        "approved": "Approve all {count} selected registrations?",
+        "rejected": "Reject all {count} selected registrations?"
+      },
       "statuses": {
         "pending": "Pending",
         "approved": "Approved",
@@ -517,6 +550,13 @@
       "colUrl": "Page URL",
       "colStatus": "Status",
       "colCreatedAt": "Submitted At",
+      "selectAll": "Select All",
+      "selectRow": "Select this report",
+      "selected": "{count} selected",
+      "batchResolve": "Mark All Resolved",
+      "batchReopen": "Reopen All",
+      "batchConfirmResolve": "Mark all {count} selected reports as resolved?",
+      "batchConfirmReopen": "Reopen all {count} selected reports?",
       "statuses": {
         "open": "Open",
         "resolved": "Resolved"
@@ -535,7 +575,9 @@
       "addDomain": "Add",
       "removeDomain": "Remove",
       "saved": "Settings saved",
-      "saveError": "Failed to save, please try again later"
+      "saveError": "Failed to save, please try again later",
+      "clubCheckin": "Club Registration Check-in",
+      "clubCheckinDesc": "When open, approved club applicants can check in with their receipt code"
     },
     "users": {
       "title": "User Management",
@@ -573,6 +615,44 @@
         "admin": "Admin",
         "editor": "Editor"
       }
+    }
+  },
+  "receipt": {
+    "codeLabel": "Receipt Code",
+    "copy": "Copy",
+    "qrHint": "Scan the QR code to check progress",
+    "saveHint": "Your receipt code and QR code are the ONLY proof to check your result — take a screenshot or write the code down; it cannot be recovered if lost",
+    "howToQueryTitle": "How to check your result?",
+    "howToQuery1": "Return to the registration page, tap \"Check Your Result\" and enter your receipt code",
+    "howToQuery2": "Or simply scan the QR code above to see your review progress instantly",
+    "queryLink": "Go to Query Page"
+  },
+  "query": {
+    "title": "Progress Query",
+    "subtitle": "Enter the receipt code you received after submitting, or scan the saved QR code",
+    "inputPlaceholder": "Receipt code, e.g. GDUECA-AB2CD3EF",
+    "button": "Query",
+    "notFound": "No record found for this receipt code. Please check the number",
+    "codeLabel": "Receipt Code",
+    "statusLabel": "Status",
+    "submittedAtLabel": "Submitted At",
+    "checkedInAtLabel": "Checked-in At",
+    "checkinButton": "Check In Now",
+    "checkinHint": "Tap the button above to check in on site. Check-in cannot be undone",
+    "checkinFailed": "Check-in failed, please try again later",
+    "activityLabel": "Related Activity",
+    "types": {
+      "activity": "Event Registration",
+      "club": "Club Application",
+      "bug": "Bug Report"
+    },
+    "statuses": {
+      "pending": "Pending Review",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "checked_in": "Checked In",
+      "open": "Open",
+      "resolved": "Resolved"
     }
   },
   "bug": {

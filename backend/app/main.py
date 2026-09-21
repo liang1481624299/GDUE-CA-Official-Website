@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api import activities, auth, bug_report, register, system
+from app.api import activities, auth, bug_report, query, register, system, translations
 from app.core.config import get_settings
 from app.core.middleware import ip_blacklist_middleware
 from app.core.security import Role, hash_password
@@ -16,10 +16,32 @@ from app.db.session import async_session, engine
 settings = get_settings()
 
 
-# ---------- 启动时：建表 + 初始化超级管理员 ----------
+# ---------- 启动时：建表 + 轻量列迁移 + 初始化超级管理员 ----------
+async def _migrate_columns(conn):
+    """SQLite 轻量迁移：为已有表补缺失列（create_all 不会给旧表加列）。"""
+    from sqlalchemy import text
+
+    expected = {
+        "activities": [("checkin_open", "BOOLEAN DEFAULT 0")],
+        "registrations": [
+            ("checked_in_at", "DATETIME NULL"),
+            ("submit_ip", "VARCHAR(64) NULL"),
+        ],
+        "bug_reports": [("submit_ip", "VARCHAR(64) NULL")],
+        "system_settings": [("club_checkin_open", "BOOLEAN DEFAULT 0")],
+    }
+    for table, columns in expected.items():
+        rows = await conn.execute(text(f"PRAGMA table_info({table})"))
+        existing = {row[1] for row in rows}
+        for col, ddl in columns:
+            if col not in existing:
+                await conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {ddl}"))
+
+
 async def _init_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await _migrate_columns(conn)
 
     # 预置系统设置记录
     async with async_session() as s:
@@ -97,6 +119,8 @@ app.include_router(activities.router)
 app.include_router(register.router)
 app.include_router(bug_report.router)
 app.include_router(system.router)
+app.include_router(translations.router)
+app.include_router(query.router)
 
 # ---------- 静态文件服务（头像上传） ----------
 os.makedirs("uploads/avatars", exist_ok=True)

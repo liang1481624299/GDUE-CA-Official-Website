@@ -300,16 +300,16 @@ export default function UsersPage() {
         <Card>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full table-fixed text-sm">
                 <thead className="border-b border-border bg-muted/30">
                   <tr className="text-left">
-                    <th className="px-4 py-3 font-medium text-muted-foreground">{t("admin.users.colDisplayName")}</th>
-                    <th className="px-4 py-3 font-medium text-muted-foreground">{t("admin.users.colRealName")}</th>
-                    <th className="px-4 py-3 font-medium text-muted-foreground">{t("admin.users.colStudentId")}</th>
-                    <th className="px-4 py-3 font-medium text-muted-foreground">{t("admin.users.colPhone")}</th>
-                    <th className="px-4 py-3 font-medium text-muted-foreground">{t("admin.users.colEmail")}</th>
-                    <th className="px-4 py-3 font-medium text-muted-foreground">{t("admin.users.colRole")}</th>
-                    <th className="px-4 py-3 font-medium text-muted-foreground text-right">{t("admin.users.colActions")}</th>
+                    <th className="px-3 py-3 font-medium text-muted-foreground w-[15%]">{t("admin.users.colDisplayName")}</th>
+                    <th className="px-3 py-3 font-medium text-muted-foreground w-[14%]">{t("admin.users.colRealName")}</th>
+                    <th className="px-3 py-3 font-medium text-muted-foreground w-[13%]">{t("admin.users.colStudentId")}</th>
+                    <th className="px-3 py-3 font-medium text-muted-foreground w-[16%]">{t("admin.users.colPhone")}</th>
+                    <th className="px-3 py-3 font-medium text-muted-foreground w-[17%]">{t("admin.users.colEmail")}</th>
+                    <th className="px-3 py-3 font-medium text-muted-foreground w-[13%]">{t("admin.users.colRole")}</th>
+                    <th className="px-3 py-3 font-medium text-muted-foreground text-right w-[12%]">{t("admin.users.colActions")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -318,36 +318,36 @@ export default function UsersPage() {
                       {editingId === u.id ? (
                         /* 编辑行 */
                         <>
-                          <td className="px-4 py-3">
+                          <td className="px-3 py-3">
                             <Input
                               value={editForm.username ?? ""}
                               onChange={(e) => setEditForm({ ...editForm, username: e.target.value })}
                               className="h-8"
                             />
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-3 py-3">
                             <Input
                               value={editForm.real_name ?? ""}
                               onChange={(e) => setEditForm({ ...editForm, real_name: e.target.value })}
                               className="h-8"
                             />
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-3 py-3">
                             <Input
                               value={editForm.student_id ?? ""}
                               onChange={(e) => setEditForm({ ...editForm, student_id: e.target.value })}
                               className="h-8"
                             />
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-3 py-3">
                             <Input
                               value={editForm.phone ?? ""}
                               onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
                               className="h-8"
                             />
                           </td>
-                          <td className="px-4 py-3 text-muted-foreground text-xs">{u.email}</td>
-                          <td className="px-4 py-3">
+                          <td className="px-3 py-3 text-muted-foreground text-xs truncate">{u.email}</td>
+                          <td className="px-3 py-3">
                             {isSuperAdmin ? (
                               <select
                                 value={editForm.role ?? "editor"}
@@ -364,7 +364,7 @@ export default function UsersPage() {
                               roleBadge(u.role)
                             )}
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-3 py-3">
                             <div className="flex justify-end gap-1">
                               <Button
                                 size="sm"
@@ -383,18 +383,18 @@ export default function UsersPage() {
                       ) : (
                         /* 只读行 */
                         <>
-                          <td className="px-4 py-3 font-medium">
+                          <td className="px-3 py-3 font-medium truncate">
                             {u.username}
                             {u.id === myId && (
                               <span className="ml-2 text-xs text-muted-foreground">({t("admin.users.you")})</span>
                             )}
                           </td>
-                          <td className="px-4 py-3">{u.real_name}</td>
-                          <td className="px-4 py-3 font-mono text-xs">{u.student_id}</td>
-                          <td className="px-4 py-3 font-mono text-xs">{u.phone}</td>
-                          <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
-                          <td className="px-4 py-3">{roleBadge(u.role)}</td>
-                          <td className="px-4 py-3">
+                          <td className="px-3 py-3 truncate">{u.real_name}</td>
+                          <td className="px-3 py-3 font-mono text-xs truncate">{u.student_id}</td>
+                          <td className="px-3 py-3 font-mono text-xs truncate">{u.phone}</td>
+                          <td className="px-3 py-3 text-muted-foreground truncate">{u.email}</td>
+                          <td className="px-3 py-3">{roleBadge(u.role)}</td>
+                          <td className="px-3 py-3">
                             <div className="flex justify-end gap-1">
                               {canEdit(u) && (
                                 <Button

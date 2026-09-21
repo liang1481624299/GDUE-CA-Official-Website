@@ -24,9 +24,11 @@ const dictionaries = {
 /**
  * 从当前请求的 URL 路径中解析 locale 前缀
  * 例如：/zh-CN/about -> "zh-CN"，/en -> "en"
- * 未匹配则返回 defaultLocale
+ * 优先使用页面 params 传入的 locale（App Router / SSG 构建时 header 不可用，params 是唯一可靠来源）；
+ * 未传时 fallback 到请求 header 推断，最后回退 defaultLocale
  */
-export async function getLocale(): Promise<Locale> {
+export async function getLocale(paramLocale?: string): Promise<Locale> {
+  if (paramLocale && isLocale(paramLocale)) return paramLocale;
   const headerList = await headers();
   // Next.js 中可以通过 x-path 或自定义 header 获取当前路径
   // 但更稳定的方式是从 referer 或其他方式获取
@@ -45,10 +47,10 @@ export async function getLocale(): Promise<Locale> {
 
 /**
  * 获取当前语言的翻译字典
- * 通过解析当前请求路径推断 locale
+ * 优先使用页面 params 传入的 locale（必须：SSG 静态页构建时 header 不可用）
  */
-export async function getDictionary(): Promise<Messages> {
-  const currentLocale = await getLocale();
+export async function getDictionary(paramLocale?: string): Promise<Messages> {
+  const currentLocale = await getLocale(paramLocale);
   return dictionaries[currentLocale]();
 }
 

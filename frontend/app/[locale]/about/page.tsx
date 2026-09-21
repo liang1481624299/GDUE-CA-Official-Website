@@ -1,4 +1,4 @@
-import { getDictionary, getLocale } from "@/i18n/dictionary";
+import { getDictionary } from "@/i18n/dictionary";
 import type { Locale } from "@/lib/i18n";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { SectionHeading } from "@/components/shared/SectionHeading";
@@ -10,12 +10,16 @@ import { CalendarCheck, Briefcase, Handshake, Megaphone, Wallet, Wrench, Graduat
  * 社团介绍页 - 历史时间线、组织架构、指导老师、社团荣誉、活动室位置
  * 人物与事件均取自《计算机协会》社史资料
  */
-export default async function AboutPage() {
-  const dict = await getDictionary();
-  const locale = await getLocale();
+export default async function AboutPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  const dict = await getDictionary(locale);
 
   /** 按当前语言取值，缺失时回退简体中文 */
-  const pick = (obj: Record<Locale, string>) => obj[locale] ?? obj["zh-CN"];
+  const pick = (obj: Record<Locale, string>) => obj[locale as Locale] ?? obj["zh-CN"];
 
   /** 历史时间线数据（社史可考大事） */
   const timeline: { year: string; event: Record<Locale, string> }[] = [

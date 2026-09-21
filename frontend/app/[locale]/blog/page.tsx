@@ -6,8 +6,13 @@ import { BlogList } from "@/components/blog/BlogList";
 /**
  * 技术博客列表页 - 文章卡片列表，支持标签筛选
  */
-export default async function BlogPage() {
-  const dict = await getDictionary();
+export default async function BlogPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  const dict = await getDictionary(locale);
   const posts = getAllBlogPosts();
   const tags = getAllBlogTags();
 

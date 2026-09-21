@@ -10,6 +10,7 @@ class SystemSettingOut(BaseModel):
     ip_blacklist: list[str]
     allowed_hosts: list[str]
     cors_origins: list[str]
+    club_checkin_open: bool
 
     model_config = {"from_attributes": True}
 
@@ -21,3 +22,4 @@ class SystemSettingUpdate(BaseModel):
     ip_blacklist: list[str] | None = None
     allowed_hosts: list[str] | None = None
     cors_origins: list[str] | None = None
+    club_checkin_open: bool | None = None  # 社团报名签到开关

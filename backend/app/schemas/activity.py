@@ -33,6 +33,7 @@ class ActivityUpdate(BaseModel):
     register_end: datetime | None = None
     max_participants: int | None = None
     cover_url: str | None = None
+    checkin_open: bool | None = None  # 签到开关
 
 
 class ActivityOut(BaseModel):
@@ -45,6 +46,7 @@ class ActivityOut(BaseModel):
     register_end: datetime | None
     max_participants: int
     cover_url: str | None
+    checkin_open: bool
     created_at: datetime
     updated_at: datetime
 

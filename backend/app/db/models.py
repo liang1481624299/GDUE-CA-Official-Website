@@ -70,6 +70,8 @@ class Activity(Base):
     register_end: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     max_participants: Mapped[int] = mapped_column(Integer, default=0)  # 0 = 无上限
     cover_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    # 签到开关：管理员在活动开始时手动开放，报名者凭回执码签到
+    checkin_open: Mapped[bool] = mapped_column(Boolean, default=False)
     created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
@@ -94,6 +96,12 @@ class Registration(Base):
     __tablename__ = "registrations"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    # 回执码（唯一，用于扫码/输号查询进度）
+    receipt_code: Mapped[str] = mapped_column(String(20), unique=True, index=True)
+    # 提交内容语言（zh-CN / zh-TW / en / ja，后台按此自动翻译）
+    content_lang: Mapped[str] = mapped_column(String(8), default="zh-CN")
+    # 提交来源 IP（内网 / 公网 / IPv6，取自 XFF → X-Real-IP → 直连）
+    submit_ip: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     # 报名类型：activity 需关联活动，club 无需关联
     registration_type: Mapped[RegistrationType] = mapped_column(
         SAEnum(RegistrationType), default=RegistrationType.ACTIVITY, index=True
@@ -116,6 +124,8 @@ class Registration(Base):
         SAEnum(RegistrationStatus), default=RegistrationStatus.PENDING
     )
     remark: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # 签到时间（仅通过回执码公开签到接口产生，管理员不可手动设置）
+    checked_in_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     submitted_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
 
     activity: Mapped[Activity] = relationship(back_populates="registrations")
@@ -126,12 +136,30 @@ class BugReport(Base):
     __tablename__ = "bug_reports"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    receipt_code: Mapped[str] = mapped_column(String(32), unique=True, index=True)
+    content_lang: Mapped[str] = mapped_column(String(8), default="zh-CN")
+    # 提交来源 IP（内网 / 公网 / IPv6，取自 XFF → X-Real-IP → 直连）
+    submit_ip: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     contact_email: Mapped[str | None] = mapped_column(String(128), nullable=True)
     contact_phone: Mapped[str | None] = mapped_column(String(48), nullable=True)
     description: Mapped[str] = mapped_column(Text)
     extra: Mapped[str | None] = mapped_column(Text, nullable=True)
     resolved: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+
+
+# ---------- 翻译缓存 ----------
+class TranslationCache(Base):
+    """表单内容自动翻译的缓存，避免重复调用外部翻译接口。"""
+    __tablename__ = "translation_cache"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    source_hash: Mapped[str] = mapped_column(String(64), index=True)  # 原文 SHA-256
+    source_lang: Mapped[str] = mapped_column(String(8))
+    target_lang: Mapped[str] = mapped_column(String(8))
+    source_text: Mapped[str] = mapped_column(Text)
+    translated_text: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 
 # ---------- 系统配置（单例表，id 固定为 1） ----------
@@ -146,6 +174,8 @@ class SystemSetting(Base):
     ip_blacklist: Mapped[list[str]] = mapped_column(JSON, default=list)
     allowed_hosts: Mapped[list[str]] = mapped_column(JSON, default=list)
     cors_origins: Mapped[list[str]] = mapped_column(JSON, default=list)
+    # 社团报名签到开关（社团报名不关联活动，用全局开关控制）
+    club_checkin_open: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
 # ---------- 操作日志 ----------

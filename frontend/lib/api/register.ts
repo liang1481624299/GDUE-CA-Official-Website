@@ -58,6 +58,21 @@ export function setRegistrationStatus(
   });
 }
 
+/** 批量审核（仅 通过 / 拒绝）：返回 { updated, skipped }，已签到记录会被跳过 */
+export function batchSetRegistrationStatus(
+  ids: number[],
+  status: "approved" | "rejected"
+) {
+  return apiFetch<{ updated: number; skipped: number[] }>(
+    "/api/registrations/batch",
+    {
+      method: "POST",
+      withAuth: true,
+      body: JSON.stringify({ ids, status }),
+    }
+  );
+}
+
 /** 触发文件下载：浏览器直接打开导出 URL（带 token 通过查询参数） */
 export function exportRegistrationsUrl(params: {
   activityId?: number;

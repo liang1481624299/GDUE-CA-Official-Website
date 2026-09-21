@@ -8,7 +8,7 @@
 
 - **前端**（`frontend/`）：Next.js 16 App Router + TypeScript + Tailwind CSS + shadcn/ui
 - **后端**（`backend/`）：FastAPI + SQLAlchemy 2.0 异步 + Pydantic v2 + JWT
-- **特性**：4 语言国际化、深浅色主题、移动端右侧抽屉菜单、报名 / Bug 提交公开表单、管理员 Web 后台
+- **特性**：4 语言国际化、深浅色主题、移动端右侧抽屉菜单、报名 / Bug 提交公开表单（含唯一回执码 + 二维码查询）、表单内容自动翻译、多语言管理员 Web 后台、批量审核操作（复选框 / 全选 / Ctrl+A）
 
 前后端互相独立，仅通过 HTTP API 通信，无任何共享代码或运行时依赖。
 
@@ -40,7 +40,7 @@
 | 鉴权 | JWT Bearer Token + bcrypt 密码哈希 |
 | 导出 | openpyxl（Excel）、CSV（UTF-8 BOM + CRLF） |
 | 部署 | uvicorn，host=`::` 同时监听 IPv4/IPv6 |
-| 安全 | IP 黑名单、CORS 域名白名单、3 级角色（super_admin / admin / editor） |
+| 安全 | IP 黑名单、CORS 域名白名单、3 级角色（super_admin / admin / editor）、表单提交 IP 留痕（内网 / 公网 / IPv6） |
 
 ## 项目结构
 
@@ -59,12 +59,13 @@ GDUECA/
 │   │   │   ├── projects/page.tsx           #     项目展示
 │   │   │   ├── projects/[slug]/page.tsx    #     项目详情
 │   │   │   ├── events/page.tsx             #     活动公告
-│   │   │   ├── join/page.tsx               #     报名入口（活动报名 / 社团报名 Tab）
+│   │   │   ├── join/page.tsx               #     报名入口（活动 / 社团报名 + 结果查询）
 │   │   │   ├── blog/page.tsx               #     技术博客
 │   │   │   ├── blog/[slug]/page.tsx        #     博客详情
-│   │   │   └── contact/page.tsx            #     联系我们 + Bug 反馈
+│   │   │   ├── contact/page.tsx            #     联系我们 + Bug 反馈
+│   │   │   └── query/page.tsx              #     回执码查询（输号 / 扫码直达）
 │   │   └── admin/                          #   管理员后台（独立路由，无 locale 前缀）
-│   │       ├── layout.tsx                  #     admin 根布局（zh-CN 固定）
+│   │       ├── layout.tsx                  #     admin 根布局（多语言 + 深浅色主题）
 │   │       ├── login/page.tsx              #     Web 登录页（含忘记密码/恢复入口）
 │   │       ├── forgot-password/page.tsx    #     忘记密码申请表单（公开）
 │   │       ├── recover/page.tsx           #     安全问题紧急恢复（公开）
@@ -100,6 +101,8 @@ GDUECA/
 │   │   │   ├── activities.ts               #     ↔ 后端 app/api/activities.py（CRUD）
 │   │   │   ├── register.ts                 #     ↔ 后端 app/api/register.py（活动 / 社团报名）
 │   │   │   ├── bugReport.ts                #     ↔ 后端 app/api/bug_report.py（Bug 提交 / 列表）
+│   │   │   ├── translations.ts             #     ↔ 后端 app/api/translations.py（批量翻译）
+│   │   │   ├── query.ts                    #     ↔ 后端 app/api/query.py（回执码查询）
 │   │   │   └── system.ts                   #     ↔ 后端 app/api/system.py（系统设置 / IP 黑名单）
 │   │   ├── utils/                          #   通用工具函数（cn 等类名合并）
 │   │   │   └── index.ts
@@ -137,19 +140,23 @@ GDUECA/
 │   │   │   ├── security.py                 #   JWT + bcrypt + 角色依赖
 │   │   │   └── middleware.py               #   IP 黑名单 + Host 白名单中间件
 │   │   ├── db/
-│   │   │   ├── models.py                   #   ORM 模型（User / Activity / Registration / BugReport / SystemSetting）
+│   │   │   ├── models.py                   #   ORM 模型（User / Activity / Registration / BugReport / SystemSetting / TranslationCache / AuditLog）
 │   │   │   └── session.py                  #   异步会话工厂
 │   │   ├── api/                            #   接口模块，与前端 lib/api/ 文件一一对应
 │   │   │   ├── auth.py                     #     ↔ 前端 lib/api/auth.ts
 │   │   │   ├── activities.py               #     ↔ 前端 lib/api/activities.ts
 │   │   │   ├── register.py                 #     ↔ 前端 lib/api/register.ts
 │   │   │   ├── bug_report.py               #     ↔ 前端 lib/api/bugReport.ts
+│   │   │   ├── translations.py             #     ↔ 前端 lib/api/translations.ts（批量翻译，带缓存）
+│   │   │   ├── query.py                    #     ↔ 前端 lib/api/query.ts（回执码公开查询）
 │   │   │   └── system.py                   #     ↔ 前端 lib/api/system.ts
 │   │   ├── schemas/                        #   Pydantic 模型（含手机号区号校验）
 │   │   │   ├── auth.py / activity.py / register.py / bug.py / system.py
 │   │   │   └── __init__.py
 │   │   └── utils/
-│   │       └── export.py                   #   CSV / Xlsx 导出（学号 / 手机号强制文本）
+│   │       ├── export.py                   #   CSV / Xlsx 导出（学号 / 手机号强制文本）
+│   │       ├── receipt.py                  #   报名回执码生成（GDUECA- + 8 位去混淆字符；Bug 回执码 REPORT-时间戳在 bug_report.py）
+│   │       └── translator.py               #   自动翻译（Google gtx / MyMemory 兜底 + 缓存）
 │   ├── run.py                              #   uvicorn 启动器（host="::" IPv4/IPv6 双栈）
 │   ├── requirements.txt
 │   └── .env.example
@@ -175,9 +182,10 @@ GDUECA/
 | `/[locale]/about` | 社团介绍 |
 | `/[locale]/projects` | 项目展示 |
 | `/[locale]/events` | 活动公告 |
-| `/[locale]/join` | 报名入口（活动报名 / 社团报名 Tab 切换） |
+| `/[locale]/join` | 报名入口（活动报名 / 社团报名 / 查询报名结果） |
 | `/[locale]/blog` | 技术博客 |
 | `/[locale]/contact` | 联系我们 + Bug 反馈表单 |
+| `/[locale]/query` | 报名 / Bug 进度查询（输入回执码或扫描二维码） |
 
 ### 管理员后台
 
@@ -208,6 +216,7 @@ GDUECA/
 | POST | `/api/auth/forgot-password` | 提交忘记密码申请 | 公开 |
 | GET | `/api/auth/password-resets` | 忘记密码申请列表 | admin+ |
 | PATCH | `/api/auth/password-resets/{id}` | 处理忘记密码申请 | admin+ |
+| POST | `/api/auth/password-resets/batch` | 批量处理忘记密码申请（handled / rejected） | admin+ |
 | GET | `/api/auth/security-question` | 获取安全问题（不含答案） | 公开 |
 | POST | `/api/auth/recover` | 安全问题紧急恢复 | 公开 |
 | PUT | `/api/auth/security-question` | 修改安全问题 | super_admin |
@@ -222,10 +231,14 @@ GDUECA/
 | POST | `/api/registrations/club` | 社团报名提交 | 公开 |
 | GET | `/api/registrations` | 报名列表 | admin+ |
 | PATCH | `/api/registrations/{id}` | 修改报名状态 | admin+ |
+| POST | `/api/registrations/batch` | 批量通过 / 拒绝报名（已签到记录自动跳过） | admin+ |
 | GET | `/api/registrations/export` | 导出 CSV/Xlsx | admin+ |
 | POST | `/api/bugs` | 公开 Bug 反馈 | 公开 |
 | GET | `/api/bugs` | Bug 列表 | editor+ |
 | PATCH | `/api/bugs/{id}` | 标记已解决 | admin+ |
+| POST | `/api/bugs/batch` | 批量标记已解决 / 重新打开 | admin+ |
+| POST | `/api/translations/batch` | 批量翻译表单内容（带缓存） | editor+ |
+| GET | `/api/query/{receipt_code}` | 回执码公开查询进度（不含个人信息） | 公开 |
 | GET/PUT | `/api/system/settings` | 系统配置 | GET 公开 / PUT admin+ |
 | POST/DELETE | `/api/system/ip-blacklist` | IP 黑名单 | admin+ |
 | GET | `/uploads/avatars/{file}` | 头像静态文件 | 公开 |
@@ -295,13 +308,19 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
    - 英国 +44：10 位，7 开头
    - 美国 / 加拿大 +1：10 位
    - 日本 +81、韩国 +82、新加坡 +65、其他 24 个区号均有规范
-4. 管理员在 `/admin/registrations` 查看报名，可按类型 / 活动 / 状态筛选、修改状态（通过 / 拒绝 / 签到）、导出 CSV/Excel
+4. 提交成功后页面显示**唯一回执码**（`GDUECA-` + 8 位字符）和二维码，并以醒目警告强调保存（回执码是查询的唯一凭证，丢失无法查询）
+5. **提交 IP 留痕**：所有表单（活动报名 / 社团报名 / Bug 反馈）提交时后端自动记录来源 IP，存入 `submit_ip` 字段（已建立索引），后台详情可见、导出 CSV/Excel 含「提交IP」列。IP 获取优先级：`X-Forwarded-For`（取最左侧）→ `X-Real-IP` → 直连地址，**同时支持内网（192.168.x 等）、公网 IPv4 与 IPv6**，IPv4-mapped IPv6（`::ffff:x.x.x.x`）自动规范化为点分格式
+6. 查询方式：① 回到 `/[locale]/join` 点击「查询报名结果」输入回执码；② 扫描保存的二维码直达 `/[locale]/query?code=回执码`
+7. 管理员在 `/admin/registrations` 查看报名，可按类型 / 活动 / 状态筛选，审核**只提供 通过 / 拒绝** 两种操作；表单内容会按后台显示语言**自动翻译**（如申请人填英文，后台用中文则显示中文译文，可切换查看原文）
+8. **批量审核**：报名 / Bug / 忘记密码申请三个管理页均支持批量操作 —— 每行复选框多选、工具栏「全选」按钮、**Ctrl+A（Cmd+A）全选**，选中后右下角浮出操作栏（已选数量 + 全部通过 / 全部拒绝 / 取消），确认后一次提交；**已签到（已处理）的记录不可选中**，批量提交时后端也会自动跳过并提示跳过数量
+9. **现场签到**：管理员不做手动签到——活动开始时在 `/admin/activities` 点击「开放签到」（社团报名则在 `/admin/settings` 打开全局开关），已通过审核的报名者凭回执码在 `/[locale]/query` 查询后点击「立即签到」，状态自动变为已签到并记录签到时间，后台实时同步
 
 ### 5. Bug 反馈流程
 
 1. 用户访问 `/[locale]/contact`，页面下半部分是 Bug 反馈表单
-2. 填写标题 / 详细描述 / 联系方式（邮箱或手机号，可选）/ 页面 URL（可选）
-3. 提交后管理员在 `/admin/bugs` 查看反馈，可标记已解决 / 重新打开
+2. 填写详细描述 / 联系方式（邮箱或手机号，可选）/ 页面 URL（可选）
+3. 提交后生成唯一回执码，格式为 **`REPORT-` + 年月日时分秒**（如 `REPORT-20260921224924`，同一秒内重复时自动追加 2 位随机字符），可在 `/[locale]/query` 查询处理进度；后端自动记录提交 IP（内网 / 公网 / IPv6），后台 Bug 列表可见
+4. 管理员在 `/admin/bugs` 查看反馈（描述自动翻译为后台显示语言），可单条标记已解决 / 重新打开，或勾选多条后使用右下角浮动操作栏**批量处理**
 
 ## 开发维护规范
 
@@ -324,6 +343,8 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
   - `activities.py` ↔ `activities.ts`
   - `register.py` ↔ `register.ts`
   - `bug_report.py` ↔ `bugReport.ts`
+  - `translations.py` ↔ `translations.ts`
+  - `query.py` ↔ `query.ts`
   - `system.py` ↔ `system.ts`
 - 前端调用某后端接口时，**必须从对应业务模块导入**（如 `import { listActivities } from "@/lib/api/activities"`），不使用统一 barrel，方便定位。
 - 公共请求层 `lib/api/client.ts` 提供 `apiFetch` / `ApiError` / `getToken` / `API_BASE_URL`，业务模块基于此实现具体接口。
@@ -365,7 +386,8 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 
 - 公开官网支持 4 语言：`zh-CN` / `zh-TW` / `en` / `ja`
 - 切换语言：导航栏右上角下拉切换（桌面）/ 抽屉「设置」区切换（移动端）
-- 管理员后台固定使用 `zh-CN`
+- 管理员后台同样支持 4 语言切换（顶栏语言下拉，localStorage 持久化）
+- **表单自动翻译**：报名 / Bug 提交时后端自动检测内容语言（`content_lang`），后台列表按当前显示语言调用 `/api/translations/batch` 批量翻译，结果缓存于 `translation_cache` 表，可随时切换查看原文
 
 ### 深浅色主题
 

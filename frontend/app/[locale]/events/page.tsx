@@ -10,8 +10,13 @@ import { EventsList } from "@/components/events/EventsList";
  * 活动页面 - 过往活动记录、讲座、竞赛、招新活动
  * 包含参与人数统计图表（Recharts）和活动时间线
  */
-export default async function EventsPage() {
-  const dict = await getDictionary();
+export default async function EventsPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  const dict = await getDictionary(locale);
   const events = getAllEvents();
 
   return (

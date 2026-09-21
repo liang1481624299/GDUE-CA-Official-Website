@@ -4,8 +4,13 @@ import { PageHeader } from "@/components/shared/PageHeader";
 /**
  * 使用条款页 - 学生社团官网合规页面
  */
-export default async function TermsPage() {
-  const dict = await getDictionary();
+export default async function TermsPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  const dict = await getDictionary(locale);
   const page = dict.terms;
 
   return (

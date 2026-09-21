@@ -18,7 +18,10 @@ export function createActivity(payload: ActivityCreate) {
   });
 }
 
-export function updateActivity(id: number, payload: Partial<ActivityCreate>) {
+export function updateActivity(
+  id: number,
+  payload: Partial<ActivityCreate> & { checkin_open?: boolean }
+) {
   return apiFetch<Activity>(`/api/activities/${id}`, {
     method: "PATCH",
     withAuth: true,

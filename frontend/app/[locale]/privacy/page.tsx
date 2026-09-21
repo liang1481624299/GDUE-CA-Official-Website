@@ -4,8 +4,13 @@ import { PageHeader } from "@/components/shared/PageHeader";
 /**
  * 隐私政策页 - 重点说明数据收集、使用和保护
  */
-export default async function PrivacyPage() {
-  const dict = await getDictionary();
+export default async function PrivacyPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  const dict = await getDictionary(locale);
   const page = dict.privacy;
 
   return (

@@ -3,9 +3,11 @@ from datetime import datetime
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.middleware import get_client_ip
 from app.core.security import Role, require_role
 from app.db.models import Activity, AuditLog, Registration, RegistrationType
 from app.db.session import get_db
@@ -16,12 +18,26 @@ from app.schemas.register import (
     RegistrationType as RegistrationTypeSchema,
 )
 from app.utils.export import registrations_to_csv, registrations_to_xlsx
+from app.utils.receipt import gen_receipt_code
+from app.utils.translator import detect_lang
 
 router = APIRouter(prefix="/api/registrations", tags=["registrations"])
 
 
 def _log(db: AsyncSession, uid: int | None, action: str, target: str | None, ip: str | None):
     db.add(AuditLog(user_id=uid, action=action, target=target, ip=ip))
+
+
+async def _unique_receipt_code(db: AsyncSession) -> str:
+    """生成不重复的回执码（碰撞时重试）。"""
+    for _ in range(8):
+        code = gen_receipt_code()
+        exists = await db.execute(
+            select(Registration).where(Registration.receipt_code == code)
+        )
+        if not exists.scalar_one_or_none():
+            return code
+    return gen_receipt_code()
 
 
 # ---------- 活动报名（公开，按活动） ----------
@@ -58,12 +74,15 @@ async def submit_for_activity(
     reg = Registration(
         registration_type=RegistrationType.ACTIVITY,
         activity_id=activity_id,
+        receipt_code=await _unique_receipt_code(db),
+        content_lang=detect_lang(req.introduction or f"{req.college}{req.major}{req.name}"),
+        submit_ip=get_client_ip(request),
         **req.model_dump(),
     )
     db.add(reg)
     await db.flush()
     _log(db, None, "registration.activity.submit", f"activity:{activity_id}",
-         request.client.host if request.client else None)
+         reg.submit_ip)
     return reg
 
 
@@ -80,12 +99,14 @@ async def submit_club_registration(
     reg = Registration(
         registration_type=RegistrationType.CLUB,
         activity_id=None,
+        receipt_code=await _unique_receipt_code(db),
+        content_lang=detect_lang(req.introduction or f"{req.college}{req.major}{req.name}"),
+        submit_ip=get_client_ip(request),
         **req.model_dump(),
     )
     db.add(reg)
     await db.flush()
-    _log(db, None, "registration.club.submit", None,
-         request.client.host if request.client else None)
+    _log(db, None, "registration.club.submit", None, reg.submit_ip)
     return reg
 
 
@@ -124,7 +145,44 @@ async def list_registrations(
     return result.scalars().all()
 
 
-# ---------- 管理员：单条更新状态 ----------
+# ---------- 管理员：批量审核（只支持 通过 / 拒绝，已签到记录自动跳过） ----------
+class RegistrationBatchUpdate(BaseModel):
+    ids: list[int]
+    status: RegistrationStatus  # 仅 approved / rejected
+
+
+@router.post("/batch")
+async def batch_update_registrations(
+    body: RegistrationBatchUpdate,
+    request: Request = Request,
+    user: dict = Depends(require_role(Role.ADMIN)),
+    db: AsyncSession = Depends(get_db),
+):
+    if not body.ids:
+        raise HTTPException(status_code=400, detail="未选择任何记录")
+    if body.status not in (RegistrationStatus.APPROVED, RegistrationStatus.REJECTED):
+        raise HTTPException(
+            status_code=400,
+            detail="批量审核仅支持 通过/拒绝；签到状态由报名者凭回执码签到产生",
+        )
+    result = await db.execute(
+        select(Registration).where(Registration.id.in_(body.ids))
+    )
+    regs = result.scalars().all()
+    updated = 0
+    skipped: list[int] = []
+    for reg in regs:
+        if reg.status == RegistrationStatus.CHECKED_IN:
+            skipped.append(reg.id)  # 已签到的记录不允许改动审核结果
+            continue
+        reg.status = body.status
+        updated += 1
+    _log(db, int(user["user_id"]), f"registration.batch_{body.status.value}",
+         ",".join(str(i) for i in body.ids), get_client_ip(request))
+    return {"updated": updated, "skipped": skipped}
+
+
+# ---------- 管理员：单条更新状态（仅 通过 / 拒绝，签到由回执码公开签到产生） ----------
 @router.patch("/{reg_id}", response_model=RegistrationOut)
 async def update_registration_status(
     reg_id: int,
@@ -138,6 +196,11 @@ async def update_registration_status(
     if not reg:
         raise HTTPException(status_code=404, detail="报名记录不存在")
     if status is not None:
+        if status not in (RegistrationStatus.APPROVED, RegistrationStatus.REJECTED):
+            raise HTTPException(
+                status_code=400,
+                detail="审核仅支持 通过/拒绝；签到状态由报名者凭回执码签到产生",
+            )
         reg.status = status
     if remark is not None:
         reg.remark = remark

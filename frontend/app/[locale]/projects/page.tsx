@@ -9,8 +9,13 @@ import { locales } from "@/lib/i18n";
 /**
  * 项目展示页 - 项目卡片列表，支持按技术栈筛选
  */
-export default async function ProjectsPage() {
-  const dict = await getDictionary();
+export default async function ProjectsPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  const dict = await getDictionary(locale);
   const projects = getAllProjects();
   const techStacks = getAllTechStacks();
   const years = getAllProjectYears();

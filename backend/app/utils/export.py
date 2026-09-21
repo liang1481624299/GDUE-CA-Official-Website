@@ -20,6 +20,7 @@ HEADERS_CN = [
     ("状态", "status"),
     ("备注", "remark"),
     ("提交时间", "submitted_at"),
+    ("提交IP", "submit_ip"),
 ]
 
 

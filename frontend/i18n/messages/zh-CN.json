@@ -36,7 +36,8 @@
     "publishedOn": "发布于",
     "participants": "参与人数",
     "techStack": "技术栈",
-    "members": "开发成员"
+    "members": "开发成员",
+    "cancel": "取消"
   },
   "home": {
     "hero": {
@@ -245,6 +246,8 @@
     "eventDesc": "报名参加某次具体活动，如讲座、竞赛、工作坊等",
     "clubTitle": "社团报名",
     "clubDesc": "加入计算机协会，选择意向部门，开启你的技术之旅",
+    "queryTitle": "查询报名结果",
+    "queryDesc": "输入提交时获得的回执编号，直接查看是否通过",
     "selectEvent": "请选择报名的活动",
     "selectPosition": "请选择意向部门",
     "noPosition": "社团报名必须选择意向部门",
@@ -299,7 +302,7 @@
     "subtitle": "我们重视您的隐私，以下说明如何收集、使用和保护您的信息",
     "updatedAt": "最后更新：2026 年 9 月",
     "items": [
-      { "title": "收集信息", "content": "在您提交活动报名表时，收集姓名、学院、专业、学号、手机号、邮箱；提交 Bug 反馈时收集您填写的联系方式。" },
+      { "title": "收集信息", "content": "在您提交活动报名表时，收集姓名、学院、专业、学号、手机号、邮箱；提交 Bug 反馈时收集您填写的联系方式。提交时系统会自动记录来源 IP 地址（内网 / 公网 / IPv6），仅用于安全审计与滥用防范，不会公开。" },
       { "title": "使用用途", "content": "仅用于社团活动报名审核、活动通知、Bug 问题跟进、网站维护，不会出售、出租给第三方。" },
       { "title": "数据存储", "content": "数据存放于社团自建服务器，仅社团管理员可访问；活动结束后，会按社团规则留存或清理报名数据。" },
       { "title": "用户权利", "content": "您可联系社团管理员申请查看、删除自己提交的报名记录。" },
@@ -326,6 +329,10 @@
     "backHome": "返回首页"
   },
   "admin": {
+    "trans": {
+      "showOriginal": "查看原文",
+      "hideOriginal": "显示译文"
+    },
     "login": {
       "title": "管理员登录",
       "subtitle": "计算机协会管理后台",
@@ -400,6 +407,15 @@
       "adminNotePlaceholder": "处理说明（可选）",
       "save": "保存",
       "empty": "暂无申请",
+      "selectAll": "全选",
+      "selectRow": "选中该申请",
+      "selected": "已选 {count} 项",
+      "batchHandled": "全部标记已处理",
+      "batchRejected": "全部拒绝",
+      "batchConfirm": {
+        "handled": "确认将选中的 {count} 条申请全部标记为已处理？",
+        "rejected": "确认将选中的 {count} 条申请全部拒绝？"
+      },
       "statuses": {
         "pending": "待处理",
         "handled": "已处理",
@@ -465,6 +481,10 @@
       "cancel": "取消",
       "delete": "删除",
       "deleteConfirm": "确认删除该活动？",
+      "checkinOpen": "关闭签到",
+      "checkinClosed": "开放签到",
+      "checkinOpenHint": "签到已开放，已通过审核的报名者可凭回执码签到；点击关闭签到",
+      "checkinClosedHint": "点击开放签到，已通过审核的报名者可凭回执码在查询页签到",
       "statuses": {
         "upcoming": "未开始",
         "ongoing": "进行中",
@@ -498,6 +518,19 @@
       "colEmail": "邮箱",
       "colStatus": "状态",
       "colSubmittedAt": "提交时间",
+      "checkedInAt": "签到时间",
+      "submitIp": "提交 IP",
+      "selectAll": "全选",
+      "selectRow": "选中该记录",
+      "checkedInLock": "已签到的记录不可再修改审核结果",
+      "selected": "已选 {count} 项",
+      "batchApprove": "全部通过",
+      "batchReject": "全部拒绝",
+      "batchSkipped": "有 {count} 条已签到记录被跳过",
+      "batchConfirm": {
+        "approved": "确认将选中的 {count} 条报名全部通过？",
+        "rejected": "确认将选中的 {count} 条报名全部拒绝？"
+      },
       "statuses": {
         "pending": "待审核",
         "approved": "已通过",
@@ -517,6 +550,13 @@
       "colUrl": "页面 URL",
       "colStatus": "状态",
       "colCreatedAt": "提交时间",
+      "selectAll": "全选",
+      "selectRow": "选中该反馈",
+      "selected": "已选 {count} 项",
+      "batchResolve": "全部标记已解决",
+      "batchReopen": "全部重新打开",
+      "batchConfirmResolve": "确认将选中的 {count} 条反馈标记为已解决？",
+      "batchConfirmReopen": "确认将选中的 {count} 条反馈重新打开？",
       "statuses": {
         "open": "待处理",
         "resolved": "已解决"
@@ -535,7 +575,9 @@
       "addDomain": "添加",
       "removeDomain": "移除",
       "saved": "设置已保存",
-      "saveError": "保存失败，请稍后重试"
+      "saveError": "保存失败，请稍后重试",
+      "clubCheckin": "社团报名签到",
+      "clubCheckinDesc": "开放后，审核通过的社团报名可凭回执码在查询页签到"
     },
     "users": {
       "title": "人员管理",
@@ -573,6 +615,44 @@
         "admin": "管理员",
         "editor": "编辑"
       }
+    }
+  },
+  "receipt": {
+    "codeLabel": "回执号码",
+    "copy": "复制",
+    "qrHint": "扫描二维码查询进度",
+    "saveHint": "回执编号与二维码是查询审核结果的唯一凭证，请务必截图或抄写保存，丢失将无法查询",
+    "howToQueryTitle": "如何查询审核结果？",
+    "howToQuery1": "回到报名页面，点击「查询报名结果」，输入回执编号即可",
+    "howToQuery2": "或直接扫描上方二维码，自动显示审核进度",
+    "queryLink": "前往查询页"
+  },
+  "query": {
+    "title": "进度查询",
+    "subtitle": "输入提交后获得的回执号码，或扫描保存的二维码",
+    "inputPlaceholder": "回执号码，如 GDUECA-AB2CD3EF",
+    "button": "查询",
+    "notFound": "未找到该回执码对应的记录，请检查号码是否正确",
+    "codeLabel": "回执号码",
+    "statusLabel": "当前状态",
+    "submittedAtLabel": "提交时间",
+    "checkedInAtLabel": "签到时间",
+    "checkinButton": "立即签到",
+    "checkinHint": "到场后点击上方按钮完成签到，签到后不可撤销",
+    "checkinFailed": "签到失败，请稍后重试",
+    "activityLabel": "关联活动",
+    "types": {
+      "activity": "活动报名",
+      "club": "社团报名",
+      "bug": "Bug 反馈"
+    },
+    "statuses": {
+      "pending": "待审核",
+      "approved": "已通过",
+      "rejected": "未通过",
+      "checked_in": "已签到",
+      "open": "待处理",
+      "resolved": "已解决"
     }
   },
   "bug": {

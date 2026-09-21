@@ -33,3 +33,12 @@ export function setBugResolved(id: number, resolved: boolean) {
     }
   );
 }
+
+/** 批量标记已解决 / 重新打开 */
+export function batchUpdateBugs(ids: number[], resolved: boolean) {
+  return apiFetch<{ updated: number }>("/api/bugs/batch", {
+    method: "POST",
+    withAuth: true,
+    body: JSON.stringify({ ids, resolved }),
+  });
+}

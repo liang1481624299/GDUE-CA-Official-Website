@@ -36,7 +36,8 @@
     "publishedOn": "公開日",
     "participants": "参加人数",
     "techStack": "技術スタック",
-    "members": "開発メンバー"
+    "members": "開発メンバー",
+    "cancel": "キャンセル"
   },
   "home": {
     "hero": {
@@ -245,6 +246,8 @@
     "eventDesc": "講演会、コンテスト、ワークショップなど具体的な活動に参加",
     "clubTitle": "サークル入会",
     "clubDesc": "コンピュータ協会に入会し、希望の部門を選択",
+    "queryTitle": "結果照会",
+    "queryDesc": "申請時に発行された受付番号を入力すると、合否をすぐに確認できます",
     "selectEvent": "活動を選択してください",
     "selectPosition": "希望部門を選択してください",
     "noPosition": "サークル入会には希望部門の選択が必要です",
@@ -299,7 +302,7 @@
     "subtitle": "お客様のプライバシーを尊重し、情報の収集・使用・保護について説明します",
     "updatedAt": "最終更新：2026 年 9 月",
     "items": [
-      { "title": "収集する情報", "content": "イベント参加登録時に、氏名、学部、学科、学籍番号、電話番号、メールアドレスを収集します。Bug 報告時には、お客様が入力した連絡先を収集します。" },
+      { "title": "収集する情報", "content": "イベント参加登録時に、氏名、学部、学科、学籍番号、電話番号、メールアドレスを収集します。Bug 報告時には、お客様が入力した連絡先を収集します。また、送信時に送信元 IP アドレス（プライベート / グローバル / IPv6）を自動的に記録します。これはセキュリティ監査と悪用防止のみを目的とし、公開されることはありません。" },
       { "title": "使用目的", "content": "サークル活動の参加審査、活動連絡、Bug 対応、サイト保守のみに使用します。第三者に販売・貸与することはありません。" },
       { "title": "データ保管", "content": "データはサークル管理のサーバーに保管され、サークル管理者のみがアクセスできます。イベント終了後は、サークル規則に従って保管または削除します。" },
       { "title": "ユーザーの権利", "content": "サークル管理者に連絡して、自身が提出した記録の閲覧または削除を申し出ることができます。" },
@@ -326,6 +329,10 @@
     "backHome": "ホームに戻る"
   },
   "admin": {
+    "trans": {
+      "showOriginal": "原文を見る",
+      "hideOriginal": "翻訳を表示"
+    },
     "login": {
       "title": "管理者ログイン",
       "subtitle": "コンピュータ協会管理コンソール",
@@ -400,6 +407,15 @@
       "adminNotePlaceholder": "対応内容（任意）",
       "save": "保存",
       "empty": "申請なし",
+      "selectAll": "全選択",
+      "selectRow": "この申請を選択",
+      "selected": "{count} 件を選択中",
+      "batchHandled": "全て対応済みにする",
+      "batchRejected": "全て却下",
+      "batchConfirm": {
+        "handled": "選択した {count} 件の申請を全て対応済みにしますか？",
+        "rejected": "選択した {count} 件の申請を全て却下しますか？"
+      },
       "statuses": {
         "pending": "保留中",
         "handled": "対応済み",
@@ -465,6 +481,10 @@
       "cancel": "キャンセル",
       "delete": "削除",
       "deleteConfirm": "この活動を削除しますか？",
+      "checkinOpen": "チェックインを閉じる",
+      "checkinClosed": "チェックインを開く",
+      "checkinOpenHint": "チェックイン受付中。審査通過者は受付番号でチェックインできます。クリックで閉じる",
+      "checkinClosedHint": "クリックするとチェックインを開放します。審査通過者は受付番号でチェックインできます",
       "statuses": {
         "upcoming": "予定",
         "ongoing": "進行中",
@@ -498,6 +518,19 @@
       "colEmail": "メール",
       "colStatus": "ステータス",
       "colSubmittedAt": "送信時間",
+      "checkedInAt": "チェックイン時間",
+      "submitIp": "送信 IP",
+      "selectAll": "全選択",
+      "selectRow": "この記録を選択",
+      "checkedInLock": "チェックイン済みの記録は審閲結果を変更できません",
+      "selected": "{count} 件を選択中",
+      "batchApprove": "全て承認",
+      "batchReject": "全て却下",
+      "batchSkipped": "{count} 件のチェックイン済み記録はスキップされました",
+      "batchConfirm": {
+        "approved": "選択した {count} 件の申し込みを全て承認しますか？",
+        "rejected": "選択した {count} 件の申し込みを全て却下しますか？"
+      },
       "statuses": {
         "pending": "審閲待ち",
         "approved": "承認済み",
@@ -517,6 +550,13 @@
       "colUrl": "ページ URL",
       "colStatus": "ステータス",
       "colCreatedAt": "送信時間",
+      "selectAll": "全選択",
+      "selectRow": "この報告を選択",
+      "selected": "{count} 件を選択中",
+      "batchResolve": "全て解決済みにする",
+      "batchReopen": "全て再オープン",
+      "batchConfirmResolve": "選択した {count} 件の報告を全て解決済みにしますか？",
+      "batchConfirmReopen": "選択した {count} 件の報告を全て再オープンしますか？",
       "statuses": {
         "open": "未処理",
         "resolved": "解決済み"
@@ -535,7 +575,9 @@
       "addDomain": "追加",
       "removeDomain": "削除",
       "saved": "設定を保存しました",
-      "saveError": "保存に失敗しました。後でもう一度お試しください"
+      "saveError": "保存に失敗しました。後でもう一度お試しください",
+      "clubCheckin": "サークル申し込みチェックイン",
+      "clubCheckinDesc": "開放中は、審査に通ったサークル申し込みが受付番号でチェックインできます"
     },
     "users": {
       "title": "ユーザー管理",
@@ -573,6 +615,44 @@
         "admin": "管理者",
         "editor": "編集者"
       }
+    }
+  },
+  "receipt": {
+    "codeLabel": "受付番号",
+    "copy": "コピー",
+    "qrHint": "QRコードをスキャンして進捗を確認",
+    "saveHint": "受付番号とQRコードは審査結果を確認する唯一の手段です。必ずスクリーンショットを保存するか番号を控えてください。紛失すると照会できません",
+    "howToQueryTitle": "審査結果の確認方法",
+    "howToQuery1": "申し込みページに戻り、「結果照会」をタップして受付番号を入力してください",
+    "howToQuery2": "または上のQRコードをスキャンすると、審査状況がすぐに表示されます",
+    "queryLink": "照会ページへ"
+  },
+  "query": {
+    "title": "進捗照会",
+    "subtitle": "送信後に発行された受付番号を入力するか、保存したQRコードをスキャンしてください",
+    "inputPlaceholder": "受付番号（例：GDUECA-AB2CD3EF）",
+    "button": "照会",
+    "notFound": "この受付番号に対応する記録が見つかりません。番号をご確認ください",
+    "codeLabel": "受付番号",
+    "statusLabel": "現在の状態",
+    "submittedAtLabel": "送信日時",
+    "checkedInAtLabel": "チェックイン時間",
+    "checkinButton": "チェックイン",
+    "checkinHint": "現地で上のボタンをタップしてチェックインしてください。取り消しはできません",
+    "checkinFailed": "チェックインに失敗しました。後でもう一度お試しください",
+    "activityLabel": "関連イベント",
+    "types": {
+      "activity": "イベント申込",
+      "club": "サークル入会申込",
+      "bug": "バグ報告"
+    },
+    "statuses": {
+      "pending": "審査待ち",
+      "approved": "承認済み",
+      "rejected": "却下",
+      "checked_in": "チェックイン済み",
+      "open": "未処理",
+      "resolved": "解決済み"
     }
   },
   "bug": {

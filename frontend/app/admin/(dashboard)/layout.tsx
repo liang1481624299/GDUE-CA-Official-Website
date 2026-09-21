@@ -25,7 +25,10 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useI18n } from "@/i18n/provider";
+import { useAdminLocale } from "@/app/admin/AdminProviders";
+import { locales, localeNames, type Locale } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { getSession, logout, type AdminSession } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
@@ -132,8 +135,8 @@ export default function AdminDashboardLayout({
         )}
       </AnimatePresence>
 
-      {/* 主区域 */}
-      <div className="flex-1 md:pl-64 flex flex-col min-h-screen">
+      {/* 主区域（min-w-0 防止内容过宽把顶栏撑出视口） */}
+      <div className="flex-1 md:pl-64 flex flex-col min-h-screen min-w-0">
         {/* 顶栏 */}
         <header className="h-14 border-b border-border bg-background/80 backdrop-blur-md flex items-center justify-between px-4 sticky top-0 z-30">
           <div className="flex items-center gap-2">
@@ -150,7 +153,9 @@ export default function AdminDashboardLayout({
               {t("admin.dashboard.title")}
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
+            <ThemeToggle />
+            <LocaleSelect />
             <Button asChild variant="ghost" size="sm">
               <Link href="/zh-CN" target="_blank" rel="noopener noreferrer">
                 <ExternalLink className="h-4 w-4 mr-1" />
@@ -168,6 +173,25 @@ export default function AdminDashboardLayout({
         <main className="flex-1 p-4 md:p-8">{children}</main>
       </div>
     </div>
+  );
+}
+
+/** 顶栏语言切换（localStorage 持久化，切换后全后台即时生效） */
+function LocaleSelect() {
+  const { locale, setLocale } = useAdminLocale();
+  return (
+    <select
+      value={locale}
+      onChange={(e) => setLocale(e.target.value as Locale)}
+      aria-label="Language"
+      className="h-8 rounded-md border border-input bg-background px-1.5 text-xs font-medium"
+    >
+      {locales.map((l) => (
+        <option key={l} value={l}>
+          {localeNames[l]}
+        </option>
+      ))}
+    </select>
   );
 }
 

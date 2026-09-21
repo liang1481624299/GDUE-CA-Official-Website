@@ -120,6 +120,15 @@ export function handlePasswordReset(
   });
 }
 
+/** 批量处理忘记密码申请（仅 通过/拒绝） */
+export function batchHandlePasswordResets(ids: number[], status: "handled" | "rejected") {
+  return apiFetch<{ updated: number }>("/api/auth/password-resets/batch", {
+    method: "POST",
+    withAuth: true,
+    body: JSON.stringify({ ids, status }),
+  });
+}
+
 /* ---------- 安全问题 ---------- */
 
 /** 公开获取安全问题（不含答案） */

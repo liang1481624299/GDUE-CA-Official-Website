@@ -5,9 +5,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
+from pydantic import BaseModel
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.middleware import get_client_ip
 from app.core.security import (
     Role,
     create_access_token,
@@ -358,6 +360,37 @@ async def handle_password_reset(
     reset_req.handled_at = datetime.now(timezone.utc)
     await db.commit()
     return reset_req
+
+
+class PasswordResetBatchRequest(BaseModel):
+    ids: list[int]
+    status: str  # handled / rejected
+
+
+# ---------- 批量处理忘记密码申请（仅 admin+） ----------
+@router.post("/password-resets/batch")
+async def batch_handle_password_resets(
+    req: PasswordResetBatchRequest,
+    request: Request,
+    user: dict = Depends(require_role(Role.ADMIN)),
+    db: AsyncSession = Depends(get_db),
+):
+    if not req.ids:
+        raise HTTPException(status_code=400, detail="未选择任何申请")
+    if req.status not in ("handled", "rejected"):
+        raise HTTPException(status_code=400, detail="status 仅支持 handled / rejected")
+    result = await db.execute(
+        select(PasswordResetRequest).where(PasswordResetRequest.id.in_(req.ids))
+    )
+    rows = result.scalars().all()
+    for row in rows:
+        row.status = req.status
+        row.handled_by = int(user["user_id"])
+        row.handled_at = datetime.now(timezone.utc)
+    _log(db, int(user["user_id"]), f"password_reset.batch_{req.status}",
+         ",".join(str(i) for i in req.ids), get_client_ip(request))
+    await db.commit()
+    return {"updated": len(rows)}
 
 
 # ---------- 安全问题（公开获取问题） ----------

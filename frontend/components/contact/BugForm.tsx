@@ -24,10 +24,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { submitBugReport } from "@/lib/api/bugReport";
+import { ReceiptPanel } from "@/components/shared/ReceiptPanel";
 
 export function BugForm() {
   const { t } = useI18n();
   const [submitted, setSubmitted] = useState(false);
+  const [receiptCode, setReceiptCode] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   // 联系方式可以是邮箱或手机号
@@ -72,12 +74,13 @@ export function BugForm() {
     // 判断 contact 是邮箱还是手机号
     const isEmail = data.contact && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.contact);
     try {
-      await submitBugReport({
+      const resp = await submitBugReport({
         description: fullDescription,
         contact_email: isEmail ? data.contact : undefined,
         contact_phone: !isEmail && data.contact ? data.contact : undefined,
         extra: data.url || undefined,
       });
+      setReceiptCode(resp.receipt_code);
       setSubmitted(true);
     } catch (err) {
       const msg = err instanceof Error ? err.message : t("bug.form.errors.submitError");
@@ -88,6 +91,7 @@ export function BugForm() {
   function handleReset() {
     reset();
     setSubmitted(false);
+    setReceiptCode(null);
     setSubmitError(null);
   }
 
@@ -119,9 +123,14 @@ export function BugForm() {
               <h3 className="text-lg font-semibold mb-2">
                 {t("bug.form.success")}
               </h3>
-              <p className="text-sm text-muted-foreground mb-6">
+              <p className="text-sm text-muted-foreground mb-5">
                 {t("bug.form.successDesc")}
               </p>
+              {receiptCode && (
+                <div className="mb-6 flex justify-center">
+                  <ReceiptPanel receiptCode={receiptCode} />
+                </div>
+              )}
               <Button onClick={handleReset} variant="outline">
                 {t("bug.form.submitAnother")}
               </Button>

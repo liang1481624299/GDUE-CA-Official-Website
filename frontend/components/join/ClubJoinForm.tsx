@@ -32,6 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { submitClubRegistration } from "@/lib/api/register";
+import { ReceiptPanel } from "@/components/shared/ReceiptPanel";
 import { COUNTRY_OPTIONS, PHONE_RULES } from "./phoneRules";
 
 const DEPARTMENTS = [
@@ -45,6 +46,7 @@ const DEPARTMENTS = [
 export function ClubJoinForm() {
   const { t } = useI18n();
   const [submitted, setSubmitted] = useState(false);
+  const [receiptCode, setReceiptCode] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const schema = z
@@ -110,7 +112,7 @@ export function ClubJoinForm() {
   async function onSubmit(data: FormValues) {
     setSubmitError(null);
     try {
-      await submitClubRegistration({
+      const resp = await submitClubRegistration({
         name: data.name,
         student_id: data.studentId,
         college: data.college,
@@ -121,6 +123,7 @@ export function ClubJoinForm() {
         position: data.position,
         introduction: data.introduction,
       });
+      setReceiptCode(resp.receipt_code);
       setSubmitted(true);
     } catch (err) {
       const msg = err instanceof Error ? err.message : t("join.form.errors.submitError");
@@ -131,6 +134,7 @@ export function ClubJoinForm() {
   function handleReset() {
     reset();
     setSubmitted(false);
+    setReceiptCode(null);
     setSubmitError(null);
   }
 
@@ -168,7 +172,12 @@ export function ClubJoinForm() {
                 <CheckCircle2 className="h-8 w-8" />
               </motion.div>
               <h3 className="text-lg font-semibold mb-2">{t("join.form.success")}</h3>
-              <p className="text-sm text-muted-foreground mb-6">{t("join.form.successDesc")}</p>
+              <p className="text-sm text-muted-foreground mb-5">{t("join.form.successDesc")}</p>
+              {receiptCode && (
+                <div className="mb-6 flex justify-center">
+                  <ReceiptPanel receiptCode={receiptCode} />
+                </div>
+              )}
               <Button onClick={handleReset} variant="outline">
                 {t("join.form.submitAnother")}
               </Button>

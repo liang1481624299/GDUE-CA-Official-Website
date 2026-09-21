@@ -104,6 +104,38 @@ export interface UserUpdatePayload {
   is_active?: boolean;
 }
 
+/* ----------------------- 翻译 / 回执查询 ----------------------- */
+
+/** 批量翻译请求项 */
+export interface TranslationItem {
+  key: string;
+  text: string;
+  source_lang?: string;
+}
+
+/** 单条翻译结果 */
+export interface TranslationResult {
+  text: string;
+  source_lang: string;
+  translated: boolean;
+}
+
+/** 批量翻译响应 */
+export interface BatchTranslateResponse {
+  translations: Record<string, TranslationResult>;
+}
+
+/** 回执码公开查询结果（不含个人隐私字段） */
+export interface ReceiptQueryResult {
+  receipt_code: string;
+  type: "activity" | "club" | "bug";
+  activity_title: string | null;
+  status: string;
+  submitted_at: string;
+  checkin_open: boolean;
+  checked_in_at: string | null;
+}
+
 /* ----------------------- Activity ----------------------- */
 
 export type ActivityStatus =
@@ -123,6 +155,7 @@ export interface Activity {
   register_end: string | null;
   max_participants: number;
   cover_url: string | null;
+  checkin_open: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -150,6 +183,8 @@ export type RegistrationType = "activity" | "club";
 
 export interface Registration {
   id: number;
+  receipt_code: string;
+  content_lang: string;
   registration_type: RegistrationType;
   activity_id: number | null;
   name: string;
@@ -163,6 +198,8 @@ export interface Registration {
   introduction: string | null;
   status: RegistrationStatus;
   remark: string | null;
+  submit_ip: string | null;
+  checked_in_at: string | null;
   submitted_at: string;
 }
 
@@ -182,11 +219,14 @@ export interface RegistrationCreate {
 
 export interface BugReport {
   id: number;
+  receipt_code: string;
+  content_lang: string;
   contact_email: string | null;
   contact_phone: string | null;
   description: string;
   extra: string | null;
   resolved: boolean;
+  submit_ip: string | null;
   created_at: string;
 }
 
@@ -206,4 +246,5 @@ export interface SystemSettings {
   ip_blacklist: string[];
   allowed_hosts: string[];
   cors_origins: string[];
+  club_checkin_open: boolean;
 }

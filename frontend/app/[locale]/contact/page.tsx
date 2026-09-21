@@ -7,8 +7,13 @@ import { BugForm } from "@/components/contact/BugForm";
 /**
  * 联系我们页面 - 社团邮箱、GitHub、社交账号 + Bug 反馈表单
  */
-export default async function ContactPage() {
-  const dict = await getDictionary();
+export default async function ContactPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  const dict = await getDictionary(locale);
 
   const contactCards = [
     {

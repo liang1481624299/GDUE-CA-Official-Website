@@ -36,7 +36,8 @@
     "publishedOn": "發佈於",
     "participants": "參與人數",
     "techStack": "技術棧",
-    "members": "開發成員"
+    "members": "開發成員",
+    "cancel": "取消"
   },
   "home": {
     "hero": {
@@ -245,6 +246,8 @@
     "eventDesc": "報名參加某次具體活動，如講座、競賽、工作坊等",
     "clubTitle": "社團報名",
     "clubDesc": "加入計算機協會，選擇意向部門，開啟你的技術之旅",
+    "queryTitle": "查詢報名結果",
+    "queryDesc": "輸入提交時獲得的回執編號，直接查看是否通過",
     "selectEvent": "請選擇報名的活動",
     "selectPosition": "請選擇意向部門",
     "noPosition": "社團報名必須選擇意向部門",
@@ -299,7 +302,7 @@
     "subtitle": "我們重視您的隱私，以下說明如何收集、使用和保護您的信息",
     "updatedAt": "最後更新：2026 年 9 月",
     "items": [
-      { "title": "收集信息", "content": "在您提交活動報名表時，收集姓名、學院、專業、學號、手機號、郵箱；提交 Bug 反饋時收集您填寫的聯繫方式。" },
+      { "title": "收集信息", "content": "在您提交活動報名表時，收集姓名、學院、專業、學號、手機號、郵箱；提交 Bug 反饋時收集您填寫的聯繫方式。提交時系統會自動記錄來源 IP 地址（內網 / 公網 / IPv6），僅用於安全審計與濫用防範，不會公開。" },
       { "title": "使用用途", "content": "僅用於社團活動報名審核、活動通知、Bug 問題跟進、網站維護，不會出售、出租給第三方。" },
       { "title": "數據存儲", "content": "數據存放於社團自建服務器，僅社團管理員可訪問；活動結束後，會按社團規則留存或清理報名數據。" },
       { "title": "用戶權利", "content": "您可聯繫社團管理員申請查看、刪除自己提交的報名記錄。" },
@@ -326,6 +329,10 @@
     "backHome": "返回首頁"
   },
   "admin": {
+    "trans": {
+      "showOriginal": "查看原文",
+      "hideOriginal": "顯示譯文"
+    },
     "login": {
       "title": "管理員登入",
       "subtitle": "計算機協會管理後台",
@@ -400,6 +407,15 @@
       "adminNotePlaceholder": "處理說明（可選）",
       "save": "儲存",
       "empty": "暫無申請",
+      "selectAll": "全選",
+      "selectRow": "選中該申請",
+      "selected": "已選 {count} 項",
+      "batchHandled": "全部標記已處理",
+      "batchRejected": "全部拒絕",
+      "batchConfirm": {
+        "handled": "確認將選中的 {count} 條申請全部標記為已處理？",
+        "rejected": "確認將選中的 {count} 條申請全部拒絕？"
+      },
       "statuses": {
         "pending": "待處理",
         "handled": "已處理",
@@ -465,6 +481,10 @@
       "cancel": "取消",
       "delete": "刪除",
       "deleteConfirm": "確認刪除該活動？",
+      "checkinOpen": "關閉簽到",
+      "checkinClosed": "開放簽到",
+      "checkinOpenHint": "簽到已開放，已通過審核的報名者可憑回執碼簽到；點擊關閉簽到",
+      "checkinClosedHint": "點擊開放簽到，已通過審核的報名者可憑回執碼在查詢頁簽到",
       "statuses": {
         "upcoming": "未開始",
         "ongoing": "進行中",
@@ -498,6 +518,19 @@
       "colEmail": "郵箱",
       "colStatus": "狀態",
       "colSubmittedAt": "提交時間",
+      "checkedInAt": "簽到時間",
+      "submitIp": "提交 IP",
+      "selectAll": "全選",
+      "selectRow": "選中該記錄",
+      "checkedInLock": "已簽到的記錄不可再修改審核結果",
+      "selected": "已選 {count} 項",
+      "batchApprove": "全部通過",
+      "batchReject": "全部拒絕",
+      "batchSkipped": "有 {count} 條已簽到記錄被跳過",
+      "batchConfirm": {
+        "approved": "確認將選中的 {count} 條報名全部通過？",
+        "rejected": "確認將選中的 {count} 條報名全部拒絕？"
+      },
       "statuses": {
         "pending": "待審核",
         "approved": "已通過",
@@ -517,6 +550,13 @@
       "colUrl": "頁面 URL",
       "colStatus": "狀態",
       "colCreatedAt": "提交時間",
+      "selectAll": "全選",
+      "selectRow": "選中該回報",
+      "selected": "已選 {count} 項",
+      "batchResolve": "全部標記已解決",
+      "batchReopen": "全部重新開啟",
+      "batchConfirmResolve": "確認將選中的 {count} 條回報標記為已解決？",
+      "batchConfirmReopen": "確認將選中的 {count} 條回報重新開啟？",
       "statuses": {
         "open": "待處理",
         "resolved": "已解決"
@@ -535,7 +575,9 @@
       "addDomain": "新增",
       "removeDomain": "移除",
       "saved": "設定已儲存",
-      "saveError": "保存失敗，請稍後重試"
+      "saveError": "保存失敗，請稍後重試",
+      "clubCheckin": "社團報名簽到",
+      "clubCheckinDesc": "開放後，審核通過的社團報名可憑回執碼在查詢頁簽到"
     },
     "users": {
       "title": "人員管理",
@@ -573,6 +615,44 @@
         "admin": "管理員",
         "editor": "編輯"
       }
+    }
+  },
+  "receipt": {
+    "codeLabel": "回執號碼",
+    "copy": "複製",
+    "qrHint": "掃描二維碼查詢進度",
+    "saveHint": "回執編號與二維碼是查詢審核結果的唯一憑證，請務必截圖或抄寫保存，遺失將無法查詢",
+    "howToQueryTitle": "如何查詢審核結果？",
+    "howToQuery1": "回到報名頁面，點擊「查詢報名結果」，輸入回執編號即可",
+    "howToQuery2": "或直接掃描上方二維碼，自動顯示審核進度",
+    "queryLink": "前往查詢頁"
+  },
+  "query": {
+    "title": "進度查詢",
+    "subtitle": "輸入提交後獲得的回執號碼，或掃描保存的二維碼",
+    "inputPlaceholder": "回執號碼，如 GDUECA-AB2CD3EF",
+    "button": "查詢",
+    "notFound": "未找到該回執碼對應的記錄，請檢查號碼是否正確",
+    "codeLabel": "回執號碼",
+    "statusLabel": "當前狀態",
+    "submittedAtLabel": "提交時間",
+    "checkedInAtLabel": "簽到時間",
+    "checkinButton": "立即簽到",
+    "checkinHint": "到場後點擊上方按鈕完成簽到，簽到後不可撤銷",
+    "checkinFailed": "簽到失敗，請稍後重試",
+    "activityLabel": "關聯活動",
+    "types": {
+      "activity": "活動報名",
+      "club": "社團報名",
+      "bug": "Bug 回饋"
+    },
+    "statuses": {
+      "pending": "待審核",
+      "approved": "已通過",
+      "rejected": "未通過",
+      "checked_in": "已簽到",
+      "open": "待處理",
+      "resolved": "已解決"
     }
   },
   "bug": {

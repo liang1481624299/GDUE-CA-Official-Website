@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Github, ExternalLink } from "lucide-react";
-import { getDictionary, getLocale } from "@/i18n/dictionary";
+import { getDictionary } from "@/i18n/dictionary";
 import { getAllProjects, getProject } from "@/lib/content";
 import { locales } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
@@ -41,9 +41,8 @@ export default async function ProjectDetailPage({
 }: {
   params: Promise<{ locale: string; slug: string }>;
 }) {
-  const { slug } = await params;
-  const dict = await getDictionary();
-  const locale = await getLocale();
+  const { slug, locale } = await params;
+  const dict = await getDictionary(locale);
   const project = getProject(slug);
 
   if (!project) notFound();

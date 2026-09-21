@@ -19,11 +19,14 @@ class BugReportCreate(BaseModel):
 
 class BugReportOut(BaseModel):
     id: int
+    receipt_code: str
+    content_lang: str
     contact_email: str | None
     contact_phone: str | None
     description: str
     extra: str | None
     resolved: bool
+    submit_ip: str | None
     created_at: datetime
 
     model_config = {"from_attributes": True}

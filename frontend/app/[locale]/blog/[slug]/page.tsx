@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Calendar, User } from "lucide-react";
-import { getDictionary, getLocale } from "@/i18n/dictionary";
+import { getDictionary } from "@/i18n/dictionary";
 import { getAllBlogPosts, getBlogPost } from "@/lib/content";
 import { locales } from "@/lib/i18n";
 import { Badge } from "@/components/ui/badge";
@@ -39,9 +39,8 @@ export default async function BlogPostPage({
 }: {
   params: Promise<{ locale: string; slug: string }>;
 }) {
-  const { slug } = await params;
-  const dict = await getDictionary();
-  const locale = await getLocale();
+  const { slug, locale } = await params;
+  const dict = await getDictionary(locale);
   const post = getBlogPost(slug);
 
   if (!post) notFound();
