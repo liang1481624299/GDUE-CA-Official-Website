@@ -1,0 +1,606 @@
+{
+  "meta": {
+    "title": "廣東第二師範學院計算機協會",
+    "description": "廣東第二師範學院（花都校區）計算機協會官方網站，成立於2008年 - 社團介紹、活動公告、招新報名、技術博客",
+    "keywords": "計算機協會,廣東二師計協,GDEI_CA,廣東第二師範學院,花都校區,義務維修,網絡安全"
+  },
+  "nav": {
+    "home": "首頁",
+    "about": "社團介紹",
+    "projects": "項目展示",
+    "events": "活動",
+    "join": "報名",
+    "blog": "技術博客",
+    "contact": "聯繫我們",
+    "language": "語言",
+    "theme": "切換主題",
+    "menu": "選單",
+    "settings": "設定",
+    "admin": "管理員"
+  },
+  "common": {
+    "learnMore": "了解更多",
+    "viewAll": "查看全部",
+    "loading": "載入中...",
+    "submit": "提交",
+    "back": "返回",
+    "close": "關閉",
+    "themeLight": "淺色",
+    "themeDark": "深色",
+    "readMore": "閱讀更多",
+    "viewProject": "查看項目",
+    "viewDemo": "在線演示",
+    "viewGithub": "GitHub 倉庫",
+    "all": "全部",
+    "by": "作者",
+    "publishedOn": "發佈於",
+    "participants": "參與人數",
+    "techStack": "技術棧",
+    "members": "開發成員"
+  },
+  "home": {
+    "hero": {
+      "badge": "廣東第二師範學院 · 花都校區",
+      "title": "計算機協會",
+      "subtitle": "服務廣大同學，推廣校園計算機文化",
+      "description": "廣東二師計協成立於2008年5月31日，是花都校區學術科技類社團。我們以每週常規授課、義務維修、網絡安全競賽和電子競技為特色，提高會員計算機應用水平。",
+      "cta1": "加入我們",
+      "cta2": "了解社團",
+      "stat1": "在冊會員",
+      "stat2": "年度活動",
+      "stat3": "覆蓋院系",
+      "stat4": "成立年份"
+    },
+    "announcements": {
+      "title": "最新公告",
+      "subtitle": "了解社團最新動態",
+      "item1Title": "計算機知識科普競賽“‘技’啟新知，‘計’築夢想”",
+      "item1Date": "2026-04-25",
+      "item2Title": "會員大會換屆：陳憶佳當選執行會長",
+      "item2Date": "2026-09-18",
+      "item3Title": "百團大綻招新：掃碼入群，現場答題拿獎",
+      "item3Date": "2025-10-01"
+    },
+    "events": {
+      "title": "近期活動",
+      "subtitle": "參與我們的技術活動與講座",
+      "items": {
+        "git-workshop": {
+          "title": "Git 版本控制工作坊",
+          "description": "Git 版本控制工具入門工作坊，從零學習 Git 與 GitHub 協作流程。"
+        },
+        "campus-coding-contest": {
+          "title": "校園程式設計競賽",
+          "description": "計算機協會主辦的年度校園程式設計競賽，考察演算法與資料結構能力。"
+        },
+        "web-frontend-lecture": {
+          "title": "Web 前端技術講座",
+          "description": "由技術部主辦的 Web 前端技術講座，主題為現代前端框架對比與實踐。"
+        },
+        "2025-autumn-recruitment": {
+          "title": "2025秋季招新活動",
+          "description": "計算機協會2025年秋季學期招新活動，面向全校新生開放報名。"
+        },
+        "2024-fraud-prevention-contest": {
+          "title": "網路安全與知識競賽「築就網路安全長城」",
+          "description": "計算機學院與保衛處主辦、計協承辦的品牌競賽，覆蓋兩校區 14 個院系。"
+        },
+        "2022-fraud-prevention-contest": {
+          "title": "網路安全知識競賽「慧眼識騙 安全同行」",
+          "description": "學工部、保衛處、計算機學院與計協合辦的校級網路安全賽，易班 APP 線上作答。"
+        },
+        "2022-monthly-workshop": {
+          "title": "四月常規授課（Word / PPT / 網路安全）",
+          "description": "計協每週日起家的常規授課，2022 年 4 月在花都校區藝術樓 212 達 35 人。"
+        },
+        "2013-microsoft-tour": {
+          "title": "微軟「創新之旅」校園巡講",
+          "description": "微軟主講、計協對接的「雲+端」主題巡講，203人到場，社史唯一微軟合作。"
+        }
+      }
+    },
+    "projects": {
+      "title": "精選項目",
+      "subtitle": "成員開發的項目作品展示"
+    },
+    "quickNav": {
+      "title": "快速導航",
+      "subtitle": "探索社團的各個方面",
+      "projectsTitle": "項目展示",
+      "projectsDesc": "查看成員開發的技術項目",
+      "eventsTitle": "社團活動",
+      "eventsDesc": "參與技術講座與競賽",
+      "joinTitle": "加入社團",
+      "joinDesc": "在線填寫招新報名表",
+      "blogTitle": "技術博客",
+      "blogDesc": "閱讀成員技術分享文章"
+    }
+  },
+  "about": {
+    "title": "關於社團",
+    "subtitle": "了解計算機協會的歷史、架構與榮譽",
+    "timeline": {
+      "title": "社團歷史",
+      "subtitle": "我們的發展歷程"
+    },
+    "structure": {
+      "title": "組織架構",
+      "subtitle": "社團部門與職責",
+      "activityDept": "活動部",
+      "activityDeptDesc": "負責品牌活動與每週常規活動的策劃執行",
+      "officeDept": "辦公室",
+      "officeDeptDesc": "負責日常事務、每月例會組織與材料歸檔",
+      "liaisonDept": "聯絡部",
+      "liaisonDeptDesc": "負責對外聯絡、贊助接洽與高校社團聯誼",
+      "publicityDept": "宣傳部",
+      "publicityDeptDesc": "負責公眾號運營與活動宣傳物料",
+      "financeDept": "財務部",
+      "financeDeptDesc": "負責社團經費管理與換屆財務交接",
+      "repairTeam": "義務維修隊",
+      "repairTeamDesc": "面向全校提供義務電腦維修與購機諮詢"
+    },
+    "teachers": {
+      "title": "指導老師",
+      "subtitle": "感謝老師們的悉心指導"
+    },
+    "honors": {
+      "title": "社團榮譽",
+      "subtitle": "我們共同取得的成就"
+    },
+    "location": {
+      "title": "活動室位置",
+      "subtitle": "歡迎來找我們交流",
+      "address": "廣東省廣州市花都區工業大道11號 廣東第二師範學院（花都校區）實驗樓 305",
+      "openHours": "常規活動：每週週日；品牌活動與動員大會另行通知"
+    }
+  },
+  "projects": {
+    "title": "項目展示",
+    "subtitle": "社團成員開發的項目作品",
+    "filterByTech": "按技術棧篩選",
+    "filterByYear": "按年份篩選",
+    "noResults": "暫無符合條件的項目",
+    "detail": {
+      "description": "項目簡介",
+      "techStack": "技術棧",
+      "members": "開發成員",
+      "screenshots": "項目截圖",
+      "links": "相關鏈接"
+    }
+  },
+  "events": {
+    "title": "社團活動",
+    "subtitle": "過往活動記錄、講座、競賽與招新活動",
+    "filterAll": "全部活動",
+    "filterLecture": "技術講座",
+    "filterCompetition": "競賽",
+    "filterRecruitment": "招新活動",
+    "filterWorkshop": "工作坊",
+    "chartTitle": "活動參與人數統計",
+    "chartSubtitle": "近一年各活動參與人數趨勢"
+  },
+  "join": {
+    "title": "加入計算機協會",
+    "subtitle": "填寫報名表，開啟你的技術之旅",
+    "intro": {
+      "title": "為什麼加入我們",
+      "desc1": "參加每週常規授課與義務維修，快速提升計算機應用水平",
+      "desc2": "出戰網絡安全賽、科普競賽等品牌活動",
+      "desc3": "參與電競賽事，優勝隊伍晉級校隊選拔",
+      "desc4": "結識各院系同好，在交流協作中共同成長"
+    },
+    "positions": {
+      "title": "招募方向",
+      "activity": "活動部",
+      "office": "辦公室",
+      "liaison": "聯絡部",
+      "publicity": "宣傳部",
+      "finance": "財務部"
+    },
+    "form": {
+      "title": "在線報名",
+      "subtitle": "請如實填寫以下信息",
+      "name": "姓名",
+      "namePlaceholder": "請輸入你的姓名",
+      "studentId": "學號",
+      "studentIdPlaceholder": "請輸入你的學號",
+      "major": "專業",
+      "majorPlaceholder": "請輸入你的專業，如：計算機科學與技術",
+      "college": "學院",
+      "collegePlaceholder": "如：計算機學院",
+      "phoneCc": "國家區號",
+      "phoneNumber": "手機號",
+      "phoneNumberPlaceholder": "本地手機號（不含區號）",
+      "email": "郵箱（可選）",
+      "emailPlaceholder": "可選，用於接收通知",
+      "position": "意向部門",
+      "positionPlaceholder": "請選擇意向部門",
+      "introduction": "自我介紹",
+      "introductionPlaceholder": "簡單介紹一下自己，以及你感興趣的技術方向...",
+      "submit": "提交報名",
+      "submitting": "提交中...",
+      "success": "報名成功！我們會盡快與你聯繫。",
+      "successDesc": "感謝你的報名，請關注手機/郵箱獲取後續通知。",
+      "submitAnother": "再提交一份",
+      "errors": {
+        "nameRequired": "請輸入姓名",
+        "studentIdRequired": "請輸入學號",
+        "majorRequired": "請輸入專業",
+        "collegeRequired": "請輸入學院",
+        "phoneCcRequired": "請選擇國家區號",
+        "phoneRequired": "請輸入手機號",
+        "phoneInvalid": "請輸入符合該區號規範的手機號",
+        "emailInvalid": "請輸入有效的郵箱",
+        "activityRequired": "請先選擇一個活動",
+        "submitError": "提交失敗，請稍後重試",
+        "positionRequired": "請選擇意向部門",
+        "introductionMin": "自我介紹至少需要 10 個字符"
+      }
+    }
+  },
+  "register": {
+    "title": "報名",
+    "subtitle": "選擇你的報名類型",
+    "eventTitle": "活動報名",
+    "eventDesc": "報名參加某次具體活動，如講座、競賽、工作坊等",
+    "clubTitle": "社團報名",
+    "clubDesc": "加入計算機協會，選擇意向部門，開啟你的技術之旅",
+    "selectEvent": "請選擇報名的活動",
+    "selectPosition": "請選擇意向部門",
+    "noPosition": "社團報名必須選擇意向部門",
+    "switchToEvent": "改為活動報名",
+    "switchToClub": "改為社團報名"
+  },
+  "blog": {
+    "title": "技術博客",
+    "subtitle": "成員技術分享文章，涵蓋前端、後端、算法等話題",
+    "filterByTag": "按標籤篩選",
+    "noResults": "暫無符合條件的文章",
+    "tableOfContents": "目錄"
+  },
+  "contact": {
+    "title": "聯繫我們",
+    "subtitle": "歡迎通過以下方式與社團取得聯繫",
+    "email": "社團郵箱",
+    "github": "GitHub 組織",
+    "social": "社交賬號",
+    "qq": "QQ 群",
+    "wechat": "微信公眾號",
+    "location": "活動室位置",
+    "address": "廣東省廣州市花都區工業大道11號 廣東第二師範學院（花都校區）實驗樓 305",
+    "openHours": "常規活動：每週週日；品牌活動與動員大會另行通知",
+    "sendMessage": "發送郵件"
+  },
+  "footer": {
+    "description": "廣東二師計協（花都校區）——服務廣大同學，推廣校園計算機文化，提高會員計算機應用水平",
+    "quickLinks": "快速鏈接",
+    "resources": "資源",
+    "connect": "關注我們",
+    "copyright": "© 2026 廣東第二師範學院計算機協會. 保留所有權利.",
+    "madeWith": "由廣東二師計協精心打造",
+    "terms": "使用條款",
+    "privacy": "隱私政策",
+    "disclaimer": "免責聲明"
+  },
+  "terms": {
+    "title": "使用條款",
+    "subtitle": "訪問或使用本網站即代表您同意以下條款",
+    "updatedAt": "最後更新：2026 年 9 月",
+    "items": [
+      { "title": "條款接受", "content": "訪問、使用本網站即代表您同意本條款。如不同意，請停止使用。" },
+      { "title": "合法使用", "content": "用戶不得利用本網站從事違法、違規、惡意攻擊、爬蟲刷表單、騷擾等行為。" },
+      { "title": "內容授權", "content": "用戶提交的內容（Bug 反饋、報名信息），授權社團用於活動管理、網站優化，不會未經許可對外公開。" },
+      { "title": "禁止濫用", "content": "禁止未經許可批量爬取本站內容、惡意提交表單佔用名額。違規者社團有權封禁其訪問。" },
+      { "title": "條款變更", "content": "社團有權隨時修改網站內容、暫停或終止網站服務，修改條款後會在網站公示。" }
+    ]
+  },
+  "privacy": {
+    "title": "隱私政策",
+    "subtitle": "我們重視您的隱私，以下說明如何收集、使用和保護您的信息",
+    "updatedAt": "最後更新：2026 年 9 月",
+    "items": [
+      { "title": "收集信息", "content": "在您提交活動報名表時，收集姓名、學院、專業、學號、手機號、郵箱；提交 Bug 反饋時收集您填寫的聯繫方式。" },
+      { "title": "使用用途", "content": "僅用於社團活動報名審核、活動通知、Bug 問題跟進、網站維護，不會出售、出租給第三方。" },
+      { "title": "數據存儲", "content": "數據存放於社團自建服務器，僅社團管理員可訪問；活動結束後，會按社團規則留存或清理報名數據。" },
+      { "title": "用戶權利", "content": "您可聯繫社團管理員申請查看、刪除自己提交的報名記錄。" },
+      { "title": "安全措施", "content": "我們採用密碼權限、IP 黑名單等方式保護數據，但無法保證絕對安全。" },
+      { "title": "Cookie 使用", "content": "本站可使用基礎 Cookie 用於登錄狀態維持，不採集額外追蹤信息。" }
+    ]
+  },
+  "disclaimer": {
+    "title": "免責聲明",
+    "subtitle": "本網站為學生社團非官方公益站點，內容僅供參考",
+    "updatedAt": "最後更新：2026 年 9 月",
+    "items": [
+      { "title": "非官方聲明", "content": "本網站為廣東二師計算機協會學生社團非官方公益站點，所有內容僅作學習交流用途，不構成任何專業建議。" },
+      { "title": "信息準確性", "content": "本站發布的活動信息、教程、資料僅供參考，如信息存在疏漏，本社團保留更正的權利。" },
+      { "title": "用戶責任", "content": "用戶在本站提交報名、Bug 反饋等信息，由提交人保證信息真實有效；因用戶填寫虛假信息帶來的後果由用戶自行承擔。" },
+      { "title": "服務可用性", "content": "本站會採取合理手段保障數據安全，但不承諾網站絕對無故障、無漏洞，對於因訪問、使用本站產生的間接損失，本社團不承擔責任。" },
+      { "title": "外部鏈接", "content": "本站鏈接到的外部網站內容，不屬於本社團管控，不對第三方網站內容負責。" },
+      { "title": "異議處理", "content": "如對本免責聲明有異議，請停止使用本網站。" }
+    ]
+  },
+  "notFound": {
+    "title": "頁面未找到",
+    "description": "你訪問的頁面不存在或已被移動",
+    "backHome": "返回首頁"
+  },
+  "admin": {
+    "login": {
+      "title": "管理員登入",
+      "subtitle": "計算機協會管理後台",
+      "username": "使用者名稱",
+      "usernamePlaceholder": "請輸入使用者名稱",
+      "password": "密碼",
+      "passwordPlaceholder": "請輸入密碼",
+      "submit": "登入",
+      "submitting": "登入中...",
+      "error": "使用者名稱或密碼錯誤",
+      "backToSite": "返回官網",
+      "forgotPassword": "忘記密碼？",
+      "mustChangeWarning": "偵測到預設密碼，請先修改密碼"
+    },
+    "changePassword": {
+      "title": "修改密碼",
+      "subtitle": "首次登入請修改預設密碼",
+      "oldPassword": "目前密碼",
+      "oldPasswordPlaceholder": "請輸入目前密碼",
+      "newPassword": "新密碼",
+      "newPasswordPlaceholder": "至少 6 位",
+      "confirmPassword": "確認新密碼",
+      "confirmPlaceholder": "再次輸入新密碼",
+      "submit": "修改密碼",
+      "submitting": "提交中...",
+      "mismatch": "兩次密碼不一致",
+      "success": "密碼修改成功",
+      "error": "修改失敗",
+      "backToLogin": "返回登入"
+    },
+    "forgotPassword": {
+      "title": "忘記密碼",
+      "subtitle": "提交申請，管理員審核後聯絡您",
+      "contactEmail": "聯絡郵箱",
+      "contactEmailPlaceholder": "請輸入聯絡郵箱",
+      "usernameHint": "使用者名稱提示（可選）",
+      "usernameHintPlaceholder": "記得的使用者名稱或郵箱",
+      "reason": "申請原因",
+      "reasonPlaceholder": "請說明情況，如忘記密碼、帳號異常等",
+      "submit": "提交申請",
+      "submitting": "提交中...",
+      "success": "申請已提交，管理員會盡快處理",
+      "error": "提交失敗，請稍後重試",
+      "backToLogin": "返回登入"
+    },
+    "recover": {
+      "title": "帳號恢復",
+      "subtitle": "所有管理員失能時的緊急恢復",
+      "securityQuestion": "安全問題",
+      "securityAnswer": "答案",
+      "securityAnswerPlaceholder": "請輸入安全問題的答案",
+      "newPassword": "新密碼",
+      "newPasswordPlaceholder": "恢復後設定的新密碼（至少 6 位）",
+      "submit": "恢復帳號",
+      "submitting": "恢復中...",
+      "success": "帳號已恢復，請用新密碼登入",
+      "error": "恢復失敗，答案可能錯誤",
+      "backToLogin": "返回登入"
+    },
+    "passwordResets": {
+      "title": "忘記密碼申請",
+      "filterPending": "待處理",
+      "filterAll": "全部",
+      "colEmail": "聯絡郵箱",
+      "colUsername": "使用者名稱提示",
+      "colReason": "申請原因",
+      "colStatus": "狀態",
+      "colCreatedAt": "提交時間",
+      "markHandled": "標記已處理",
+      "markRejected": "拒絕",
+      "adminNote": "處理備註",
+      "adminNotePlaceholder": "處理說明（可選）",
+      "save": "儲存",
+      "empty": "暫無申請",
+      "statuses": {
+        "pending": "待處理",
+        "handled": "已處理",
+        "rejected": "已拒絕"
+      }
+    },
+    "dashboard": {
+      "title": "管理後台",
+      "welcome": "歡迎回來",
+      "logout": "登出",
+      "overview": "概覽",
+      "activities": "活動管理",
+      "registrations": "報名審閱",
+      "bugs": "Bug 回報",
+      "passwordResets": "忘記密碼申請",
+      "users": "人員管理",
+      "settings": "系統設定",
+      "statsActivities": "活動總數",
+      "statsRegistrations": "報名總數",
+      "statsPending": "待審報名",
+      "statsBugs": "未處理 Bug"
+    },
+    "profile": {
+      "title": "個人資料",
+      "subtitle": "查看和修改您的帳號資訊",
+      "avatar": "頭像",
+      "avatarHint": "支援 JPG/PNG/WEBP，最大 5MB",
+      "avatarUpload": "上傳頭像",
+      "avatarUploading": "上傳中...",
+      "avatarSuccess": "頭像更新成功",
+      "avatarError": "頭像上傳失敗",
+      "displayName": "顯示名稱",
+      "displayNamePlaceholder": "用於顯示的名稱",
+      "realName": "真實姓名",
+      "realNamePlaceholder": "請輸入真實姓名",
+      "studentId": "學號",
+      "studentIdPlaceholder": "請輸入學號",
+      "phone": "手機號",
+      "phonePlaceholder": "含區號，如 +8613800000000",
+      "email": "郵箱",
+      "emailReadonly": "郵箱不可修改",
+      "role": "角色",
+      "save": "儲存資料",
+      "saving": "儲存中...",
+      "saved": "資料儲存成功",
+      "saveError": "儲存失敗",
+      "changePassword": "修改密碼"
+    },
+    "activities": {
+      "title": "活動管理",
+      "create": "建立活動",
+      "edit": "編輯活動",
+      "name": "活動名稱",
+      "description": "活動描述",
+      "location": "活動地點",
+      "capacity": "人數上限",
+      "status": "狀態",
+      "startAt": "開始時間",
+      "endAt": "結束時間",
+      "actions": "操作",
+      "empty": "暫無活動",
+      "save": "儲存",
+      "cancel": "取消",
+      "delete": "刪除",
+      "deleteConfirm": "確認刪除該活動？",
+      "statuses": {
+        "upcoming": "未開始",
+        "ongoing": "進行中",
+        "ended": "已結束",
+        "cancelled": "已取消"
+      }
+    },
+    "registrations": {
+      "title": "報名審閱",
+      "filterActivity": "按活動篩選",
+      "filterType": "按類型篩選",
+      "filterStatus": "按狀態篩選",
+      "typeActivity": "活動報名",
+      "typeClub": "社團報名",
+      "export": "匯出",
+      "exportCsv": "匯出 CSV",
+      "exportXlsx": "匯出 Excel",
+      "viewDetail": "查看詳情",
+      "approve": "通過",
+      "reject": "拒絕",
+      "checkIn": "簽到",
+      "remark": "備註",
+      "remarkPlaceholder": "新增審閱備註...",
+      "saveRemark": "儲存備註",
+      "empty": "暫無報名紀錄",
+      "colName": "姓名",
+      "colStudentId": "學號",
+      "colCollege": "學院",
+      "colMajor": "專業",
+      "colPhone": "手機號",
+      "colEmail": "郵箱",
+      "colStatus": "狀態",
+      "colSubmittedAt": "提交時間",
+      "statuses": {
+        "pending": "待審核",
+        "approved": "已通過",
+        "rejected": "已拒絕",
+        "checked_in": "已簽到"
+      }
+    },
+    "bugs": {
+      "title": "Bug 回報",
+      "filterStatus": "按狀態篩選",
+      "markResolved": "標記已解決",
+      "reopen": "重新開啟",
+      "empty": "暫無 Bug 回報",
+      "colTitle": "標題",
+      "colDescription": "描述",
+      "colContact": "聯繫方式",
+      "colUrl": "頁面 URL",
+      "colStatus": "狀態",
+      "colCreatedAt": "提交時間",
+      "statuses": {
+        "open": "待處理",
+        "resolved": "已解決"
+      }
+    },
+    "settings": {
+      "title": "系統設定",
+      "ipBlacklist": "IP 黑名單",
+      "ipBlacklistDesc": "新增需要攔截的 IP 或 CIDR 段，每行一個",
+      "ipBlacklistPlaceholder": "如：192.168.1.1 或 10.0.0.0/24",
+      "addIp": "新增",
+      "removeIp": "移除",
+      "domainWhitelist": "域名白名單",
+      "domainWhitelistDesc": "CORS 允許的來源域名，每行一個",
+      "domainWhitelistPlaceholder": "如：gdue-ca.paperee.guru",
+      "addDomain": "新增",
+      "removeDomain": "移除",
+      "saved": "設定已儲存",
+      "saveError": "保存失敗，請稍後重試"
+    },
+    "users": {
+      "title": "人員管理",
+      "subtitle": "查看和編輯你的帳號信息",
+      "subtitleSuper": "管理所有管理員帳號：創建、編輯、刪除",
+      "you": "你",
+      "create": "新建帳號",
+      "formTitle": "創建新帳號",
+      "displayName": "顯示名稱",
+      "displayNamePlaceholder": "用於登錄和顯示",
+      "realName": "真實姓名",
+      "realNamePlaceholder": "請輸入真實姓名",
+      "studentId": "學號",
+      "studentIdPlaceholder": "請輸入學號",
+      "phone": "手機號",
+      "phonePlaceholder": "含區號，如 +8613800000000",
+      "email": "郵箱",
+      "emailPlaceholder": "用於登錄",
+      "password": "密碼",
+      "passwordPlaceholder": "至少 6 位",
+      "role": "角色",
+      "save": "創建帳號",
+      "cancel": "取消",
+      "deleteConfirm": "確認刪除該帳號？此操作不可撤銷",
+      "empty": "暫無帳號",
+      "colDisplayName": "顯示名稱",
+      "colRealName": "真實姓名",
+      "colStudentId": "學號",
+      "colPhone": "手機號",
+      "colEmail": "郵箱",
+      "colRole": "角色",
+      "colActions": "操作",
+      "roles": {
+        "super_admin": "超級管理員",
+        "admin": "管理員",
+        "editor": "編輯"
+      }
+    }
+  },
+  "bug": {
+    "title": "Bug 回報",
+    "subtitle": "遇到問題？告訴我們，我們會盡快處理",
+    "form": {
+      "title": "提交 Bug 回報",
+      "titleLabel": "標題",
+      "titlePlaceholder": "簡要描述問題",
+      "descriptionLabel": "詳細描述",
+      "descriptionPlaceholder": "請描述重現步驟、期望結果與實際結果",
+      "contactLabel": "聯繫方式（可選）",
+      "contactPlaceholder": "郵箱或手機號，便於我們回覆",
+      "urlLabel": "頁面 URL（可選）",
+      "urlPlaceholder": "出問題的頁面地址",
+      "submit": "提交回報",
+      "submitting": "提交中...",
+      "success": "回報已提交，感謝你的支持！",
+      "successDesc": "我們會盡快處理你的回報。",
+      "submitAnother": "再提交一份",
+      "errors": {
+        "titleRequired": "請輸入標題",
+        "titleMin": "標題至少 3 個字符",
+        "descriptionRequired": "請輸入詳細描述",
+        "descriptionMin": "描述至少 10 個字符",
+        "contactInvalid": "請輸入有效的郵箱或手機號",
+        "submitError": "提交失敗，請稍後重試"
+      }
+    }
+  }
+}

@@ -1,0 +1,127 @@
+"use client";
+
+/**
+ * /[locale]/join 报名入口页
+ * 顶部两个卡片按钮：活动报名 vs 社团报名
+ * 点击切换到对应表单
+ */
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { CalendarDays, Users } from "lucide-react";
+import { useI18n } from "@/i18n/provider";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { EventJoinForm } from "@/components/join/EventJoinForm";
+import { ClubJoinForm } from "@/components/join/ClubJoinForm";
+
+type FormMode = "event" | "club";
+
+export default function RegisterPage() {
+  const { t } = useI18n();
+  const [mode, setMode] = useState<FormMode | null>(null);
+
+  // 入口选择界面
+  if (!mode) {
+    return (
+      <div className="container mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-16">
+        <div className="text-center mb-12">
+          <h1 className="text-3xl md:text-4xl font-bold mb-3">{t("register.title")}</h1>
+          <p className="text-muted-foreground">{t("register.subtitle")}</p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* 活动报名卡片 */}
+          <button
+            className="text-left group"
+            onClick={() => setMode("event")}
+          >
+            <Card className="h-full hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer border-2 hover:border-blue-500">
+              <CardContent className="p-6 space-y-4">
+                <div className="inline-flex h-14 w-14 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 group-hover:bg-blue-500 group-hover:text-white transition-colors">
+                  <CalendarDays className="h-7 w-7" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold mb-2">{t("register.eventTitle")}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {t("register.eventDesc")}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </button>
+
+          {/* 社团报名卡片 */}
+          <button
+            className="text-left group"
+            onClick={() => setMode("club")}
+          >
+            <Card className="h-full hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer border-2 hover:border-emerald-500">
+              <CardContent className="p-6 space-y-4">
+                <div className="inline-flex h-14 w-14 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+                  <Users className="h-7 w-7" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold mb-2">{t("register.clubTitle")}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {t("register.clubDesc")}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // 表单填写界面
+  return (
+    <div className="container mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-12 space-y-6">
+      <div className="flex items-center justify-between">
+        <Button variant="ghost" onClick={() => setMode(null)} size="sm">
+          ← {t("common.back")}
+        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant={mode === "event" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setMode("event")}
+          >
+            {t("register.eventTitle")}
+          </Button>
+          <Button
+            variant={mode === "club" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setMode("club")}
+          >
+            {t("register.clubTitle")}
+          </Button>
+        </div>
+      </div>
+
+      <AnimatePresence mode="wait">
+        {mode === "event" ? (
+          <motion.div
+            key="event"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+          >
+            <EventJoinForm />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="club"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+          >
+            <ClubJoinForm />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}

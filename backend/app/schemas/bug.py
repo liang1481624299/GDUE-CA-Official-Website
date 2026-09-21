@@ -1,0 +1,29 @@
+"""Bug 反馈 Pydantic 模型。"""
+from datetime import datetime
+
+from pydantic import BaseModel, EmailStr, Field, model_validator
+
+
+class BugReportCreate(BaseModel):
+    contact_email: EmailStr | None = None
+    contact_phone: str | None = Field(default=None, max_length=48)
+    description: str = Field(min_length=1, max_length=2000)
+    extra: str | None = Field(default=None, max_length=2000)
+
+    @model_validator(mode="after")
+    def check_contact(self) -> "BugReportCreate":
+        if not self.contact_email and not self.contact_phone:
+            raise ValueError("邮箱和手机号至少填写一项")
+        return self
+
+
+class BugReportOut(BaseModel):
+    id: int
+    contact_email: str | None
+    contact_phone: str | None
+    description: str
+    extra: str | None
+    resolved: bool
+    created_at: datetime
+
+    model_config = {"from_attributes": True}

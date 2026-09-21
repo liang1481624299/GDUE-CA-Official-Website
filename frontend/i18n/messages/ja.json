@@ -1,0 +1,606 @@
+{
+  "meta": {
+    "title": "広東第二師範学院コンピュータ協会",
+    "description": "広東第二師範学院（花都キャンパス）コンピュータ協会公式サイト、2008年創立 - サークル紹介、活動告知、新歓募集、技術ブログ",
+    "keywords": "コンピュータ協会,広東二師計協,GDEI_CA,広東第二師範学院,花都キャンパス,無料修理,サイバーセキュリティ"
+  },
+  "nav": {
+    "home": "ホーム",
+    "about": "サークル紹介",
+    "projects": "プロジェクト",
+    "events": "活動",
+    "join": "申し込み",
+    "blog": "技術ブログ",
+    "contact": "お問い合わせ",
+    "language": "言語",
+    "theme": "テーマ切替",
+    "menu": "メニュー",
+    "settings": "設定",
+    "admin": "管理者"
+  },
+  "common": {
+    "learnMore": "詳しく見る",
+    "viewAll": "すべて見る",
+    "loading": "読み込み中...",
+    "submit": "送信",
+    "back": "戻る",
+    "close": "閉じる",
+    "themeLight": "ライト",
+    "themeDark": "ダーク",
+    "readMore": "続きを読む",
+    "viewProject": "プロジェクトを見る",
+    "viewDemo": "デモを見る",
+    "viewGithub": "GitHubリポジトリ",
+    "all": "すべて",
+    "by": "作者",
+    "publishedOn": "公開日",
+    "participants": "参加人数",
+    "techStack": "技術スタック",
+    "members": "開発メンバー"
+  },
+  "home": {
+    "hero": {
+      "badge": "広東第二師範学院 · 花都キャンパス",
+      "title": "コンピュータ協会",
+      "subtitle": "広範な学生への奉仕、キャンパスコンピュータ文化の普及",
+      "description": "広東二師計協は2008年5月31日に創立された花都キャンパスの学術・技術系サークルです。毎週の定例講座、無料修理、サイバーセキュリティコンテスト、eスポーツを特色とし、会員のコンピュータ応用力向上を目指しています。",
+      "cta1": "入会する",
+      "cta2": "サークル紹介",
+      "stat1": "在籍会員",
+      "stat2": "年間活動",
+      "stat3": "カバー学院数",
+      "stat4": "創立年"
+    },
+    "announcements": {
+      "title": "最新のお知らせ",
+      "subtitle": "サークルの最新情報",
+      "item1Title": "コンピュータ知識普及コンテスト「技で新知を啓き、計で夢を築く」",
+      "item1Date": "2026-04-25",
+      "item2Title": "会員大会で改選：陳憶佳さんが執行会長に就任",
+      "item2Date": "2026-09-18",
+      "item3Title": "サークルフェア新歓：QRで入会、クイズで賞品",
+      "item3Date": "2025-10-01"
+    },
+    "events": {
+      "title": "近日の活動",
+      "subtitle": "技術イベントと講座に参加しよう",
+      "items": {
+        "git-workshop": {
+          "title": "Git バージョン管理ワークショップ",
+          "description": "Git バージョン管理ツールの初心者向けワークショップ。Git と GitHub の連携フローをゼロから学ぶ。"
+        },
+        "campus-coding-contest": {
+          "title": "キャンパスプログラミングコンテスト",
+          "description": "コンピュータ協会が主催する年次キャンパスプログラミングコンテスト。アルゴリズムとデータ構造の能力を競う。"
+        },
+        "web-frontend-lecture": {
+          "title": "Web フロントエンド技術講座",
+          "description": "技術部主催の Web フロントエンド技術講座。テーマはモダンフロントエンドフレームワークの比較と実践。"
+        },
+        "2025-autumn-recruitment": {
+          "title": "2025年秋の新入生募集",
+          "description": "コンピュータ協会の2025年秋学期新入生募集活動。全学部の新入生向け。"
+        },
+        "2024-fraud-prevention-contest": {
+          "title": "サイバーセキュリティ知識コンテスト「サイバーセキュリティの長城を築く」",
+          "description": "コンピュータ学院と警備部主催、計協が運営するブランドコンテスト。2キャンパス14学部をカバー。"
+        },
+        "2022-fraud-prevention-contest": {
+          "title": "サイバーセキュリティ知識コンテスト「騙を見抜き、安全に歩む」",
+          "description": "学工部、警備部、コンピュータ学院と計協が共催する学部級サイバーセキュリティコンテスト。易班 APP でオンライン解答。"
+        },
+        "2022-monthly-workshop": {
+          "title": "4月定期授業（Word / PPT / サイバーセキュリティ）",
+          "description": "計協の毎週日曜日の定期授業。2022年4月、花都キャンパス芸術棟212で35人が参加。"
+        },
+        "2013-microsoft-tour": {
+          "title": "マイクロソフト「イノベーションの旅」キャンパス講演",
+          "description": "マイクロソフト主講、計協が対応した「クラウド+クライアント」テーマの講演。203人が来場、社史唯一のマイクロソフト提携。"
+        }
+      }
+    },
+    "projects": {
+      "title": "注目プロジェクト",
+      "subtitle": "メンバーが開発したプロジェクト作品"
+    },
+    "quickNav": {
+      "title": "クイックナビゲーション",
+      "subtitle": "サークルの各方面を探索",
+      "projectsTitle": "プロジェクト",
+      "projectsDesc": "メンバーの技術プロジェクトを見る",
+      "eventsTitle": "サークル活動",
+      "eventsDesc": "技術講座とコンテストに参加",
+      "joinTitle": "サークル入会",
+      "joinDesc": "オンラインで新歓申し込み",
+      "blogTitle": "技術ブログ",
+      "blogDesc": "メンバーの技術記事を読む"
+    }
+  },
+  "about": {
+    "title": "サークルについて",
+    "subtitle": "コンピュータ協会の歴史、組織、栄誉を知る",
+    "timeline": {
+      "title": "サークルの歴史",
+      "subtitle": "私たちの歩み"
+    },
+    "structure": {
+      "title": "組織構成",
+      "subtitle": "サークルの部門と役割",
+      "activityDept": "活動部",
+      "activityDeptDesc": "ブランド活動と毎週の定例活動の企画・運営を担当",
+      "officeDept": "事務室",
+      "officeDeptDesc": "日常事務、月例会議の運営、資料の整理を担当",
+      "liaisonDept": "渉外部",
+      "liaisonDeptDesc": "対外連絡、スポンサー対応、他大学サークル交流を担当",
+      "publicityDept": "宣伝部",
+      "publicityDeptDesc": "WeChat公式アカウント運営と宣伝物制作を担当",
+      "financeDept": "財務部",
+      "financeDeptDesc": "会費管理と改選時の財務引継ぎを担当",
+      "repairTeam": "無料修理チーム",
+      "repairTeamDesc": "全学向けに無料パソコン修理と購入相談を提供"
+    },
+    "teachers": {
+      "title": "指導教員",
+      "subtitle": "先生方のご指導に感謝いたします"
+    },
+    "honors": {
+      "title": "サークル栄誉",
+      "subtitle": "共に達成した成果"
+    },
+    "location": {
+      "title": "部室の場所",
+      "subtitle": "ぜひ遊びに来てください",
+      "address": "広東省広州市花都区工業大道11号 広東第二師範学院（花都キャンパス）実験棟 305",
+      "openHours": "定例活動：毎週日曜；ブランド活動と会員大会は別途通知"
+    }
+  },
+  "projects": {
+    "title": "プロジェクト展示",
+    "subtitle": "サークルメンバーが開発したプロジェクト作品",
+    "filterByTech": "技術スタックで絞り込み",
+    "filterByYear": "年で絞り込み",
+    "noResults": "条件に一致するプロジェクトはありません",
+    "detail": {
+      "description": "プロジェクト概要",
+      "techStack": "技術スタック",
+      "members": "開発メンバー",
+      "screenshots": "プロジェクトのスクリーンショット",
+      "links": "関連リンク"
+    }
+  },
+  "events": {
+    "title": "サークル活動",
+    "subtitle": "過去の活動記録、講座、コンテスト、新歓活動",
+    "filterAll": "すべての活動",
+    "filterLecture": "技術講座",
+    "filterCompetition": "コンテスト",
+    "filterRecruitment": "新歓活動",
+    "filterWorkshop": "ワークショップ",
+    "chartTitle": "活動参加者統計",
+    "chartSubtitle": "過去1年間の各活動の参加者数推移"
+  },
+  "join": {
+    "title": "コンピュータ協会に入会",
+    "subtitle": "申し込みフォームに記入して、技術の旅を始めよう",
+    "intro": {
+      "title": "入会のメリット",
+      "desc1": "毎週の定例講座と無料修理に参加し、コンピュータ応用力を素早く向上",
+      "desc2": "サイバーセキュリティ大会や知識普及コンテストなどブランド活動に出場",
+      "desc3": "eスポーツ大会に参加し、優秀チームは学代表選考へ",
+      "desc4": "各学院の仲間と出会い、交流と協力の中で共に成長"
+    },
+    "positions": {
+      "title": "募集部門",
+      "activity": "活動部",
+      "office": "事務室",
+      "liaison": "渉外部",
+      "publicity": "宣伝部",
+      "finance": "財務部"
+    },
+    "form": {
+      "title": "オンライン申し込み",
+      "subtitle": "以下の情報をご記入ください",
+      "name": "氏名",
+      "namePlaceholder": "氏名を入力してください",
+      "studentId": "学籍番号",
+      "studentIdPlaceholder": "学籍番号を入力してください",
+      "major": "専攻",
+      "majorPlaceholder": "専攻を入力してください（例：コンピュータ科学）",
+      "college": "学院",
+      "collegePlaceholder": "例：コンピュータ学院",
+      "phoneCc": "国番号",
+      "phoneNumber": "電話番号",
+      "phoneNumberPlaceholder": "ローカル電話番号（国番号除く）",
+      "email": "メール（任意）",
+      "emailPlaceholder": "任意、通知受信用",
+      "position": "希望部門",
+      "positionPlaceholder": "希望部門を選択してください",
+      "introduction": "自己紹介",
+      "introductionPlaceholder": "自分について、興味のある技術方向を簡単に紹介してください...",
+      "submit": "申し込みを送信",
+      "submitting": "送信中...",
+      "success": "申し込み完了！近日中にご連絡します。",
+      "successDesc": "お申し込みありがとうございます。電話/メールで今後の通知をお待ちください。",
+      "submitAnother": "もう一度送信",
+      "errors": {
+        "nameRequired": "氏名を入力してください",
+        "studentIdRequired": "学籍番号を入力してください",
+        "majorRequired": "専攻を入力してください",
+        "collegeRequired": "学院を入力してください",
+        "phoneCcRequired": "国番号を選択してください",
+        "phoneRequired": "電話番号を入力してください",
+        "phoneInvalid": "選択した国番号の形式に合致する電話番号を入力してください",
+        "emailInvalid": "有効なメールアドレスを入力してください",
+        "activityRequired": "活動を先に選択してください",
+        "submitError": "送信に失敗しました。後でもう一度お試しください",
+        "positionRequired": "希望部門を選択してください",
+        "introductionMin": "自己紹介は10文字以上で入力してください"
+      }
+    }
+  },
+  "register": {
+    "title": "申し込み",
+    "subtitle": "申し込みの種類を選択してください",
+    "eventTitle": "活動申し込み",
+    "eventDesc": "講演会、コンテスト、ワークショップなど具体的な活動に参加",
+    "clubTitle": "サークル入会",
+    "clubDesc": "コンピュータ協会に入会し、希望の部門を選択",
+    "selectEvent": "活動を選択してください",
+    "selectPosition": "希望部門を選択してください",
+    "noPosition": "サークル入会には希望部門の選択が必要です",
+    "switchToEvent": "活動申し込みに切り替え",
+    "switchToClub": "サークル入会に切り替え"
+  },
+  "blog": {
+    "title": "技術ブログ",
+    "subtitle": "メンバーによる技術共有記事：フロントエンド、バックエンド、アルゴリズムなど",
+    "filterByTag": "タグで絞り込み",
+    "noResults": "条件に一致する記事はありません",
+    "tableOfContents": "目次"
+  },
+  "contact": {
+    "title": "お問い合わせ",
+    "subtitle": "以下の方法でサークルにお問い合わせください",
+    "email": "サークルメール",
+    "github": "GitHub組織",
+    "social": "ソーシャルアカウント",
+    "qq": "QQグループ",
+    "wechat": "WeChat公式アカウント",
+    "location": "部室の場所",
+    "address": "広東省広州市花都区工業大道11号 広東第二師範学院（花都キャンパス）実験棟 305",
+    "openHours": "定例活動：毎週日曜；ブランド活動と会員大会は別途通知",
+    "sendMessage": "メールを送信"
+  },
+  "footer": {
+    "description": "広東二師計協（花都キャンパス）- 広範な学生への奉仕、キャンパスコンピュータ文化の普及、会員の応用力向上",
+    "quickLinks": "クイックリンク",
+    "resources": "リソース",
+    "connect": "フォローする",
+    "copyright": "© 2026 広東第二師範学院コンピュータ協会. All rights reserved.",
+    "madeWith": "広東二師計協が丁寧に作成",
+    "terms": "利用規約",
+    "privacy": "プライバシーポリシー",
+    "disclaimer": "免責事項"
+  },
+  "terms": {
+    "title": "利用規約",
+    "subtitle": "本ウェブサイトにアクセスまたは使用することで、以下の規約に同意したものとみなします",
+    "updatedAt": "最終更新：2026 年 9 月",
+    "items": [
+      { "title": "規約の受諾", "content": "本ウェブサイトにアクセスまたは使用することで、本規約に同意したものとみなします。同意されない場合は、使用を停止してください。" },
+      { "title": "適法な使用", "content": "ユーザーは、本ウェブサイトを違法、不正、悪意のある攻撃、フォームのスクレイピング、迷惑行為などの目的で利用してはなりません。" },
+      { "title": "コンテンツの許諾", "content": "ユーザーが提出したコンテンツ（Bug 報告、参加登録情報）は、サークルの活動管理・サイト最適化のために使用することを許諾します。許可なく公開することはありません。" },
+      { "title": "濫用の禁止", "content": "無許可での大量スクレイピングや、悪意のあるフォーム送信で他者の枠を占拠する行為は禁止されています。違反者はアクセスを制限される場合があります。" },
+      { "title": "規約の変更", "content": "サークルはウェブサイトの内容、サービスの一時停止・終了、または本規約を随時変更する権利を有します。変更はウェブサイト上で告知します。" }
+    ]
+  },
+  "privacy": {
+    "title": "プライバシーポリシー",
+    "subtitle": "お客様のプライバシーを尊重し、情報の収集・使用・保護について説明します",
+    "updatedAt": "最終更新：2026 年 9 月",
+    "items": [
+      { "title": "収集する情報", "content": "イベント参加登録時に、氏名、学部、学科、学籍番号、電話番号、メールアドレスを収集します。Bug 報告時には、お客様が入力した連絡先を収集します。" },
+      { "title": "使用目的", "content": "サークル活動の参加審査、活動連絡、Bug 対応、サイト保守のみに使用します。第三者に販売・貸与することはありません。" },
+      { "title": "データ保管", "content": "データはサークル管理のサーバーに保管され、サークル管理者のみがアクセスできます。イベント終了後は、サークル規則に従って保管または削除します。" },
+      { "title": "ユーザーの権利", "content": "サークル管理者に連絡して、自身が提出した記録の閲覧または削除を申し出ることができます。" },
+      { "title": "セキュリティ", "content": "パスワード認証や IP ブラックリストなどの手段でデータを保護しますが、絶対的な安全性を保証することはできません。" },
+      { "title": "Cookie の使用", "content": "本サイトではログイン状態維持のための基本的な Cookie を使用する場合があります。追跡用 Cookie は使用しません。" }
+    ]
+  },
+  "disclaimer": {
+    "title": "免責事項",
+    "subtitle": "本ウェブサイトは学生サークルによる非公式の公益サイトであり、内容は参考のためのものです",
+    "updatedAt": "最終更新：2026 年 9 月",
+    "items": [
+      { "title": "非公式声明", "content": "本ウェブサイトは広東二師コンピュータ協会学生サークルによる非公式の公益サイトであり、すべての内容は学習・交流用であり、専門的な助言を構成するものではありません。" },
+      { "title": "情報の正確性", "content": "本サイトで公開するイベント情報、チュートリアル、資料は参考のためのものであり、誤りがある場合、サークルは訂正する権利を留保します。" },
+      { "title": "ユーザーの責任", "content": "ユーザーが本サイトに提出した情報は、提出者が真実かつ有効であることを保証します。虚偽の情報による結果はユーザー自身が負担します。" },
+      { "title": "サービスの可用性", "content": "合理的な手段でデータセキュリティを確保しますが、サイトが絶対に故障や脆弱性がないことを保証しません。本サイトへのアクセスまたは使用によって生じた間接的損害について、サークルは責任を負いません。" },
+      { "title": "外部リンク", "content": "本サイトがリンクする外部ウェブサイトの内容は、本サークルの管轄下になく、第三者のコンテンツについて責任を負いません。" },
+      { "title": "異議申し立て", "content": "本免責事項に異議がある場合は、本ウェブサイトの使用を停止してください。" }
+    ]
+  },
+  "notFound": {
+    "title": "ページが見つかりません",
+    "description": "アクセスしたページは存在しないか、移動されました",
+    "backHome": "ホームに戻る"
+  },
+  "admin": {
+    "login": {
+      "title": "管理者ログイン",
+      "subtitle": "コンピュータ協会管理コンソール",
+      "username": "ユーザー名",
+      "usernamePlaceholder": "ユーザー名を入力してください",
+      "password": "パスワード",
+      "passwordPlaceholder": "パスワードを入力してください",
+      "submit": "ログイン",
+      "submitting": "ログイン中...",
+      "error": "ユーザー名またはパスワードが正しくありません",
+      "backToSite": "サイトに戻る",
+      "forgotPassword": "パスワードをお忘れですか？",
+      "mustChangeWarning": "デフォルトパスワードが検出されました。先に変更してください"
+    },
+    "changePassword": {
+      "title": "パスワード変更",
+      "subtitle": "初回ログイン時にデフォルトパスワードを変更してください",
+      "oldPassword": "現在のパスワード",
+      "oldPasswordPlaceholder": "現在のパスワードを入力",
+      "newPassword": "新しいパスワード",
+      "newPasswordPlaceholder": "6文字以上",
+      "confirmPassword": "新しいパスワード（確認）",
+      "confirmPlaceholder": "新しいパスワードを再入力",
+      "submit": "パスワード変更",
+      "submitting": "送信中...",
+      "mismatch": "パスワードが一致しません",
+      "success": "パスワード変更成功",
+      "error": "変更に失敗しました",
+      "backToLogin": "ログインに戻る"
+    },
+    "forgotPassword": {
+      "title": "パスワード再設定",
+      "subtitle": "申請を送信すると管理者が対応します",
+      "contactEmail": "連絡先メール",
+      "contactEmailPlaceholder": "連絡先メールを入力",
+      "usernameHint": "ユーザー名のヒント（任意）",
+      "usernameHintPlaceholder": "覚えているユーザー名またはメール",
+      "reason": "申請理由",
+      "reasonPlaceholder": "状況を説明してください",
+      "submit": "申請送信",
+      "submitting": "送信中...",
+      "success": "申請が送信されました。管理者が対応します",
+      "error": "送信に失敗しました。後でもう一度お試しください",
+      "backToLogin": "ログインに戻る"
+    },
+    "recover": {
+      "title": "アカウント復元",
+      "subtitle": "全管理者が無効化された時の緊急復元",
+      "securityQuestion": "セキュリティの質問",
+      "securityAnswer": "答え",
+      "securityAnswerPlaceholder": "セキュリティの質問の答えを入力",
+      "newPassword": "新しいパスワード",
+      "newPasswordPlaceholder": "復元後に設定する新パスワード（6文字以上）",
+      "submit": "アカウント復元",
+      "submitting": "復元中...",
+      "success": "アカウントが復元されました。新パスワードでログインしてください",
+      "error": "復元に失敗しました。答えが間違っている可能性があります",
+      "backToLogin": "ログインに戻る"
+    },
+    "passwordResets": {
+      "title": "パスワード再設定申請",
+      "filterPending": "保留中",
+      "filterAll": "全て",
+      "colEmail": "連絡先メール",
+      "colUsername": "ユーザー名ヒント",
+      "colReason": "申請理由",
+      "colStatus": "状態",
+      "colCreatedAt": "送信日時",
+      "markHandled": "対応済みにする",
+      "markRejected": "却下",
+      "adminNote": "対応メモ",
+      "adminNotePlaceholder": "対応内容（任意）",
+      "save": "保存",
+      "empty": "申請なし",
+      "statuses": {
+        "pending": "保留中",
+        "handled": "対応済み",
+        "rejected": "却下"
+      }
+    },
+    "dashboard": {
+      "title": "管理コンソール",
+      "welcome": "おかえりなさい",
+      "logout": "ログアウト",
+      "overview": "概要",
+      "activities": "活動管理",
+      "registrations": "申し込み審閲",
+      "bugs": "バグ報告",
+      "passwordResets": "パスワード再設定",
+      "users": "ユーザー管理",
+      "settings": "システム設定",
+      "statsActivities": "活動総数",
+      "statsRegistrations": "申し込み総数",
+      "statsPending": "審閲待ち",
+      "statsBugs": "未処理バグ"
+    },
+    "profile": {
+      "title": "プロフィール",
+      "subtitle": "アカウント情報の確認と編集",
+      "avatar": "アバター",
+      "avatarHint": "JPG/PNG/WEBP、最大5MB",
+      "avatarUpload": "アバターアップロード",
+      "avatarUploading": "アップロード中...",
+      "avatarSuccess": "アバター更新成功",
+      "avatarError": "アバターアップロード失敗",
+      "displayName": "表示名",
+      "displayNamePlaceholder": "表示用の名前",
+      "realName": "本名",
+      "realNamePlaceholder": "本名を入力",
+      "studentId": "学籍番号",
+      "studentIdPlaceholder": "学籍番号を入力",
+      "phone": "電話番号",
+      "phonePlaceholder": "国番号含む、例: +8613800000000",
+      "email": "メール",
+      "emailReadonly": "メールは変更できません",
+      "role": "役割",
+      "save": "プロフィール保存",
+      "saving": "保存中...",
+      "saved": "プロフィール保存成功",
+      "saveError": "保存失敗",
+      "changePassword": "パスワード変更"
+    },
+    "activities": {
+      "title": "活動管理",
+      "create": "活動作成",
+      "edit": "活動編集",
+      "name": "活動名",
+      "description": "説明",
+      "location": "場所",
+      "capacity": "定員",
+      "status": "ステータス",
+      "startAt": "開始時間",
+      "endAt": "終了時間",
+      "actions": "操作",
+      "empty": "活動がありません",
+      "save": "保存",
+      "cancel": "キャンセル",
+      "delete": "削除",
+      "deleteConfirm": "この活動を削除しますか？",
+      "statuses": {
+        "upcoming": "予定",
+        "ongoing": "進行中",
+        "ended": "終了",
+        "cancelled": "キャンセル"
+      }
+    },
+    "registrations": {
+      "title": "申し込み審閲",
+      "filterActivity": "活動で絞り込み",
+      "filterType": "種類で絞り込み",
+      "filterStatus": "ステータスで絞り込み",
+      "typeActivity": "活動申し込み",
+      "typeClub": "サークル入会",
+      "export": "エクスポート",
+      "exportCsv": "CSV エクスポート",
+      "exportXlsx": "Excel エクスポート",
+      "viewDetail": "詳細を見る",
+      "approve": "承認",
+      "reject": "却下",
+      "checkIn": "チェックイン",
+      "remark": "備考",
+      "remarkPlaceholder": "審閲メモを追加...",
+      "saveRemark": "備考を保存",
+      "empty": "申し込み記録がありません",
+      "colName": "氏名",
+      "colStudentId": "学籍番号",
+      "colCollege": "学院",
+      "colMajor": "専攻",
+      "colPhone": "電話番号",
+      "colEmail": "メール",
+      "colStatus": "ステータス",
+      "colSubmittedAt": "送信時間",
+      "statuses": {
+        "pending": "審閲待ち",
+        "approved": "承認済み",
+        "rejected": "却下済み",
+        "checked_in": "チェックイン済み"
+      }
+    },
+    "bugs": {
+      "title": "バグ報告",
+      "filterStatus": "ステータスで絞り込み",
+      "markResolved": "解決済みにする",
+      "reopen": "再オープン",
+      "empty": "バグ報告はありません",
+      "colTitle": "タイトル",
+      "colDescription": "説明",
+      "colContact": "連絡先",
+      "colUrl": "ページ URL",
+      "colStatus": "ステータス",
+      "colCreatedAt": "送信時間",
+      "statuses": {
+        "open": "未処理",
+        "resolved": "解決済み"
+      }
+    },
+    "settings": {
+      "title": "システム設定",
+      "ipBlacklist": "IP ブラックリスト",
+      "ipBlacklistDesc": "ブロックする IP または CIDR 範囲を 1 行 1 件で追加",
+      "ipBlacklistPlaceholder": "例：192.168.1.1 または 10.0.0.0/24",
+      "addIp": "追加",
+      "removeIp": "削除",
+      "domainWhitelist": "ドメインホワイトリスト",
+      "domainWhitelistDesc": "CORS 許可ドメイン、1 行 1 件",
+      "domainWhitelistPlaceholder": "例：gdue-ca.paperee.guru",
+      "addDomain": "追加",
+      "removeDomain": "削除",
+      "saved": "設定を保存しました",
+      "saveError": "保存に失敗しました。後でもう一度お試しください"
+    },
+    "users": {
+      "title": "ユーザー管理",
+      "subtitle": "自分のアカウント情報の確認・編集",
+      "subtitleSuper": "すべての管理者アカウント管理：作成・編集・削除",
+      "you": "あなた",
+      "create": "新規アカウント",
+      "formTitle": "新規アカウント作成",
+      "displayName": "表示名",
+      "displayNamePlaceholder": "ログインと表示に使用",
+      "realName": "本名",
+      "realNamePlaceholder": "本名を入力",
+      "studentId": "学籍番号",
+      "studentIdPlaceholder": "学籍番号を入力",
+      "phone": "電話番号",
+      "phonePlaceholder": "国番号付き、例: +8613800000000",
+      "email": "メール",
+      "emailPlaceholder": "ログインに使用",
+      "password": "パスワード",
+      "passwordPlaceholder": "6 文字以上",
+      "role": "ロール",
+      "save": "アカウント作成",
+      "cancel": "キャンセル",
+      "deleteConfirm": "このアカウントを削除しますか？この操作は取り消せません",
+      "empty": "アカウントなし",
+      "colDisplayName": "表示名",
+      "colRealName": "本名",
+      "colStudentId": "学籍番号",
+      "colPhone": "電話番号",
+      "colEmail": "メール",
+      "colRole": "ロール",
+      "colActions": "操作",
+      "roles": {
+        "super_admin": "スーパー管理者",
+        "admin": "管理者",
+        "editor": "編集者"
+      }
+    }
+  },
+  "bug": {
+    "title": "バグ報告",
+    "subtitle": "問題を見つけましたか？お知らせください",
+    "form": {
+      "title": "バグ報告を送信",
+      "titleLabel": "タイトル",
+      "titlePlaceholder": "問題を簡潔に説明",
+      "descriptionLabel": "詳細説明",
+      "descriptionPlaceholder": "再現手順、期待結果と実際の結果を記述してください",
+      "contactLabel": "連絡先（任意）",
+      "contactPlaceholder": "メールまたは電話番号、返信用",
+      "urlLabel": "ページ URL（任意）",
+      "urlPlaceholder": "問題が発生したページの URL",
+      "submit": "報告を送信",
+      "submitting": "送信中...",
+      "success": "報告を送信しました。ありがとうございます！",
+      "successDesc": "早急に対応いたします。",
+      "submitAnother": "もう一度送信",
+      "errors": {
+        "titleRequired": "タイトルを入力してください",
+        "titleMin": "タイトルは 3 文字以上で入力してください",
+        "descriptionRequired": "詳細説明を入力してください",
+        "descriptionMin": "詳細説明は 10 文字以上で入力してください",
+        "contactInvalid": "有効なメールアドレスまたは電話番号を入力してください",
+        "submitError": "送信に失敗しました。後でもう一度お試しください"
+      }
+    }
+  }
+}

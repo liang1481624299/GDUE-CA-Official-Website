@@ -1,0 +1,606 @@
+{
+  "meta": {
+    "title": "Guangdong Institute of Education Computer Society",
+    "description": "Official website of the Computer Association of Guangdong University of Education (Huadu Campus), founded in 2008 - club intro, events, recruitment, and tech blog",
+    "keywords": "Computer Association, GDUECA, GDEI_CA, Guangdong University of Education, Huadu Campus, free repair, cybersecurity"
+  },
+  "nav": {
+    "home": "Home",
+    "about": "About",
+    "projects": "Projects",
+    "events": "Events",
+    "join": "Register",
+    "blog": "Blog",
+    "contact": "Contact",
+    "language": "Language",
+    "theme": "Toggle Theme",
+    "menu": "Menu",
+    "settings": "Settings",
+    "admin": "Admin"
+  },
+  "common": {
+    "learnMore": "Learn More",
+    "viewAll": "View All",
+    "loading": "Loading...",
+    "submit": "Submit",
+    "back": "Back",
+    "close": "Close",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "readMore": "Read More",
+    "viewProject": "View Project",
+    "viewDemo": "Live Demo",
+    "viewGithub": "GitHub Repo",
+    "all": "All",
+    "by": "by",
+    "publishedOn": "Published on",
+    "participants": "Participants",
+    "techStack": "Tech Stack",
+    "members": "Team Members"
+  },
+  "home": {
+    "hero": {
+      "badge": "Guangdong University of Education · Huadu Campus",
+      "title": "Computer Association",
+      "subtitle": "Serving students, promoting campus computer culture",
+      "description": "Founded on May 31, 2008, GDUECA Computer Association is an academic and technology club on the Huadu Campus. We are known for weekly hands-on sessions, free repair clinics, anti-fraud cybersecurity competitions, and esports events.",
+      "cta1": "Join Us",
+      "cta2": "About Club",
+      "stat1": "Registered Members",
+      "stat2": "Annual Events",
+      "stat3": "Schools Covered",
+      "stat4": "Founded"
+    },
+    "announcements": {
+      "title": "Latest Announcements",
+      "subtitle": "Stay updated with the latest club news",
+      "item1Title": "Computer Science Popularization Contest: Ignite Knowledge, Build Dreams with Computing",
+      "item1Date": "2026-04-25",
+      "item2Title": "General Meeting: Chen Yijia elected executive president",
+      "item2Date": "2026-09-18",
+      "item3Title": "Club Fair recruitment: scan to join, quiz to win prizes",
+      "item3Date": "2025-10-01"
+    },
+    "events": {
+      "title": "Upcoming Events",
+      "subtitle": "Join our tech events and talks",
+      "items": {
+        "git-workshop": {
+          "title": "Git Version Control Workshop",
+          "description": "A beginner workshop on Git version control, learning Git and GitHub collaboration from scratch."
+        },
+        "campus-coding-contest": {
+          "title": "Campus Programming Contest",
+          "description": "Annual campus programming contest hosted by the Computer Association, testing algorithm and data structure skills."
+        },
+        "web-frontend-lecture": {
+          "title": "Web Frontend Tech Talk",
+          "description": "A Web frontend tech talk hosted by the Tech Department, comparing modern frontend frameworks with practical insights."
+        },
+        "2025-autumn-recruitment": {
+          "title": "2025 Autumn Recruitment",
+          "description": "The Computer Association's autumn 2025 recruitment drive, open to all new students."
+        },
+        "2024-fraud-prevention-contest": {
+          "title": "Cybersecurity Knowledge Contest \"Building the Great Wall of Cybersecurity\"",
+          "description": "A flagship contest hosted by the School of Computer Science and Security Department, organized by the Computer Association, covering 14 departments across two campuses."
+        },
+        "2022-fraud-prevention-contest": {
+          "title": "Cybersecurity Knowledge Contest \"Sharp Eyes Against Fraud, Safe Journey Together\"",
+          "description": "A university-level cybersecurity contest co-organized by Student Affairs, Security Department, School of Computer Science and the Computer Association, held online via the Yiban app."
+        },
+        "2022-monthly-workshop": {
+          "title": "April Regular Class (Word / PPT / Cybersecurity)",
+          "description": "The Computer Association's weekly Sunday regular class — the April 2022 session in Arts Building 212, Huadu Campus, drew 35 attendees."
+        },
+        "2013-microsoft-tour": {
+          "title": "Microsoft \"Innovation Journey\" Campus Lecture",
+          "description": "A \"Cloud + Client\" themed lecture co-organized by Microsoft and the Computer Association, drawing 203 attendees — the only Microsoft collaboration in the association's history."
+        }
+      }
+    },
+    "projects": {
+      "title": "Featured Projects",
+      "subtitle": "Project works by our members"
+    },
+    "quickNav": {
+      "title": "Quick Navigation",
+      "subtitle": "Explore all aspects of the club",
+      "projectsTitle": "Projects",
+      "projectsDesc": "Explore tech projects by members",
+      "eventsTitle": "Events",
+      "eventsDesc": "Join tech talks and competitions",
+      "joinTitle": "Join Club",
+      "joinDesc": "Fill out the recruitment form",
+      "blogTitle": "Tech Blog",
+      "blogDesc": "Read member tech sharing articles"
+    }
+  },
+  "about": {
+    "title": "About Us",
+    "subtitle": "Learn about our history, structure, and honors",
+    "timeline": {
+      "title": "Our History",
+      "subtitle": "Our development journey"
+    },
+    "structure": {
+      "title": "Organization Structure",
+      "subtitle": "Club departments and responsibilities",
+      "activityDept": "Events Department",
+      "activityDeptDesc": "Plans and runs brand events and weekly routine sessions",
+      "officeDept": "Office",
+      "officeDeptDesc": "Daily affairs, monthly meetings, and archives",
+      "liaisonDept": "Liaison Department",
+      "liaisonDeptDesc": "External outreach, sponsorships, and inter-university exchanges",
+      "publicityDept": "Publicity Department",
+      "publicityDeptDesc": "Runs the WeChat account and event promotions",
+      "financeDept": "Finance Department",
+      "financeDeptDesc": "Manages funds and handover audits",
+      "repairTeam": "Volunteer Repair Team",
+      "repairTeamDesc": "Free computer repair and buying advice for the whole campus"
+    },
+    "teachers": {
+      "title": "Faculty Advisors",
+      "subtitle": "Thanks to our advisors for their guidance"
+    },
+    "honors": {
+      "title": "Club Honors",
+      "subtitle": "Achievements we accomplished together"
+    },
+    "location": {
+      "title": "Club Room Location",
+      "subtitle": "Come find us for a chat",
+      "address": "Room 305, Laboratory Building, Guangdong University of Education (Huadu Campus), No. 11 Gongye Avenue, Huadu District, Guangzhou, Guangdong",
+      "openHours": "Routine sessions: every Sunday; brand events and assemblies announced separately"
+    }
+  },
+  "projects": {
+    "title": "Projects",
+    "subtitle": "Project works by club members",
+    "filterByTech": "Filter by Tech Stack",
+    "filterByYear": "Filter by Year",
+    "noResults": "No projects match the criteria",
+    "detail": {
+      "description": "Description",
+      "techStack": "Tech Stack",
+      "members": "Team Members",
+      "screenshots": "Screenshots",
+      "links": "Links"
+    }
+  },
+  "events": {
+    "title": "Events",
+    "subtitle": "Past events, talks, competitions, and recruitment activities",
+    "filterAll": "All Events",
+    "filterLecture": "Tech Talks",
+    "filterCompetition": "Competitions",
+    "filterRecruitment": "Recruitment",
+    "filterWorkshop": "Workshops",
+    "chartTitle": "Event Participation Stats",
+    "chartSubtitle": "Participation trends over the past year"
+  },
+  "join": {
+    "title": "Join the Computer Association",
+    "subtitle": "Fill out the form and start your tech journey",
+    "intro": {
+      "title": "Why Join Us",
+      "desc1": "Join weekly hands-on sessions and free repair clinics to sharpen your computer skills",
+      "desc2": "Compete in brand events like the anti-fraud cybersecurity and science popularization contests",
+      "desc3": "Play in esports tournaments with a path to the university team trials",
+      "desc4": "Meet friends from every school and grow together through collaboration"
+    },
+    "positions": {
+      "title": "Open Positions",
+      "activity": "Events Department",
+      "office": "Office",
+      "liaison": "Liaison Department",
+      "publicity": "Publicity Department",
+      "finance": "Finance Department"
+    },
+    "form": {
+      "title": "Online Application",
+      "subtitle": "Please fill in the following information",
+      "name": "Name",
+      "namePlaceholder": "Enter your name",
+      "studentId": "Student ID",
+      "studentIdPlaceholder": "Enter your student ID",
+      "major": "Major",
+      "majorPlaceholder": "e.g., Computer Science",
+      "college": "College",
+      "collegePlaceholder": "e.g., College of Computer Science",
+      "phoneCc": "Country Code",
+      "phoneNumber": "Phone Number",
+      "phoneNumberPlaceholder": "Local phone number (without country code)",
+      "email": "Email (optional)",
+      "emailPlaceholder": "Optional, for notifications",
+      "position": "Preferred Department",
+      "positionPlaceholder": "Select a department",
+      "introduction": "Self Introduction",
+      "introductionPlaceholder": "Briefly introduce yourself and your tech interests...",
+      "submit": "Submit Application",
+      "submitting": "Submitting...",
+      "success": "Application submitted! We'll contact you soon.",
+      "successDesc": "Thank you for applying. Please watch your phone/email for updates.",
+      "submitAnother": "Submit Another",
+      "errors": {
+        "nameRequired": "Please enter your name",
+        "studentIdRequired": "Please enter your student ID",
+        "majorRequired": "Please enter your major",
+        "collegeRequired": "Please enter your college",
+        "phoneCcRequired": "Please select a country code",
+        "phoneRequired": "Please enter your phone number",
+        "phoneInvalid": "Phone number does not match the selected country code format",
+        "emailInvalid": "Please enter a valid email",
+        "activityRequired": "Please select an activity first",
+        "submitError": "Submission failed, please try again later",
+        "positionRequired": "Please select a department",
+        "introductionMin": "Introduction must be at least 10 characters"
+      }
+    }
+  },
+  "register": {
+    "title": "Register",
+    "subtitle": "Choose your registration type",
+    "eventTitle": "Activity Registration",
+    "eventDesc": "Sign up for a specific event — lecture, competition, workshop, etc.",
+    "clubTitle": "Club Membership",
+    "clubDesc": "Join the Computer Society and pick your preferred department",
+    "selectEvent": "Select an activity",
+    "selectPosition": "Select a department",
+    "noPosition": "Club registration requires a department selection",
+    "switchToEvent": "Switch to activity",
+    "switchToClub": "Switch to club"
+  },
+  "blog": {
+    "title": "Tech Blog",
+    "subtitle": "Member tech sharing articles on frontend, backend, algorithms, and more",
+    "filterByTag": "Filter by Tag",
+    "noResults": "No articles match the criteria",
+    "tableOfContents": "Table of Contents"
+  },
+  "contact": {
+    "title": "Contact Us",
+    "subtitle": "Reach out to us through the following channels",
+    "email": "Club Email",
+    "github": "GitHub Organization",
+    "social": "Social Media",
+    "qq": "QQ Group",
+    "wechat": "WeChat Official Account",
+    "location": "Club Room Location",
+    "address": "Room 305, Laboratory Building, Guangdong University of Education (Huadu Campus), No. 11 Gongye Avenue, Huadu District, Guangzhou, Guangdong",
+    "openHours": "Routine sessions: every Sunday; brand events and assemblies announced separately",
+    "sendMessage": "Send Email"
+  },
+  "footer": {
+    "description": "GDUECA Computer Association (Huadu Campus) - serving students, promoting campus computer culture, raising members' computer literacy",
+    "quickLinks": "Quick Links",
+    "resources": "Resources",
+    "connect": "Connect",
+    "copyright": "© 2026 GDUE Computer Association. All rights reserved.",
+    "madeWith": "Built with care by the GDUECA Computer Association",
+    "terms": "Terms of Use",
+    "privacy": "Privacy Policy",
+    "disclaimer": "Disclaimer"
+  },
+  "terms": {
+    "title": "Terms of Use",
+    "subtitle": "By accessing or using this website, you agree to the following terms",
+    "updatedAt": "Last updated: September 2026",
+    "items": [
+      { "title": "Acceptance of Terms", "content": "By accessing or using this website, you accept these terms. If you do not agree, please stop using the site." },
+      { "title": "Lawful Use", "content": "Users must not use this website for any illegal, malicious, harmful, or unauthorized purpose, including but not limited to attacks, scraping forms, or harassment." },
+      { "title": "Content License", "content": "Content you submit (bug reports, registration info) is licensed to the club for activity management and site optimization. It will not be publicly disclosed without your consent." },
+      { "title": "Prohibited Conduct", "content": "Unauthorized bulk scraping of site content or malicious form submissions to block others is prohibited. Violators may have their access revoked." },
+      { "title": "Changes to Terms", "content": "The club may modify site content, suspend or terminate service, or revise these terms at any time. Changes will be posted on the website." }
+    ]
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "subtitle": "We value your privacy. Here's how we collect, use, and protect your information",
+    "updatedAt": "Last updated: September 2026",
+    "items": [
+      { "title": "Information We Collect", "content": "When you submit an activity registration, we collect your name, college, major, student ID, phone number, and email. Bug reports collect the contact information you provide." },
+      { "title": "How We Use It", "content": "Used solely for registration review, activity notifications, bug follow-up, and site maintenance. We do not sell or rent your information to third parties." },
+      { "title": "Data Storage", "content": "Data is stored on club-managed servers, accessible only to club administrators. After an activity ends, data is retained or purged according to club rules." },
+      { "title": "Your Rights", "content": "You may contact club administrators to request access to or deletion of your submitted records." },
+      { "title": "Security", "content": "We use password-protected access and IP blacklists to protect data, but cannot guarantee absolute security." },
+      { "title": "Cookies", "content": "This site may use essential cookies to maintain login sessions. No tracking cookies are used." }
+    ]
+  },
+  "disclaimer": {
+    "title": "Disclaimer",
+    "subtitle": "This is a non-official, non-profit student club website. Content is for reference only",
+    "updatedAt": "Last updated: September 2026",
+    "items": [
+      { "title": "Non-Official Statement", "content": "This website is a non-official, non-profit public-interest site maintained by the GDUE Computer Association student club. All content is for learning and communication only and does not constitute professional advice." },
+      { "title": "Content Accuracy", "content": "Activity information, tutorials, and materials published here are for reference only. The club reserves the right to correct any errors." },
+      { "title": "User Responsibility", "content": "Users are responsible for the accuracy of the information they submit. Consequences of providing false information are borne by the user." },
+      { "title": "Service Availability", "content": "We take reasonable measures to protect data security, but do not guarantee the site is fault-free or vulnerability-free. The club is not liable for indirect losses arising from access to or use of this website." },
+      { "title": "External Links", "content": "Links to external websites are not under the club's control, and we are not responsible for their content." },
+      { "title": "Objections", "content": "If you object to this disclaimer, please stop using this website." }
+    ]
+  },
+  "notFound": {
+    "title": "Page Not Found",
+    "description": "The page you're looking for doesn't exist or has been moved",
+    "backHome": "Back to Home"
+  },
+  "admin": {
+    "login": {
+      "title": "Admin Login",
+      "subtitle": "Computer Society Admin Console",
+      "username": "Username",
+      "usernamePlaceholder": "Enter your username",
+      "password": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "submit": "Log In",
+      "submitting": "Logging in...",
+      "error": "Invalid username or password",
+      "backToSite": "Back to Site",
+      "forgotPassword": "Forgot Password?",
+      "mustChangeWarning": "Default password detected, please change it first"
+    },
+    "changePassword": {
+      "title": "Change Password",
+      "subtitle": "Please change the default password",
+      "oldPassword": "Current Password",
+      "oldPasswordPlaceholder": "Enter current password",
+      "newPassword": "New Password",
+      "newPasswordPlaceholder": "At least 6 characters",
+      "confirmPassword": "Confirm New Password",
+      "confirmPlaceholder": "Re-enter new password",
+      "submit": "Change Password",
+      "submitting": "Submitting...",
+      "mismatch": "Passwords do not match",
+      "success": "Password changed successfully",
+      "error": "Failed to change password",
+      "backToLogin": "Back to Login"
+    },
+    "forgotPassword": {
+      "title": "Forgot Password",
+      "subtitle": "Submit a request and an admin will contact you",
+      "contactEmail": "Contact Email",
+      "contactEmailPlaceholder": "Enter your contact email",
+      "usernameHint": "Username Hint (optional)",
+      "usernameHintPlaceholder": "Username or email you remember",
+      "reason": "Reason",
+      "reasonPlaceholder": "Explain your situation, e.g. forgot password, account issue",
+      "submit": "Submit Request",
+      "submitting": "Submitting...",
+      "success": "Request submitted, admin will process it soon",
+      "error": "Submission failed, please try again later",
+      "backToLogin": "Back to Login"
+    },
+    "recover": {
+      "title": "Account Recovery",
+      "subtitle": "Emergency recovery when all admins are disabled",
+      "securityQuestion": "Security Question",
+      "securityAnswer": "Answer",
+      "securityAnswerPlaceholder": "Enter the answer to the security question",
+      "newPassword": "New Password",
+      "newPasswordPlaceholder": "New password to set after recovery (min 6 chars)",
+      "submit": "Recover Account",
+      "submitting": "Recovering...",
+      "success": "Account recovered, please log in with new password",
+      "error": "Recovery failed, answer may be incorrect",
+      "backToLogin": "Back to Login"
+    },
+    "passwordResets": {
+      "title": "Password Reset Requests",
+      "filterPending": "Pending",
+      "filterAll": "All",
+      "colEmail": "Contact Email",
+      "colUsername": "Username Hint",
+      "colReason": "Reason",
+      "colStatus": "Status",
+      "colCreatedAt": "Submitted At",
+      "markHandled": "Mark as Handled",
+      "markRejected": "Reject",
+      "adminNote": "Admin Note",
+      "adminNotePlaceholder": "Handling note (optional)",
+      "save": "Save",
+      "empty": "No requests",
+      "statuses": {
+        "pending": "Pending",
+        "handled": "Handled",
+        "rejected": "Rejected"
+      }
+    },
+    "dashboard": {
+      "title": "Admin Console",
+      "welcome": "Welcome back",
+      "logout": "Log Out",
+      "overview": "Overview",
+      "activities": "Activities",
+      "registrations": "Registrations",
+      "bugs": "Bug Reports",
+      "passwordResets": "Password Resets",
+      "users": "User Management",
+      "settings": "Settings",
+      "statsActivities": "Total Activities",
+      "statsRegistrations": "Total Registrations",
+      "statsPending": "Pending Reviews",
+      "statsBugs": "Open Bugs"
+    },
+    "profile": {
+      "title": "Profile",
+      "subtitle": "View and edit your account information",
+      "avatar": "Avatar",
+      "avatarHint": "JPG/PNG/WEBP, max 5MB",
+      "avatarUpload": "Upload Avatar",
+      "avatarUploading": "Uploading...",
+      "avatarSuccess": "Avatar updated",
+      "avatarError": "Avatar upload failed",
+      "displayName": "Display Name",
+      "displayNamePlaceholder": "Name shown to others",
+      "realName": "Real Name",
+      "realNamePlaceholder": "Enter your real name",
+      "studentId": "Student ID",
+      "studentIdPlaceholder": "Enter your student ID",
+      "phone": "Phone",
+      "phonePlaceholder": "With country code, e.g. +8613800000000",
+      "email": "Email",
+      "emailReadonly": "Email cannot be changed",
+      "role": "Role",
+      "save": "Save Profile",
+      "saving": "Saving...",
+      "saved": "Profile saved successfully",
+      "saveError": "Failed to save",
+      "changePassword": "Change Password"
+    },
+    "activities": {
+      "title": "Activity Management",
+      "create": "Create Activity",
+      "edit": "Edit Activity",
+      "name": "Activity Name",
+      "description": "Description",
+      "location": "Location",
+      "capacity": "Capacity",
+      "status": "Status",
+      "startAt": "Start Time",
+      "endAt": "End Time",
+      "actions": "Actions",
+      "empty": "No activities yet",
+      "save": "Save",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "deleteConfirm": "Delete this activity?",
+      "statuses": {
+        "upcoming": "Upcoming",
+        "ongoing": "Ongoing",
+        "ended": "Ended",
+        "cancelled": "Cancelled"
+      }
+    },
+    "registrations": {
+      "title": "Registration Review",
+      "filterActivity": "Filter by Activity",
+      "filterType": "Filter by Type",
+      "filterStatus": "Filter by Status",
+      "typeActivity": "Activity",
+      "typeClub": "Club",
+      "export": "Export",
+      "exportCsv": "Export CSV",
+      "exportXlsx": "Export Excel",
+      "viewDetail": "View Detail",
+      "approve": "Approve",
+      "reject": "Reject",
+      "checkIn": "Check-in",
+      "remark": "Remark",
+      "remarkPlaceholder": "Add a review remark...",
+      "saveRemark": "Save Remark",
+      "empty": "No registrations yet",
+      "colName": "Name",
+      "colStudentId": "Student ID",
+      "colCollege": "College",
+      "colMajor": "Major",
+      "colPhone": "Phone",
+      "colEmail": "Email",
+      "colStatus": "Status",
+      "colSubmittedAt": "Submitted At",
+      "statuses": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "checked_in": "Checked-in"
+      }
+    },
+    "bugs": {
+      "title": "Bug Reports",
+      "filterStatus": "Filter by Status",
+      "markResolved": "Mark Resolved",
+      "reopen": "Reopen",
+      "empty": "No bug reports",
+      "colTitle": "Title",
+      "colDescription": "Description",
+      "colContact": "Contact",
+      "colUrl": "Page URL",
+      "colStatus": "Status",
+      "colCreatedAt": "Submitted At",
+      "statuses": {
+        "open": "Open",
+        "resolved": "Resolved"
+      }
+    },
+    "settings": {
+      "title": "System Settings",
+      "ipBlacklist": "IP Blacklist",
+      "ipBlacklistDesc": "Add IPs or CIDR ranges to block, one per line",
+      "ipBlacklistPlaceholder": "e.g., 192.168.1.1 or 10.0.0.0/24",
+      "addIp": "Add",
+      "removeIp": "Remove",
+      "domainWhitelist": "Domain Whitelist",
+      "domainWhitelistDesc": "CORS allowed origins, one per line",
+      "domainWhitelistPlaceholder": "e.g., gdue-ca.paperee.guru",
+      "addDomain": "Add",
+      "removeDomain": "Remove",
+      "saved": "Settings saved",
+      "saveError": "Failed to save, please try again later"
+    },
+    "users": {
+      "title": "User Management",
+      "subtitle": "View and edit your account info",
+      "subtitleSuper": "Manage all admin accounts: create, edit, delete",
+      "you": "you",
+      "create": "New Account",
+      "formTitle": "Create New Account",
+      "displayName": "Display Name",
+      "displayNamePlaceholder": "Used for login and display",
+      "realName": "Real Name",
+      "realNamePlaceholder": "Enter real name",
+      "studentId": "Student ID",
+      "studentIdPlaceholder": "Enter student ID",
+      "phone": "Phone",
+      "phonePlaceholder": "With country code, e.g. +8613800000000",
+      "email": "Email",
+      "emailPlaceholder": "Used for login",
+      "password": "Password",
+      "passwordPlaceholder": "At least 6 characters",
+      "role": "Role",
+      "save": "Create Account",
+      "cancel": "Cancel",
+      "deleteConfirm": "Delete this account? This action cannot be undone",
+      "empty": "No accounts",
+      "colDisplayName": "Display Name",
+      "colRealName": "Real Name",
+      "colStudentId": "Student ID",
+      "colPhone": "Phone",
+      "colEmail": "Email",
+      "colRole": "Role",
+      "colActions": "Actions",
+      "roles": {
+        "super_admin": "Super Admin",
+        "admin": "Admin",
+        "editor": "Editor"
+      }
+    }
+  },
+  "bug": {
+    "title": "Bug Report",
+    "subtitle": "Found an issue? Tell us and we'll fix it soon",
+    "form": {
+      "title": "Submit a Bug Report",
+      "titleLabel": "Title",
+      "titlePlaceholder": "Briefly describe the issue",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Steps to reproduce, expected vs actual behavior",
+      "contactLabel": "Contact (optional)",
+      "contactPlaceholder": "Email or phone, so we can reply",
+      "urlLabel": "Page URL (optional)",
+      "urlPlaceholder": "URL of the page with the issue",
+      "submit": "Submit Report",
+      "submitting": "Submitting...",
+      "success": "Report submitted, thank you!",
+      "successDesc": "We'll handle your report as soon as possible.",
+      "submitAnother": "Submit Another",
+      "errors": {
+        "titleRequired": "Please enter a title",
+        "titleMin": "Title must be at least 3 characters",
+        "descriptionRequired": "Please enter a description",
+        "descriptionMin": "Description must be at least 10 characters",
+        "contactInvalid": "Please enter a valid email or phone number",
+        "submitError": "Submission failed, please try again later"
+      }
+    }
+  }
+}
