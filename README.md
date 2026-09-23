@@ -161,6 +161,10 @@ GDUECA/
 │   ├── requirements.txt
 │   └── .env.example
 │
+├── deploy/                                 # 部署配置（接入层协议兼容：HTTP/1.0-3、TLS 1.2/1.3）
+│   ├── nginx/gdueca.conf                   #   Nginx 反代（腾讯云/阿里云自建节点；http2 + quic/HTTP3）
+│   └── Caddyfile                           #   Caddy 反代（自动 HTTPS，Nginx 简化替代，二选一）
+│
 └── README.md                               # 本文件（项目唯一 markdown 文档）
 ```
 
@@ -441,6 +445,37 @@ cd backend
 # 生产环境推荐 gunicorn + uvicorn worker
 gunicorn -k uvicorn.workers.UvicornWorker -b [::]:8000 app.main:app
 ```
+
+### 多云接入与协议兼容
+
+业务代码不感知协议版本，HTTP/TLS 兼容全部在接入层（CDN/反向代理）配置：
+
+**节点拓扑（按访客地域就近接入）**
+
+- 国内节点：腾讯云 / 阿里云自建反代（Nginx 或 Caddy），配置见 `deploy/nginx/gdueca.conf` 与 `deploy/Caddyfile`
+- 海外节点：Cloudflare 代理（源站指向任一自建节点或 Vercel）
+- DNS 分线路解析（DNSPod / 阿里云 DNS）：境内线路 → 国内节点 IP，境外/默认线路 → Cloudflare；实现访客按所在地自动走最快链路
+
+**自建节点协议兼容矩阵（Nginx ≥ 1.25 / Caddy）**
+
+| 协议 | 支持方式 |
+|---|---|
+| HTTP/1.0、HTTP/1.1 | 服务器天然支持 |
+| HTTP/2 | `http2 on;`（Caddy 默认开启） |
+| HTTP/3 (QUIC) | `listen 443 quic;` + UDP 443 放行（Caddy 默认开启） |
+| TLS 1.2 | 最低版本，兼容 IE11（Win7/8.1/10）等老客户端 |
+| TLS 1.3 | 与 1.2 并行启用，现代浏览器优先协商 |
+
+TLS 1.0/1.1 与 SSL 2.0/3.0 不启用：已被 RFC 8996 废弃、PCI-DSS 禁止、现代浏览器拒绝握手；IE11 走 TLS 1.2 不受影响。
+
+**Cloudflare 仪表盘开关清单**
+
+- SSL/TLS → Overview：模式 `Full (strict)`
+- SSL/TLS → Edge Certificates → Minimum TLS Version：`TLS 1.2`
+- SSL/TLS → Edge Certificates → TLS 1.3：开启
+- Speed → Optimization → Protocol Optimization：HTTP/3 (QUIC) 开启、0-RTT 可选开启
+- Network：HTTP/2 to Origin 开启（回源提速）
+- 回源走 HTTPS 时源站证书需有效（Cloudflare Origin CA 或公网证书）
 
 ## 约束
 

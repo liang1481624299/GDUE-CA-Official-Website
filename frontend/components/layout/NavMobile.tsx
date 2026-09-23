@@ -13,10 +13,11 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Sun, Moon, ShieldCheck, ChevronDown } from "lucide-react";
+import { X, Sun, Moon, ChevronDown } from "lucide-react";
 import { locales, localeNames, type Locale } from "@/lib/i18n";
 import { useI18n } from "@/i18n/provider";
 import { Button } from "@/components/ui/button";
+import { UserMenu } from "@/components/layout/UserMenu";
 import { cn } from "@/lib/utils";
 
 /** 导航项配置（与 NavDesktop 保持一致；不抽到第三个文件以遵守「仅 2 个导航栏 tsx」约束） */
@@ -230,18 +231,22 @@ export function NavMobile({
                   <span>{t("nav.settings")}</span>
                   <ChevronDown
                     className={cn(
-                      "h-4 w-4 transition-transform duration-200",
+                      "h-4 w-4 transition-all",
                       settingsOpen && "rotate-180"
                     )}
                   />
                 </button>
 
-                {/* 下拉面板 —— 从设置按钮下方自然向下展开 */}
+                {/* 折叠面板 —— 与全站伸缩菜单同速（150ms 默认贝塞尔曲线） */}
                 <div
-                  className="grid transition-[grid-template-rows] duration-200 ease-in-out"
-                  style={{ gridTemplateRows: settingsOpen ? "1fr" : "0fr" }}
+                  id="nav-mobile-settings-panel"
+                  aria-hidden={!settingsOpen}
+                  className={cn(
+                    "grid transition-[grid-template-rows] motion-reduce:transition-none",
+                    settingsOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                  )}
                 >
-                  <div className="overflow-hidden">
+                  <div className="overflow-hidden min-h-0">
                     <div className="ml-2 pl-3 border-l-2 border-border space-y-3 py-2">
                       <div>
                         <p className="text-xs text-muted-foreground mb-2">
@@ -250,6 +255,7 @@ export function NavMobile({
                         <div className="grid grid-cols-2 gap-2">
                           <button
                             type="button"
+                            tabIndex={settingsOpen ? undefined : -1}
                             onClick={() => applyThemeMode("light")}
                             className={cn(
                               "flex items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-xs font-medium transition-colors",
@@ -263,6 +269,7 @@ export function NavMobile({
                           </button>
                           <button
                             type="button"
+                            tabIndex={settingsOpen ? undefined : -1}
                             onClick={() => applyThemeMode("dark")}
                             className={cn(
                               "flex items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-xs font-medium transition-colors",
@@ -286,6 +293,7 @@ export function NavMobile({
                             <button
                               key={loc}
                               type="button"
+                              tabIndex={settingsOpen ? undefined : -1}
                               onClick={() => switchLocale(loc)}
                               className={cn(
                                 "rounded-md border px-3 py-2 text-xs font-medium transition-colors",
@@ -305,24 +313,14 @@ export function NavMobile({
               </div>
             </nav>
 
-            {/* 底部 CTA 按钮区 */}
-            <div className="p-4 border-t border-border space-y-2 shrink-0">
-              <Button asChild className="w-full">
+            {/* 底部 CTA + 用户菜单 */}
+            <div className="p-4 border-t border-border shrink-0 flex items-center gap-3">
+              <Button asChild className="flex-1">
                 <Link href={localePath("/join")} onClick={handleDrawerNavigate}>
                   {t("nav.join")}
                 </Link>
               </Button>
-              <Button
-                asChild
-                variant="outline"
-                className="w-full"
-                aria-label={t("nav.admin")}
-              >
-                <Link href="/admin" onClick={handleDrawerNavigate}>
-                  <ShieldCheck className="h-4 w-4 mr-1.5" />
-                  {t("nav.admin")}
-                </Link>
-              </Button>
+              <UserMenu />
             </div>
           </motion.aside>
         </>

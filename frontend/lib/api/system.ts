@@ -1,13 +1,14 @@
 /**
  * System Settings API - 对应后端 app/api/system.py
  *
- * 站点设置读写、IP 黑名单管理。
+ * 站点设置读写、IP 黑名单管理、网络配置变更历史。
  */
 import { apiFetch } from "./client";
-import type { SystemSettings } from "@/types/api";
+import type { NetworkConfigHistory, SystemSettings } from "@/types/api";
 
 export function fetchSystemSettings() {
-  return apiFetch<SystemSettings>("/api/system/settings", { withAuth: true });
+  // 公开可读，不需要 admin 鉴权（GET /api/system/settings 无鉴权）
+  return apiFetch<SystemSettings>("/api/system/settings");
 }
 
 export function updateSystemSettings(payload: Partial<SystemSettings>) {
@@ -36,5 +37,13 @@ export function removeIpBlacklist(ip: string) {
       method: "DELETE",
       withAuth: true,
     }
+  );
+}
+
+/** 网络配置变更历史（最近 5 条） */
+export function fetchNetworkConfigHistory() {
+  return apiFetch<NetworkConfigHistory[]>(
+    "/api/system/network-config/history",
+    { withAuth: true }
   );
 }

@@ -46,6 +46,11 @@ class User(Base):
     real_name: Mapped[str] = mapped_column(String(64))               # 真实姓名
     phone: Mapped[str] = mapped_column(String(32))                   # 手机号（含区号）
     avatar_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    # IANA 时区（如 Asia/Shanghai）；NULL = 使用浏览器自动探测
+    timezone: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # 用户物理位置：国家 + 省份/城市（手动设置或浏览器 Geolocation 自动定位）
+    country: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    region: Mapped[str | None] = mapped_column(String(128), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 
@@ -176,6 +181,12 @@ class SystemSetting(Base):
     cors_origins: Mapped[list[str]] = mapped_column(JSON, default=list)
     # 社团报名签到开关（社团报名不关联活动，用全局开关控制）
     club_checkin_open: Mapped[bool] = mapped_column(Boolean, default=False)
+    # 系统默认 IANA 时区（前端降级回退用）；默认 Asia/Shanghai
+    system_timezone: Mapped[str] = mapped_column(String(64), default="Asia/Shanghai")
+    # 网络配置（接入层 Nginx/Caddy 热重载参考用；实际生效需运维手动重载）
+    network_port: Mapped[int] = mapped_column(Integer, default=443)
+    network_listen_ip: Mapped[str] = mapped_column(String(64), default="0.0.0.0")
+    network_domains: Mapped[list[str]] = mapped_column(JSON, default=list)
 
 
 # ---------- 操作日志 ----------
@@ -187,6 +198,19 @@ class AuditLog(Base):
     action: Mapped[str] = mapped_column(String(64))     # 如 "login" / "activity.create"
     target: Mapped[str | None] = mapped_column(String(64), nullable=True)   # 如 "activity:5"
     detail: Mapped[str | None] = mapped_column(Text, nullable=True)
+    ip: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+# ---------- 网络配置变更历史（最近 5 次） ----------
+class NetworkConfigHistory(Base):
+    __tablename__ = "network_config_history"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    # 快照：变更后的完整网络配置（JSON 存储）
+    config_snapshot: Mapped[dict] = mapped_column(JSON)
+    change_summary: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     ip: Mapped[str | None] = mapped_column(String(64), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 

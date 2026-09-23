@@ -7,17 +7,20 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useI18n } from "@/i18n/provider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CalendarDays, ClipboardList, Bug, Clock } from "lucide-react";
+import { CalendarDays, ClipboardList, Bug, Clock, Globe } from "lucide-react";
 import { listActivities } from "@/lib/api/activities";
 import { listRegistrations } from "@/lib/api/register";
 import { listBugReports } from "@/lib/api/bugReport";
-import type { Activity, Registration, BugReport } from "@/types/api";
+import { fetchAccessStats } from "@/lib/api/adminStats";
+import { FormattedUserActionTime } from "@/components/shared/FormattedUserActionTime";
+import type { Activity, Registration, BugReport, AccessStats } from "@/types/api";
 
 export default function AdminDashboardPage() {
   const { t } = useI18n();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [bugs, setBugs] = useState<BugReport[]>([]);
+  const [access, setAccess] = useState<AccessStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,16 +28,46 @@ export default function AdminDashboardPage() {
       listActivities().catch(() => [] as Activity[]),
       listRegistrations().catch(() => [] as Registration[]),
       listBugReports().catch(() => [] as BugReport[]),
-    ]).then(([a, r, b]) => {
+      fetchAccessStats().catch(() => null),
+    ]).then(([a, r, b, st]) => {
       setActivities(a);
       setRegistrations(r);
       setBugs(b);
+      setAccess(st);
       setLoading(false);
     });
   }, []);
 
   const pending = registrations.filter((r) => r.status === "pending").length;
   const openBugs = bugs.filter((b) => !b.resolved).length;
+
+  /** IP 地区分类 → 本地化标签 */
+  function regionLabel(region: string): string {
+    switch (region) {
+      case "loopback":
+        return t("admin.dashboard.accessRegionLoopback");
+      case "internal":
+        return t("admin.dashboard.accessRegionInternal");
+      case "public":
+        return t("admin.dashboard.accessRegionPublic");
+      default:
+        return t("admin.dashboard.accessRegionInvalid");
+    }
+  }
+
+  /** IP 地区分类 → 徽章配色 */
+  function regionBadgeClass(region: string): string {
+    switch (region) {
+      case "internal":
+        return "bg-blue-500/10 text-blue-600";
+      case "loopback":
+        return "bg-muted text-muted-foreground";
+      case "public":
+        return "bg-emerald-500/10 text-emerald-600";
+      default:
+        return "bg-amber-500/10 text-amber-600";
+    }
+  }
 
   const stats = [
     {
@@ -129,6 +162,82 @@ export default function AdminDashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* 访问来源：后台操作 + 游客表单提交的 IP 聚合与地区分类（GeoIP 完整属地待接入） */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Globe className="h-4 w-4" />
+            {t("admin.dashboard.accessStatsTitle")}
+          </CardTitle>
+          {access && (
+            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+              <span>
+                {t("admin.dashboard.accessUniqueIps")}：<span className="font-semibold text-foreground">{access.unique_ips}</span>
+              </span>
+              <span>
+                {t("admin.dashboard.accessEvents")}：<span className="font-semibold text-foreground">{access.total_events}</span>
+              </span>
+            </div>
+          )}
+        </CardHeader>
+        <CardContent>
+          {!access || access.top_ips.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t("admin.dashboard.accessEmpty")}</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs text-muted-foreground border-b border-border">
+                    <th className="py-2 pr-4 font-medium">{t("admin.dashboard.accessColIp")}</th>
+                    <th className="py-2 pr-4 font-medium">{t("admin.dashboard.accessColRegion")}</th>
+                    <th className="py-2 pr-4 font-medium">{t("admin.dashboard.accessColSource")}</th>
+                    <th className="py-2 pr-4 font-medium text-right">{t("admin.dashboard.accessColCount")}</th>
+                    <th className="py-2 font-medium">{t("admin.dashboard.accessColLastSeen")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {access.top_ips.map((s) => (
+                    <tr key={s.ip} className="border-b border-border/60 last:border-0">
+                      <td className="py-2 pr-4 font-mono text-xs">{s.ip}</td>
+                      <td className="py-2 pr-4">
+                        <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${regionBadgeClass(s.region)}`}>
+                          {regionLabel(s.region)}
+                        </span>
+                      </td>
+                      <td className="py-2 pr-4">
+                        <div className="flex flex-wrap gap-1.5 text-xs text-muted-foreground">
+                          {s.admin_actions > 0 && (
+                            <span className="rounded bg-muted px-1.5 py-0.5">
+                              {t("admin.dashboard.accessSourceAdmin")} ×{s.admin_actions}
+                            </span>
+                          )}
+                          {s.registrations > 0 && (
+                            <span className="rounded bg-muted px-1.5 py-0.5">
+                              {t("admin.dashboard.accessSourceRegistrations")} ×{s.registrations}
+                            </span>
+                          )}
+                          {s.bugs > 0 && (
+                            <span className="rounded bg-muted px-1.5 py-0.5">
+                              {t("admin.dashboard.accessSourceBugs")} ×{s.bugs}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-2 pr-4 text-right font-semibold">{s.total}</td>
+                      <td className="py-2 text-xs text-muted-foreground">
+                        {s.last_seen ? (
+                          <FormattedUserActionTime utcIso={s.last_seen} />
+                        ) : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

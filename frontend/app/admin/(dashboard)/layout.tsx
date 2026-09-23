@@ -22,6 +22,7 @@ import {
   Menu,
   X,
   ExternalLink,
+  ChevronDown,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useI18n } from "@/i18n/provider";
@@ -39,12 +40,30 @@ type NavItem = {
   roles?: string[];
 };
 
-const navItems: NavItem[] = [
+/** 父标签分组（如「表单审阅」，包含报名/Bug/重置密码三个子项） */
+type NavGroup = {
+  groupKey: string;
+  items: NavItem[];
+};
+
+/** 侧边栏条目：平铺项 或 父标签分组 */
+type NavEntry = NavItem | NavGroup;
+
+function isGroup(entry: NavEntry): entry is NavGroup {
+  return "groupKey" in entry;
+}
+
+const navEntries: NavEntry[] = [
   { key: "admin.dashboard.overview", href: "/admin", icon: LayoutDashboard },
   { key: "admin.dashboard.activities", href: "/admin/activities", icon: CalendarDays },
-  { key: "admin.dashboard.registrations", href: "/admin/registrations", icon: ClipboardList },
-  { key: "admin.dashboard.bugs", href: "/admin/bugs", icon: Bug },
-  { key: "admin.dashboard.passwordResets", href: "/admin/password-resets", icon: KeyRound },
+  {
+    groupKey: "admin.dashboard.formReview",
+    items: [
+      { key: "admin.dashboard.registrations", href: "/admin/registrations", icon: ClipboardList },
+      { key: "admin.dashboard.bugs", href: "/admin/bugs", icon: Bug },
+      { key: "admin.dashboard.passwordResets", href: "/admin/password-resets", icon: KeyRound },
+    ],
+  },
   { key: "admin.dashboard.users", href: "/admin/users", icon: Users },
   { key: "admin.dashboard.settings", href: "/admin/settings", icon: Settings },
 ];
@@ -209,6 +228,41 @@ function SidebarContent({
   onLogout: () => void;
   onNavigate?: () => void;
 }) {
+  // 父标签展开/折叠状态：默认全部展开（key=groupKey，true=折叠）
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+
+  function toggleGroup(groupKey: string) {
+    setCollapsedGroups((prev) => ({ ...prev, [groupKey]: !prev[groupKey] }));
+  }
+
+  /** 渲染单个导航项 —— 对齐 shadcn Button ghost 变体完整类名 */
+  function renderNavItem(item: NavItem, grouped = false, tabbable = true) {
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        onClick={onNavigate}
+        tabIndex={tabbable ? undefined : -1}
+        className={cn(
+          // Button ghost + size-sm 完整类名
+          "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+          // Button ghost 变体悬停
+          "hover:bg-accent hover:text-accent-foreground",
+          // 侧边栏导航定制：左对齐 + 可选缩进
+          "justify-start w-full px-3 h-8",
+          grouped && "pl-5",
+          // 激活态 = 选中（与顶栏 primary 按钮同色系）
+          isActive(item.href)
+            ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
+            : "text-muted-foreground"
+        )}
+      >
+        <item.icon className="h-4 w-4" />
+        {t(item.key)}
+      </Link>
+    );
+  }
+
   return (
     <>
       <div className="h-14 flex items-center justify-between px-4 border-b border-border">
@@ -222,24 +276,59 @@ function SidebarContent({
         )}
       </div>
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-        {navItems
-          .filter((item) => !item.roles || (session?.role ? item.roles.includes(session.role) : false))
-          .map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={onNavigate}
-            className={cn(
-              "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-              isActive(item.href)
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
-            )}
-          >
-            <item.icon className="h-4 w-4" />
-            {t(item.key)}
-          </Link>
-        ))}
+        {navEntries.map((entry, idx) => {
+          if (isGroup(entry)) {
+            const open = !collapsedGroups[entry.groupKey];
+            const groupId = `nav-group-${entry.groupKey.replace(/\W+/g, "-")}`;
+            return (
+              <div key={entry.groupKey} className={cn(idx > 0 && "pt-2")}>
+                {/* 父标签：Button ghost + size-sm，加 uppercase 保留分组层级感 + chevron 指示器 */}
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(entry.groupKey)}
+                  aria-expanded={open}
+                  aria-controls={groupId}
+                  className={cn(
+                    // Button ghost + size-sm 完整类名
+                    "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+                    // Button ghost 变体悬停
+                    "hover:bg-accent hover:text-accent-foreground",
+                    // 侧边栏定制：左对齐 + 高度 + uppercase
+                    "justify-between w-full px-3 h-8 text-xs uppercase tracking-wide text-muted-foreground font-semibold"
+                  )}
+                >
+                  <span>{t(entry.groupKey)}</span>
+                  <ChevronDown
+                    className={cn(
+                      "h-4 w-4 shrink-0 transition-all",
+                      open ? "rotate-180" : "rotate-0"
+                    )}
+                  />
+                </button>
+                {/* 子项容器：与按钮同速（Tailwind transition 默认 150ms + 同款贝塞尔曲线） */}
+                <div
+                  id={groupId}
+                  aria-hidden={!open}
+                  className={cn(
+                    "grid transition-[grid-template-rows] motion-reduce:transition-none",
+                    open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                  )}
+                >
+                  <div className="overflow-hidden min-h-0">
+                    {entry.items
+                      .filter((item) => !item.roles || (session?.role ? item.roles.includes(session.role) : false))
+                      .map((item) => renderNavItem(item, true, open))}
+                  </div>
+                </div>
+              </div>
+            );
+          }
+          // 平铺项
+          if (entry.roles && !(session?.role ? entry.roles.includes(session.role) : false)) {
+            return null;
+          }
+          return renderNavItem(entry);
+        })}
       </nav>
       <div className="p-3 border-t border-border">
         <Link

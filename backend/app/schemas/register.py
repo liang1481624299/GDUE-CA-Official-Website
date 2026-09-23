@@ -5,6 +5,8 @@ from enum import Enum
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
+from app.schemas.common import UTCDatetime
+
 # 常见国家/地区区号
 PHONE_COUNTRY_CODES = [
     "+86",   # 中国大陆
@@ -159,7 +161,7 @@ class RegistrationOut(BaseModel):
     status: RegistrationStatus
     remark: str | None
     submit_ip: str | None
-    checked_in_at: datetime | None
-    submitted_at: datetime
+    checked_in_at: UTCDatetime | None
+    submitted_at: UTCDatetime
 
     model_config = {"from_attributes": True}

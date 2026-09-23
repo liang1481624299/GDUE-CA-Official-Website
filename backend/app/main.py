@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api import activities, auth, bug_report, query, register, system, translations
+from app.api import activities, admin_stats, auth, bug_report, query, register, system, translations
 from app.core.config import get_settings
 from app.core.middleware import ip_blacklist_middleware
 from app.core.security import Role, hash_password
@@ -22,13 +22,24 @@ async def _migrate_columns(conn):
     from sqlalchemy import text
 
     expected = {
+        "users": [
+            ("timezone", "VARCHAR(64) NULL"),
+            ("country", "VARCHAR(64) NULL"),
+            ("region", "VARCHAR(128) NULL"),
+        ],
         "activities": [("checkin_open", "BOOLEAN DEFAULT 0")],
         "registrations": [
             ("checked_in_at", "DATETIME NULL"),
             ("submit_ip", "VARCHAR(64) NULL"),
         ],
         "bug_reports": [("submit_ip", "VARCHAR(64) NULL")],
-        "system_settings": [("club_checkin_open", "BOOLEAN DEFAULT 0")],
+        "system_settings": [
+            ("club_checkin_open", "BOOLEAN DEFAULT 0"),
+            ("system_timezone", "VARCHAR(64) DEFAULT 'Asia/Shanghai'"),
+            ("network_port", "INTEGER DEFAULT 443"),
+            ("network_listen_ip", "VARCHAR(64) DEFAULT '0.0.0.0'"),
+            ("network_domains", "TEXT DEFAULT '[]'"),
+        ],
     }
     for table, columns in expected.items():
         rows = await conn.execute(text(f"PRAGMA table_info({table})"))
@@ -121,6 +132,7 @@ app.include_router(bug_report.router)
 app.include_router(system.router)
 app.include_router(translations.router)
 app.include_router(query.router)
+app.include_router(admin_stats.router)
 
 # ---------- 静态文件服务（头像上传） ----------
 os.makedirs("uploads/avatars", exist_ok=True)

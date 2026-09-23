@@ -13,12 +13,12 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Terminal, ShieldCheck, Menu } from "lucide-react";
+import { Terminal, Menu } from "lucide-react";
 import { useI18n } from "@/i18n/provider";
 import { Button } from "@/components/ui/button";
-import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
-import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { SettingsDropdown } from "@/components/layout/SettingsDropdown";
 import { NavMobile } from "@/components/layout/NavMobile";
+import { UserMenu } from "@/components/layout/UserMenu";
 import { cn } from "@/lib/utils";
 
 /** 导航项配置（不含「报名」—— 报名在桌面 CTA 与移动抽屉底部） */
@@ -106,27 +106,15 @@ export function NavDesktop() {
             {/* 右侧操作区 */}
             <div className="flex items-center gap-1 justify-self-end">
               <div className="hidden md:flex items-center gap-1">
-                <ThemeToggle />
-                <LanguageSwitcher />
+                <SettingsDropdown />
               </div>
               <Button asChild size="sm" className="hidden md:inline-flex">
                 <Link href={localePath("/join")}>{t("nav.join")}</Link>
               </Button>
-              {/* 管理员入口：仅桌面端可见，移动端在抽屉底部 */}
-              <Button
-                asChild
-                variant="ghost"
-                size="icon"
-                className="hidden md:inline-flex rounded-full"
-                aria-label={t("nav.admin")}
-                title={t("nav.admin")}
-              >
-                <Link href="/admin">
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground hover:bg-primary hover:text-primary-foreground transition-colors">
-                    <ShieldCheck className="h-4 w-4" />
-                  </span>
-                </Link>
-              </Button>
+              {/* 用户头像下拉菜单：桌面端可见 */}
+              <div className="hidden md:inline-flex items-center">
+                <UserMenu />
+              </div>
               {/* 移动端汉堡菜单按钮 */}
               <Button
                 variant="ghost"

@@ -3,6 +3,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, EmailStr, Field, model_validator
 
+from app.schemas.common import UTCDatetime
+
 
 class BugReportCreate(BaseModel):
     contact_email: EmailStr | None = None
@@ -27,6 +29,6 @@ class BugReportOut(BaseModel):
     extra: str | None
     resolved: bool
     submit_ip: str | None
-    created_at: datetime
+    created_at: UTCDatetime
 
     model_config = {"from_attributes": True}

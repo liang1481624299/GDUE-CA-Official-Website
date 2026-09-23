@@ -2,31 +2,30 @@
 
 /**
  * 客户端 i18n Provider 与 Hook
- * 通过 React Context 向客户端组件提供翻译函数和当前语言
+ *
+ * 纯翻译职责——时区逻辑已完全解耦到 `useEffectiveTimezone()`
+ * （frontend/lib/hooks/useEffectiveTimezone.ts），两个组件互不依赖。
  */
 import {
   createContext,
   useContext,
+  useMemo,
   type ReactNode,
 } from "react";
 import type { Locale } from "@/lib/i18n";
 import type { Messages } from "@/i18n/dictionary";
-
-type MessagesType = Messages;
+import { useEffectiveTimezone } from "@/lib/hooks/useEffectiveTimezone";
 
 interface I18nContextValue {
   locale: Locale;
-  messages: MessagesType;
+  messages: Messages;
   t: (key: string, vars?: Record<string, string | number>) => string;
 }
 
 const I18nContext = createContext<I18nContextValue | null>(null);
 
-/**
- * 嵌套键查找函数（客户端版本）
- */
 function lookup(
-  messages: MessagesType,
+  messages: Messages,
   key: string,
   vars?: Record<string, string | number>
 ): string {
@@ -48,35 +47,57 @@ function lookup(
   return result;
 }
 
-/**
- * I18n Provider 组件
- * 在根 layout 中包裹，向所有客户端组件提供翻译
- */
 export function I18nProvider({
   locale,
   messages,
   children,
 }: {
   locale: Locale;
-  messages: MessagesType;
+  messages: Messages;
   children: ReactNode;
 }) {
-  const value: I18nContextValue = {
-    locale,
-    messages,
-    t: (key, vars) => lookup(messages, key, vars),
-  };
+  const value = useMemo<I18nContextValue>(
+    () => ({
+      locale,
+      messages,
+      t: (key, vars) => lookup(messages, key, vars),
+    }),
+    [locale, messages]
+  );
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
 
-/**
- * useI18n Hook
- * 在客户端组件中获取翻译函数和当前语言
- */
 export function useI18n(): I18nContextValue {
   const ctx = useContext(I18nContext);
   if (!ctx) {
     throw new Error("useI18n must be used within I18nProvider");
   }
   return ctx;
+}
+
+/**
+ * useTimezone —— admin 后台兼容钩子
+ *
+ * 旧版 admin/profile 页面还在使用这个 hook；为遵守「不修改 admin 原有业务代码」
+ * 的红线约束，保留导出，内部转发到 useEffectiveTimezone。
+ *
+ * 返回值字段对齐旧版 TimezoneContext（timezonePref / effectiveTimezone / browserTimezone / ready）。
+ * 注意：旧版里 setTimezone 还会同步后端 profile，这里改为仅本地——
+ * admin/profile 的 TimezoneSelect 会直接触发 fetchProfile / updateProfile，不需要 setTimezone 桥接。
+ */
+export function useTimezone() {
+  const h = useEffectiveTimezone();
+  return {
+    /** 旧版语义：null = 自动（auto）/ IANA = 手动。
+     *  新版 useEffectiveTimezone.userTz 是 string | null，null 即自动。
+     *  为让旧 admin/profile 页面正常工作，这里统一为 "auto" / IANA 字符串。 */
+    timezonePref: h.userTz ?? "auto",
+    effectiveTimezone: h.tz,
+    browserTimezone: h.browserTz,
+    ready: h.ready,
+    /** 仅为兼容旧签名占位；admin/profile 已改用 fetchProfile/updateProfile */
+    setTimezone: (_tz: string) => {
+      /* no-op */
+    },
+  };
 }

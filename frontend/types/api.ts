@@ -31,6 +31,12 @@ export interface AdminUser {
   real_name: string;
   phone: string;
   avatar_url: string | null;
+  /** IANA 时区；null = 自动探测浏览器时区 */
+  timezone: string | null;
+  /** 用户物理位置：国家 */
+  country: string | null;
+  /** 用户物理位置：省份/城市 */
+  region: string | null;
   created_at: string;
 }
 
@@ -39,10 +45,36 @@ export interface ProfileUpdate {
   real_name?: string;
   phone?: string;
   student_id?: string;
+  /** IANA 时区；空字符串 = 恢复自动探测 */
+  timezone?: string;
+  /** 国家；空字符串 = 清空 */
+  country?: string;
+  /** 省份/城市；空字符串 = 清空 */
+  region?: string;
 }
 
 export interface AvatarUploadOut {
   avatar_url: string;
+}
+
+/** 单个 IP 的访问来源聚合（后台概览） */
+export interface IpSourceStat {
+  ip: string;
+  /** loopback=本机 / internal=内网 / public=公网(地区未知) / invalid=无法解析 */
+  region: string;
+  total: number;
+  admin_actions: number;
+  registrations: number;
+  bugs: number;
+  /** 带大写 Z 的 UTC ISO 字符串 */
+  last_seen: string | null;
+}
+
+/** 访问来源统计（后台概览） */
+export interface AccessStats {
+  total_events: number;
+  unique_ips: number;
+  top_ips: IpSourceStat[];
 }
 
 export interface ChangePasswordRequest {
@@ -247,4 +279,27 @@ export interface SystemSettings {
   allowed_hosts: string[];
   cors_origins: string[];
   club_checkin_open: boolean;
+  /** 站点全局回退系统时区（IANA 字符串） */
+  system_timezone: string;
+  /** 后端服务端口（参考值，实际生效需运维重载 Nginx） */
+  network_port: number;
+  /** 后端监听 IP（参考值） */
+  network_listen_ip: string;
+  /** 站点绑定域名列表（参考值） */
+  network_domains: string[];
+}
+
+/** 网络配置变更历史条目 */
+export interface NetworkConfigHistory {
+  id: number;
+  config_snapshot: {
+    network_port: number;
+    network_listen_ip: string;
+    network_domains: string[];
+  };
+  change_summary: string | null;
+  user_id: number | null;
+  ip: string | null;
+  /** 带大写 Z 的 UTC ISO 字符串 */
+  created_at: string | null;
 }

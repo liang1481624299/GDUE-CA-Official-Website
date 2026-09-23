@@ -4,6 +4,7 @@ from datetime import datetime
 from pydantic import BaseModel, EmailStr, Field
 
 from app.core.security import Role
+from app.schemas.common import UTCDatetime
 
 
 class LoginRequest(BaseModel):
@@ -52,18 +53,28 @@ class UserOut(BaseModel):
     real_name: str
     phone: str
     avatar_url: str | None = None
-    created_at: datetime
+    # IANA 时区；null = 自动探测浏览器时区
+    timezone: str | None = None
+    # 用户物理位置：国家 + 省份/城市
+    country: str | None = None
+    region: str | None = None
+    created_at: UTCDatetime
 
     model_config = {"from_attributes": True}
 
 
 # ---------- 个人资料更新 ----------
 class ProfileUpdate(BaseModel):
-    """用户自行更新资料：显示名称、真实姓名、手机号、学号"""
+    """用户自行更新资料：显示名称、真实姓名、手机号、学号、时区"""
     username: str | None = Field(default=None, min_length=2, max_length=64)
     real_name: str | None = Field(default=None, min_length=1, max_length=64)
     phone: str | None = Field(default=None, min_length=1, max_length=32)
     student_id: str | None = Field(default=None, min_length=1, max_length=32)
+    # IANA 时区字符串；空字符串 = 恢复自动探测（存 NULL）；不传 = 不修改
+    timezone: str | None = Field(default=None, max_length=64)
+    # 国家 + 省份/城市；空字符串 = 清空（存 NULL）；不传 = 不修改
+    country: str | None = Field(default=None, max_length=64)
+    region: str | None = Field(default=None, max_length=128)
 
 
 class AvatarUploadOut(BaseModel):
@@ -90,8 +101,8 @@ class PasswordResetOut(BaseModel):
     reason: str
     status: str
     admin_note: str | None
-    handled_at: datetime | None
-    created_at: datetime
+    handled_at: UTCDatetime | None
+    created_at: UTCDatetime
 
     model_config = {"from_attributes": True}
 

@@ -4,6 +4,8 @@ from enum import Enum
 
 from pydantic import BaseModel, Field
 
+from app.schemas.common import UTCDatetime
+
 
 class ActivityStatus(str, Enum):
     DRAFT = "draft"
@@ -42,12 +44,12 @@ class ActivityOut(BaseModel):
     content: str
     category: str | None
     status: ActivityStatus
-    register_start: datetime | None
-    register_end: datetime | None
+    register_start: UTCDatetime | None
+    register_end: UTCDatetime | None
     max_participants: int
     cover_url: str | None
     checkin_open: bool
-    created_at: datetime
-    updated_at: datetime
+    created_at: UTCDatetime
+    updated_at: UTCDatetime
 
     model_config = {"from_attributes": True}

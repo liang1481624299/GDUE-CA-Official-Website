@@ -131,6 +131,23 @@ async def update_profile(
         u.phone = req.phone
     if req.student_id is not None:
         u.student_id = req.student_id
+    # 时区：空字符串 = 恢复自动探测（存 NULL）；否则校验 IANA 后保存
+    if req.timezone is not None:
+        tz = req.timezone.strip()
+        if tz == "":
+            u.timezone = None
+        else:
+            try:
+                from zoneinfo import ZoneInfo
+                ZoneInfo(tz)
+            except Exception:
+                raise HTTPException(status_code=400, detail="无效的 IANA 时区")
+            u.timezone = tz
+    # 国家 + 省份/城市：空字符串 = 清空（存 NULL）
+    if req.country is not None:
+        u.country = req.country.strip() or None
+    if req.region is not None:
+        u.region = req.region.strip() or None
 
     _log(db, u.id, "profile.update", None, request.client.host if request.client else None)
     await db.commit()
