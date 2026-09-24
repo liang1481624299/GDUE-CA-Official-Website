@@ -33,6 +33,10 @@ async def _migrate_columns(conn):
             ("submit_ip", "VARCHAR(64) NULL"),
         ],
         "bug_reports": [("submit_ip", "VARCHAR(64) NULL")],
+        "login_sessions": [
+            ("location_zh", "VARCHAR(128) NULL"),
+            ("location_en", "VARCHAR(128) NULL"),
+        ],
         "system_settings": [
             ("club_checkin_open", "BOOLEAN DEFAULT 0"),
             ("system_timezone", "VARCHAR(64) DEFAULT 'Asia/Shanghai'"),

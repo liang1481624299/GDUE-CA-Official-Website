@@ -1,7 +1,8 @@
-"""认证接口：登录、当前用户、用户管理、改密、忘记密码、安全问题恢复、个人资料、头像上传。"""
+"""认证接口：登录、当前用户、用户管理、改密、忘记密码、安全问题恢复、个人资料、头像上传、登录会话管理。"""
 import os
+import re
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
@@ -10,7 +11,9 @@ from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.middleware import get_client_ip
+from app.core.ip_location import resolve_location
 from app.core.security import (
+    REMEMBER_DEVICE_DAYS,
     Role,
     create_access_token,
     hash_password,
@@ -19,6 +22,7 @@ from app.core.security import (
 )
 from app.db.models import (
     AuditLog,
+    LoginSession,
     PasswordResetRequest,
     SecurityQuestion,
     User,
@@ -30,6 +34,7 @@ from app.schemas.auth import (
     ChangePasswordRequest,
     ForgotPasswordRequest,
     LoginRequest,
+    LoginSessionOut,
     PasswordResetHandleRequest,
     PasswordResetOut,
     ProfileUpdate,
@@ -49,6 +54,61 @@ def _log(db: AsyncSession, user_id: int | None, action: str, detail: str | None,
     db.add(AuditLog(user_id=user_id, action=action, detail=detail, ip=ip))
 
 
+# ---------- User-Agent 解析（无第三方依赖） ----------
+def parse_user_agent(ua: str | None) -> tuple[str, str]:
+    """解析 User-Agent → (device_name 设备名称, device_model 设备型号)。
+
+    device_name 例: "Chrome 129 · Windows"
+    device_model 例: "Windows 10/11 桌面" / "iPhone" / "22081212C (Android 13)"
+    """
+    if not ua:
+        return ("未知设备", "未知")
+    s = ua
+
+    # 浏览器（按优先级：Edge > Opera > Chrome > Firefox > Safari > IE）
+    browser, browser_ver = "未知浏览器", ""
+    for pattern, name in (
+        (r"Edg(?:e|A|iOS)?/([\d.]+)", "Edge"),
+        (r"OPR/([\d.]+)", "Opera"),
+        (r"Chrome/([\d.]+)", "Chrome"),
+        (r"Firefox/([\d.]+)", "Firefox"),
+        (r"Version/([\d.]+).*Safari", "Safari"),
+        (r"MSIE ([\d.]+)", "Internet Explorer"),
+    ):
+        m = re.search(pattern, s)
+        if m:
+            browser, browser_ver = name, m.group(1).split(".")[0]
+            break
+
+    # 操作系统 / 设备型号
+    os_name, model = "未知系统", "桌面设备"
+    if "iPhone" in s:
+        os_name, model = "iOS", "iPhone"
+    elif "iPad" in s:
+        os_name, model = "iPadOS", "iPad"
+    elif "Android" in s:
+        m = re.search(r"Android ([\d.]+)", s)
+        os_name = f"Android {m.group(1)}" if m else "Android"
+        # UA 形如 "(Linux; Android 13; 22081212C Build/...)"
+        m2 = re.search(r"Android [\d.]+;\s*([^;)]+?)(?:\s+Build/[^;)]*)?\s*[;)]", s)
+        model = f"{m2.group(1).strip()} ({os_name})" if m2 else "Android 设备"
+    elif "Windows NT 10.0" in s:
+        os_name, model = "Windows", "Windows 10/11 桌面"
+    elif "Windows NT 6.1" in s:
+        os_name, model = "Windows", "Windows 7 桌面"
+    elif "Windows" in s:
+        os_name, model = "Windows", "Windows 桌面"
+    elif "Mac OS X" in s:
+        m = re.search(r"Mac OS X ([\d_]+)", s)
+        os_name = "macOS" + (f" {m.group(1).replace('_', '.')}" if m else "")
+        model = "Mac"
+    elif "Linux" in s:
+        os_name, model = "Linux", "Linux 桌面"
+
+    device_name = f"{browser} {browser_ver}".strip() + f" · {os_name}"
+    return (device_name, model)
+
+
 # ---------- 登录 ----------
 @router.post("/login", response_model=TokenResponse)
 async def login(req: LoginRequest, request: Request, db: AsyncSession = Depends(get_db)):
@@ -66,14 +126,100 @@ async def login(req: LoginRequest, request: Request, db: AsyncSession = Depends(
         raise HTTPException(status_code=401, detail="账号或密码错误")
     if not user.is_active:
         raise HTTPException(status_code=403, detail="账号已停用")
-    token = create_access_token(str(user.id), user.role)
-    _log(db, user.id, "login", None, request.client.host if request.client else None)
+
+    # 记住此设备 → 硬顶 30 天；否则沿用 JWT_EXPIRE_HOURS
+    if req.remember_device:
+        expires_delta = timedelta(days=REMEMBER_DEVICE_DAYS)
+    else:
+        from app.core.config import get_settings
+        expires_delta = timedelta(hours=get_settings().JWT_EXPIRE_HOURS)
+
+    # 创建登录会话记录（设备 / IP / 登录地点 / UA）
+    ua = request.headers.get("user-agent", "") or ""
+    device_name, device_model = parse_user_agent(ua)
+    client_ip = get_client_ip(request)
+    loc_zh, loc_en = resolve_location(client_ip)
+    sid = uuid.uuid4().hex
+    db.add(LoginSession(
+        user_id=user.id,
+        session_id=sid,
+        device_name=device_name[:128],
+        device_model=device_model[:128],
+        user_agent=ua[:512],
+        ip=client_ip,
+        location_zh=loc_zh[:128] if loc_zh else None,
+        location_en=loc_en[:128] if loc_en else None,
+        remember_device=req.remember_device,
+        login_at=datetime.now(timezone.utc),
+        last_active_at=datetime.now(timezone.utc),
+        expires_at=datetime.now(timezone.utc) + expires_delta,
+    ))
+    token = create_access_token(str(user.id), user.role, sid, expires_delta)
+    _log(db, user.id, "login", f"session:{sid[:8]} device:{device_model}",
+         get_client_ip(request))
     return TokenResponse(
         access_token=token,
         role=user.role,
         username=user.username,
         must_change_password=user.must_change_password,
     )
+
+
+# ---------- 心跳：保持会话活跃（前端可见时定时调用） ----------
+@router.get("/heartbeat")
+async def heartbeat(user: dict = Depends(require_role(Role.EDITOR))):
+    return {"ok": True}
+
+
+# ---------- 登录会话列表（当前用户自己的设备） ----------
+@router.get("/sessions", response_model=list[LoginSessionOut])
+async def list_sessions(
+    user: dict = Depends(require_role(Role.EDITOR)),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(LoginSession)
+        .where(LoginSession.user_id == int(user["user_id"]))
+        .order_by(LoginSession.login_at.desc())
+        .limit(20)
+    )
+    rows = result.scalars().all()
+    jti = user.get("jti")
+    out = []
+    for r in rows:
+        item = LoginSessionOut.model_validate(r)
+        item.is_current = bool(jti) and r.session_id == jti
+        out.append(item)
+    return out
+
+
+# ---------- 踢出登录（撤销指定会话） ----------
+@router.delete("/sessions/{session_row_id}")
+async def revoke_session(
+    session_row_id: int,
+    request: Request,
+    user: dict = Depends(require_role(Role.EDITOR)),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(LoginSession).where(
+            LoginSession.id == session_row_id,
+            LoginSession.user_id == int(user["user_id"]),
+        )
+    )
+    sess = result.scalar_one_or_none()
+    if not sess:
+        raise HTTPException(status_code=404, detail="登录记录不存在")
+    if sess.revoked:
+        raise HTTPException(status_code=400, detail="该会话已退出")
+    sess.revoked = True
+    sess.revoked_at = datetime.now(timezone.utc)
+    _log(db, int(user["user_id"]), "session.revoke",
+         f"session:{sess.session_id[:8]} device:{sess.device_model}",
+         get_client_ip(request))
+    await db.commit()
+    is_current = bool(user.get("jti")) and sess.session_id == user["jti"]
+    return {"ok": True, "current_kicked": is_current}
 
 
 # ---------- 当前用户 ----------

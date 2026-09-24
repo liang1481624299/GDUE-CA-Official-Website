@@ -54,6 +54,36 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 
+# ---------- 登录会话（设备管理 / 踢出登录 / 30 分钟滑动超时） ----------
+class LoginSession(Base):
+    __tablename__ = "login_sessions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    # JWT jti，唯一标识一次登录会话
+    session_id: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    # 设备名称（浏览器 + 操作系统），如 "Chrome 129 · Windows"
+    device_name: Mapped[str] = mapped_column(String(128))
+    # 设备型号，如 "Windows 10/11 桌面" / "iPhone" / "22081212C (Android 13)"
+    device_model: Mapped[str] = mapped_column(String(128))
+    # 完整 User-Agent（详细展示用）
+    user_agent: Mapped[str] = mapped_column(String(512), default="")
+    ip: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # 登录地点（IP 归属地）：中文（ip2region）/ 英文（GeoLite2）；
+    # "local"=本机回环，"intranet"=校园内网（枚举由前端按语言渲染）
+    location_zh: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    location_en: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    # 勾选「记住此设备」登录：空闲超时从 30 分钟放宽到 30 天
+    remember_device: Mapped[bool] = mapped_column(Boolean, default=False)
+    revoked: Mapped[bool] = mapped_column(Boolean, default=False)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    login_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    # 滑动续期：每次认证请求刷新
+    last_active_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    # 会话硬顶：登录时间 + token 有效期
+    expires_at: Mapped[datetime] = mapped_column(DateTime)
+
+
 # ---------- 活动 ----------
 class ActivityStatus(str, Enum):
     DRAFT = "draft"

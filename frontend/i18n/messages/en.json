@@ -47,7 +47,9 @@
     "members": "Team Members",
     "cancel": "Cancel",
     "beijingTime": "Beijing Time",
-    "localTime": "Local time"
+    "localTime": "Local time",
+    "yes": "Yes",
+    "no": "No"
   },
   "home": {
     "hero": {
@@ -182,7 +184,33 @@
     "geolocationUnsupported": "Geolocation is not supported by this browser",
     "locateSuccess": "Location detected, country and region filled automatically",
     "locateFailed": "Location detection failed, please retry or enter manually",
-    "locateDenied": "Geolocation permission denied, please enter manually or try again later"
+    "locateDenied": "Geolocation permission denied, please enter manually or try again later",
+    "sessions": {
+      "title": "Login Devices",
+      "subtitle": "View current and past login devices, models and IPs; remotely sign out any device",
+      "refresh": "Refresh list",
+      "empty": "No login records yet",
+      "loadFailed": "Failed to load login records",
+      "current": "Current device",
+      "revoked": "Signed out",
+      "remembered": "Remembered device",
+      "unknownIp": "IP unknown",
+      "loginAt": "Signed in",
+      "lastActive": "Last active",
+      "viewDetails": "Details",
+      "hideDetails": "Hide",
+      "kick": "Sign out",
+      "kicking": "Signing out...",
+      "kickFailed": "Failed to sign out, please try again",
+      "kickConfirmTitle": "Sign out this device?",
+      "kickConfirmDesc": "The device \"{device}\" will be signed out immediately and its session invalidated.",
+      "ip": "Login IP",
+      "expiresAt": "Session expires",
+      "revokedAt": "Signed out at",
+      "rememberDevice": "Remember this device",
+      "userAgent": "Browser user agent (UA)",
+      "hint": "Sessions expire after 30 minutes of inactivity by default; a visible-page heartbeat automatically extends the session. Up to 20 most recent records are shown."
+    }
   },
   "projects": {
     "title": "Projects",
@@ -374,7 +402,10 @@
       "error": "Invalid username or password",
       "backToSite": "Back to Site",
       "forgotPassword": "Forgot Password?",
-      "mustChangeWarning": "Default password detected, please change it first"
+      "mustChangeWarning": "Default password detected, please change it first",
+      "savePassword": "Save username & password",
+      "autoLogin": "Automatic sign-in",
+      "rememberDevice": "Remember this device (fewer verifications for 30 days)"
     },
     "changePassword": {
       "title": "Change Password",

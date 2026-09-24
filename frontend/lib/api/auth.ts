@@ -7,6 +7,7 @@ import { apiFetch } from "./client";
 import type {
   LoginRequest,
   LoginResponse,
+  LoginSessionInfo,
   AdminUser,
   ProfileUpdate,
   AvatarUploadOut,
@@ -31,6 +32,26 @@ export function login(payload: LoginRequest) {
 
 export function fetchMe() {
   return apiFetch<AdminUser>("/api/auth/me", { withAuth: true });
+}
+
+/* ---------- 登录会话管理（设备 / 踢出 / 心跳） ---------- */
+
+/** 心跳：页面可见时定时调用，滑动续期会话 */
+export function heartbeat() {
+  return apiFetch<{ ok: boolean }>("/api/auth/heartbeat", { withAuth: true });
+}
+
+/** 当前用户的登录设备列表 */
+export function fetchSessions() {
+  return apiFetch<LoginSessionInfo[]>("/api/auth/sessions", { withAuth: true });
+}
+
+/** 踢出指定登录会话 */
+export function revokeSession(sessionRowId: number) {
+  return apiFetch<{ ok: boolean; current_kicked: boolean }>(
+    `/api/auth/sessions/${sessionRowId}`,
+    { method: "DELETE", withAuth: true }
+  );
 }
 
 /* ---------- 个人资料 ---------- */

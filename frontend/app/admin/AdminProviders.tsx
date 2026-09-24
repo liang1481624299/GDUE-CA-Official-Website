@@ -8,6 +8,7 @@
  */
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { I18nProvider } from "@/i18n/provider";
+import { SessionHeartbeat } from "@/components/shared/SessionHeartbeat";
 import type { Locale } from "@/lib/i18n";
 import type { Messages } from "@/i18n/dictionary";
 import zhCN from "@/i18n/messages/zh-CN.json";
@@ -53,6 +54,7 @@ export function AdminProviders({ children }: { children: ReactNode }) {
   return (
     <AdminLocaleContext.Provider value={{ locale, setLocale }}>
       <I18nProvider locale={locale} messages={DICTS[locale]}>
+        <SessionHeartbeat />
         {children}
       </I18nProvider>
     </AdminLocaleContext.Provider>

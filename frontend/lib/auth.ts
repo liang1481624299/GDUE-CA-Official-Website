@@ -64,3 +64,56 @@ export function requireAuth(redirectTo = "/admin/login"): boolean {
   }
   return true;
 }
+
+/* ---------- 登录选项：保存账号密码 / 自动登录 ---------- */
+
+const CREDS_KEY = "gdueca_saved_creds";
+const AUTO_LOGIN_KEY = "gdueca_autologin";
+
+export interface SavedCreds {
+  username: string;
+  password: string;
+}
+
+/** 保存账号密码（base64 编码存储，仅作便捷预填；登录页勾选使用） */
+export function saveCreds(creds: SavedCreds) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(
+      CREDS_KEY,
+      window.btoa(unescape(encodeURIComponent(JSON.stringify(creds))))
+    );
+  } catch {
+    /* 存储失败静默忽略 */
+  }
+}
+
+/** 读取保存的账号密码（未保存返回 null） */
+export function getSavedCreds(): SavedCreds | null {
+  if (typeof window === "undefined") return null;
+  const raw = window.localStorage.getItem(CREDS_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(decodeURIComponent(escape(window.atob(raw)))) as SavedCreds;
+  } catch {
+    return null;
+  }
+}
+
+/** 清除保存的账号密码 */
+export function clearCreds() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(CREDS_KEY);
+}
+
+/** 自动登录开关 */
+export function isAutoLogin(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.localStorage.getItem(AUTO_LOGIN_KEY) === "1";
+}
+
+export function setAutoLogin(on: boolean) {
+  if (typeof window === "undefined") return;
+  if (on) window.localStorage.setItem(AUTO_LOGIN_KEY, "1");
+  else window.localStorage.removeItem(AUTO_LOGIN_KEY);
+}

@@ -47,7 +47,9 @@
     "members": "開發成員",
     "cancel": "取消",
     "beijingTime": "北京時間",
-    "localTime": "本地時間"
+    "localTime": "本地時間",
+    "yes": "是",
+    "no": "否"
   },
   "home": {
     "hero": {
@@ -182,7 +184,33 @@
     "geolocationUnsupported": "目前瀏覽器不支援地理定位",
     "locateSuccess": "定位成功，已自動填入國家和地區",
     "locateFailed": "定位失敗，請稍後重試或手動填寫",
-    "locateDenied": "已拒絕地理位置授權，請手動填寫或稍後再試"
+    "locateDenied": "已拒絕地理位置授權，請手動填寫或稍後再試",
+    "sessions": {
+      "title": "登入裝置管理",
+      "subtitle": "查看目前與歷史登入的裝置、型號與 IP，可遠端登出裝置",
+      "refresh": "重新整理列表",
+      "empty": "暫無登入記錄",
+      "loadFailed": "登入記錄載入失敗",
+      "current": "目前裝置",
+      "revoked": "已登出",
+      "remembered": "已記住裝置",
+      "unknownIp": "IP 未知",
+      "loginAt": "登入時間",
+      "lastActive": "最近活躍",
+      "viewDetails": "查看詳細",
+      "hideDetails": "收合",
+      "kick": "登出此裝置",
+      "kicking": "處理中...",
+      "kickFailed": "登出失敗，請稍後重試",
+      "kickConfirmTitle": "確認登出此裝置？",
+      "kickConfirmDesc": "即將強制登出裝置「{device}」，該裝置上的登入工作階段將立即失效。",
+      "ip": "登入 IP",
+      "expiresAt": "工作階段到期時間",
+      "revokedAt": "登出時間",
+      "rememberDevice": "記住此裝置",
+      "userAgent": "瀏覽器標識 (UA)",
+      "hint": "預設 30 分鐘無操作自動逾時；頁面保持可見時心跳自動延長工作階段。最多顯示最近 20 筆記錄。"
+    }
   },
   "projects": {
     "title": "項目展示",
@@ -374,7 +402,10 @@
       "error": "使用者名稱或密碼錯誤",
       "backToSite": "返回官網",
       "forgotPassword": "忘記密碼？",
-      "mustChangeWarning": "偵測到預設密碼，請先修改密碼"
+      "mustChangeWarning": "偵測到預設密碼，請先修改密碼",
+      "savePassword": "儲存帳號密碼",
+      "autoLogin": "自動登入",
+      "rememberDevice": "記住此裝置（30 天內減少驗證）"
     },
     "changePassword": {
       "title": "修改密碼",

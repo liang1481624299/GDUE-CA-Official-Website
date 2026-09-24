@@ -20,6 +20,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { TimezoneSelect } from "@/components/layout/TimezoneSelect";
+import { LoginSessionsCard } from "@/components/profile/LoginSessionsCard";
 import {
   fetchProfile,
   updateProfile,
@@ -460,6 +461,9 @@ export function ProfileEditForm() {
           </form>
         </CardContent>
       </Card>
+
+      {/* 登录设备 / 会话管理 */}
+      <LoginSessionsCard />
     </div>
   );
 }

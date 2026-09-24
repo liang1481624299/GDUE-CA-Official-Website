@@ -10,6 +10,8 @@
 export interface LoginRequest {
   username: string;
   password: string;
+  /** 记住此设备：空闲超时 30 分钟 → 30 天 */
+  remember_device?: boolean;
 }
 
 export interface LoginResponse {
@@ -18,6 +20,24 @@ export interface LoginResponse {
   role: string;
   username: string;
   must_change_password: boolean;
+}
+
+/** 登录会话（设备管理） */
+export interface LoginSessionInfo {
+  id: number;
+  device_name: string;
+  device_model: string;
+  user_agent: string;
+  ip: string | null;
+  remember_device: boolean;
+  revoked: boolean;
+  /** 带大写 Z 的 UTC ISO 字符串 */
+  revoked_at: string | null;
+  login_at: string;
+  last_active_at: string;
+  expires_at: string;
+  /** 是否为当前设备 */
+  is_current: boolean;
 }
 
 export interface AdminUser {

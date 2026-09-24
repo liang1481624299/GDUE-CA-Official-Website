@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/card";
 import { fetchProfile, updateProfile, uploadAvatar } from "@/lib/api/auth";
 import { TimezoneSelect } from "@/components/layout/TimezoneSelect";
+import { LoginSessionsCard } from "@/components/profile/LoginSessionsCard";
 import { useTimezone } from "@/i18n/provider";
 import type { AdminUser } from "@/types/api";
 import type { Locale } from "@/lib/i18n";
@@ -406,6 +407,9 @@ export default function ProfilePage() {
           </form>
         </CardContent>
       </Card>
+
+      {/* 登录设备 / 会话管理 */}
+      <LoginSessionsCard />
     </div>
   );
 }

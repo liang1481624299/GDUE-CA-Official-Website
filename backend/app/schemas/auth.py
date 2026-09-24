@@ -12,6 +12,8 @@ class LoginRequest(BaseModel):
     email: EmailStr | None = None
     # 默认 admin/admin 仅 5 字符，放行以便首次登录
     password: str = Field(min_length=1)
+    # 勾选「记住此设备」：空闲超时 30 分钟 → 30 天，token 硬顶 30 天
+    remember_device: bool = False
 
 
 class TokenResponse(BaseModel):
@@ -20,6 +22,28 @@ class TokenResponse(BaseModel):
     role: Role
     username: str
     must_change_password: bool = False
+
+
+# ---------- 登录会话（设备管理） ----------
+class LoginSessionOut(BaseModel):
+    id: int
+    device_name: str
+    device_model: str
+    user_agent: str
+    ip: str | None = None
+    # 登录地点（IP 归属地）：zh=en 双语字段；"local"/"intranet" 为枚举 code
+    location_zh: str | None = None
+    location_en: str | None = None
+    remember_device: bool
+    revoked: bool
+    revoked_at: UTCDatetime | None = None
+    login_at: UTCDatetime
+    last_active_at: UTCDatetime
+    expires_at: UTCDatetime
+    # 是否为当前请求所用的登录会话
+    is_current: bool = False
+
+    model_config = {"from_attributes": True}
 
 
 class UserCreate(BaseModel):

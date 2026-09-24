@@ -47,7 +47,9 @@
     "members": "開発メンバー",
     "cancel": "キャンセル",
     "beijingTime": "北京時間",
-    "localTime": "ローカル時間"
+    "localTime": "ローカル時間",
+    "yes": "はい",
+    "no": "いいえ"
   },
   "home": {
     "hero": {
@@ -182,7 +184,33 @@
     "geolocationUnsupported": "このブラウザは位置情報に対応していません",
     "locateSuccess": "検出成功、国と地域が自動入力されました",
     "locateFailed": "検出失敗、再試行または手動入力してください",
-    "locateDenied": "位置情報の権限が拒否されました、手動入力または後で再試行してください"
+    "locateDenied": "位置情報の権限が拒否されました、手動入力または後で再試行してください",
+    "sessions": {
+      "title": "ログイン端末管理",
+      "subtitle": "現在および過去のログイン端末・型番・IP を確認し、遠隔でログアウトできます",
+      "refresh": "一覧を更新",
+      "empty": "ログイン記録はありません",
+      "loadFailed": "ログイン記録の読み込みに失敗しました",
+      "current": "現在の端末",
+      "revoked": "ログアウト済み",
+      "remembered": "記憶済み端末",
+      "unknownIp": "IP 不明",
+      "loginAt": "ログイン日時",
+      "lastActive": "最終アクティブ",
+      "viewDetails": "詳細を見る",
+      "hideDetails": "閉じる",
+      "kick": "ログアウトさせる",
+      "kicking": "処理中...",
+      "kickFailed": "ログアウトに失敗しました、後でお試しください",
+      "kickConfirmTitle": "この端末をログアウトさせますか？",
+      "kickConfirmDesc": "端末「{device}」を強制的にログアウトさせ、そのセッションを即時無効化します。",
+      "ip": "ログイン IP",
+      "expiresAt": "セッション有効期限",
+      "revokedAt": "ログアウト日時",
+      "rememberDevice": "この端末を記憶",
+      "userAgent": "ブラウザ識別子 (UA)",
+      "hint": "既定では 30 分間無操作で自動タイムアウトします。ページが表示中のときはハートビートでセッションが自動延長されます。最新 20 件まで表示します。"
+    }
   },
   "projects": {
     "title": "プロジェクト展示",
@@ -374,7 +402,10 @@
       "error": "ユーザー名またはパスワードが正しくありません",
       "backToSite": "サイトに戻る",
       "forgotPassword": "パスワードをお忘れですか？",
-      "mustChangeWarning": "デフォルトパスワードが検出されました。先に変更してください"
+      "mustChangeWarning": "デフォルトパスワードが検出されました。先に変更してください",
+      "savePassword": "アカウントとパスワードを保存",
+      "autoLogin": "自動ログイン",
+      "rememberDevice": "この端末を記憶する（30日間認証を減らす）"
     },
     "changePassword": {
       "title": "パスワード変更",
