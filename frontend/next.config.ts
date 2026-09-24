@@ -24,17 +24,16 @@ const nextConfig: NextConfig = {
     qualities: [50, 75, 100],
   },
 
-  // 自定义响应头：启用 HTTP/3 Alt-Svc 提示、安全头
+  // 自定义响应头：安全头
+  // 注意：Alt-Svc (HTTP/3) 头不应由 Next.js 应用设置，
+  // 应由前端 CDN/Nginx/Caddy 反向代理层在 443 端口上添加。
+  // 在 Next.js 层设置 h3=":443" 会导致非 443 端口环境下的远程设备
+  // 浏览器尝试通过 443 端口 HTTP/3 加载资源→失败→页面空白。
   async headers() {
     return [
       {
         source: "/(.*)",
         headers: [
-          // HTTP/3 服务提示（实际 HTTP/3 由 Cloudflare CDN 层启用）
-          {
-            key: "Alt-Svc",
-            value: 'h3=":443"; ma=86400',
-          },
           // 安全头
           {
             key: "X-Content-Type-Options",
