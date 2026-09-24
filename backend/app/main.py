@@ -26,6 +26,7 @@ async def _migrate_columns(conn):
             ("timezone", "VARCHAR(64) NULL"),
             ("country", "VARCHAR(64) NULL"),
             ("region", "VARCHAR(128) NULL"),
+            ("locality", "VARCHAR(128) NULL"),
         ],
         "activities": [("checkin_open", "BOOLEAN DEFAULT 0")],
         "registrations": [

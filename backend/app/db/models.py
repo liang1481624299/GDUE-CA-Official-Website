@@ -50,7 +50,10 @@ class User(Base):
     timezone: Mapped[str | None] = mapped_column(String(64), nullable=True)
     # 用户物理位置：国家 + 省份/城市（手动设置或浏览器 Geolocation 自动定位）
     country: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # 一级行政区（省/州）
     region: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    # 二级行政区（市/郡）；为空时仅 country + region 两级
+    locality: Mapped[str | None] = mapped_column(String(128), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 

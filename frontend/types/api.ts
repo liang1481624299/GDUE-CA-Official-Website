@@ -55,8 +55,10 @@ export interface AdminUser {
   timezone: string | null;
   /** 用户物理位置：国家 */
   country: string | null;
-  /** 用户物理位置：省份/城市 */
+  /** 一级行政区（省/州） */
   region: string | null;
+  /** 二级行政区（市/郡）；可为空 */
+  locality: string | null;
   created_at: string;
 }
 
@@ -69,8 +71,10 @@ export interface ProfileUpdate {
   timezone?: string;
   /** 国家；空字符串 = 清空 */
   country?: string;
-  /** 省份/城市；空字符串 = 清空 */
+  /** 一级行政区（省/州）；空字符串 = 清空 */
   region?: string;
+  /** 二级行政区（市/郡）；空字符串 = 清空 */
+  locality?: string;
 }
 
 export interface AvatarUploadOut {

@@ -79,9 +79,10 @@ class UserOut(BaseModel):
     avatar_url: str | None = None
     # IANA 时区；null = 自动探测浏览器时区
     timezone: str | None = None
-    # 用户物理位置：国家 + 省份/城市
-    country: str | None = None
-    region: str | None = None
+    # 用户物理位置（三级行政区）
+    country: str | None = None       # 国家
+    region: str | None = None        # 一级行政区（省/州）
+    locality: str | None = None      # 二级行政区（市/郡）；可为空
     created_at: UTCDatetime
 
     model_config = {"from_attributes": True}
@@ -96,9 +97,10 @@ class ProfileUpdate(BaseModel):
     student_id: str | None = Field(default=None, min_length=1, max_length=32)
     # IANA 时区字符串；空字符串 = 恢复自动探测（存 NULL）；不传 = 不修改
     timezone: str | None = Field(default=None, max_length=64)
-    # 国家 + 省份/城市；空字符串 = 清空（存 NULL）；不传 = 不修改
+    # 三级行政区地址；空字符串 = 清空（存 NULL）；不传 = 不修改
     country: str | None = Field(default=None, max_length=64)
     region: str | None = Field(default=None, max_length=128)
+    locality: str | None = Field(default=None, max_length=128)
 
 
 class AvatarUploadOut(BaseModel):

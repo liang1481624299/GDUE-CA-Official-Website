@@ -37,7 +37,9 @@
 | ORM | SQLAlchemy 2.0 异步 |
 | 数据库 | SQLite（开发）/ PostgreSQL（生产可换） |
 | 校验 | Pydantic v2 |
-| 鉴权 | JWT Bearer Token + bcrypt 密码哈希 |
+| 鉴权 | JWT Bearer Token + bcrypt 密码哈希 + 会话三级校验（撤销/硬顶过期/空闲超时） |
+| 时区 | `zoneinfo`（Python 3.9+ 标准库 + `tzdata>=2024.1`），全部 UTC 存储 + 返回带大写 Z ISO 字符串 |
+| IP 属地 | `maxminddb 3.2.0` + GeoLite2-City.mmdb 离线库；备用 `ip2region.xdb` |
 | 导出 | openpyxl（Excel）、CSV（UTF-8 BOM + CRLF） |
 | 部署 | uvicorn，host=`::` 同时监听 IPv4/IPv6 |
 | 安全 | IP 黑名单、CORS 域名白名单、3 级角色（super_admin / admin / editor）、表单提交 IP 留痕（内网 / 公网 / IPv6） |
@@ -92,7 +94,18 @@ GDUECA/
 │   │   ├── projects/                       #   项目模块：ProjectList
 │   │   ├── join/                           #   报名模块：EventJoinForm / ClubJoinForm / phoneRules
 │   │   ├── contact/                        #   联系模块：BugForm
-│   │   ├── shared/                         #   公共组件：PageHeader / SectionHeading
+│   │   ├── profile/                        #   个人资料组件
+│   │   │   ├── PersonalInfoCard.tsx        #     统一个人信息卡片（基础资料 + 三级行政区地区选择 + 单按钮提交）
+│   │   │   ├── LocationSelect.tsx          #     全球 160+ 国家三级行政区选择器（Intl.DisplayNames 动态国名）
+│   │   │   ├── AccountSecurityCard.tsx     #     账户安全卡片（修改用户名 / 修改密码）
+│   │   │   ├── LoginSessionsCard.tsx       #     登录会话管理（设备列表 / 踢出）
+│   │   │   └── ProfileEditForm.tsx         #     前台 /profile 页表单组合（接入 PersonalInfoCard）
+│   │   ├── shared/                         #   公共组件
+│   │   │   ├── PageHeader.tsx / SectionHeading.tsx
+│   │   │   ├── FormattedEventTime.tsx      #     活动业务时间组件（默认北京时区 + 浏览器本地时间）
+│   │   │   ├── FormattedUserActionTime.tsx #     用户行为时间组件（按用户选定时区渲染）
+│   │   │   ├── SessionHeartbeat.tsx        #     登录会话心跳续期（挂载于两棵布局树）
+│   │   │   └── TimezoneContext.tsx         #     全局时区上下文
 │   │   └── ui/                             #   通用基础 UI 组件（shadcn/ui：button/card/input/...）
 │   ├── lib/                                # 工具函数与 API 请求封装
 │   │   ├── api/                            #   API 请求封装，文件与后端 app/api/ 模块一一对应
@@ -108,6 +121,9 @@ GDUECA/
 │   │   │   └── index.ts
 │   │   ├── auth.ts                         #   管理员前端会话工具（getSession / logout / AdminSession）
 │   │   ├── content.ts                      #   Markdown 内容加载器（blog/events/projects）
+│   │   ├── data/                           #   静态数据文件
+│   │   │   ├── countries.ts                #     全球 ~160 国家数据（ISO 3166-1 + 中英名 + 拼音，按五大洲分组）
+│   │   │   └── regions.ts                 #     20+ 主要国家三级行政区层级数据
 │   │   └── i18n.ts                         #   语言列表 / 类型（locales / Locale / localeNames）
 │   ├── i18n/                               # 国际化
 │   │   ├── provider.tsx                    #   客户端 i18n Context + useI18n
@@ -200,7 +216,7 @@ GDUECA/
 | `/admin/recover` | 安全问题紧急恢复 | 公开 |
 | `/admin/change-password` | 修改密码页（首次登录强制跳转） | 已登录 |
 | `/admin` | 仪表盘（统计概览） | 已登录 |
-| `/admin/profile` | 个人资料（显示名 / 真实姓名 / 学号 / 手机号 / 头像上传） | 已登录 |
+| `/admin/profile` | 个人资料（统一编辑：显示名/真实姓名/学号/手机号/时区/三级行政区地区选择 + 账户安全 + 登录会话管理） | 已登录 |
 | `/admin/activities` | 活动 CRUD | editor+ |
 | `/admin/registrations` | 报名审阅 + CSV/Xlsx 导出 | admin+ |
 | `/admin/bugs` | Bug 反馈列表 + 标记已解决 | editor+ |
@@ -211,12 +227,15 @@ GDUECA/
 
 | 方法 | 路径 | 说明 | 鉴权 |
 | --- | --- | --- | --- |
-| POST | `/api/auth/login` | 登录获取 JWT | 公开 |
-| GET | `/api/auth/me` | 当前用户信息 | Bearer |
-| GET | `/api/auth/profile` | 当前用户完整资料 | Bearer |
-| PUT | `/api/auth/profile` | 更新个人资料（显示名/真实姓名/学号/手机号） | Bearer |
+| POST | `/api/auth/login` | 登录获取 JWT（支持 `remember_device` 参数，30 天记住设备） | 公开 |
+| GET | `/api/auth/me` | 当前用户信息（含 timezone / country / region / locality） | Bearer |
+| GET | `/api/auth/profile` | 当前用户完整资料（含 timezone / country / region / locality） | Bearer |
+| PUT | `/api/auth/profile` | 更新个人资料（显示名/真实姓名/学号/手机号/时区/三级行政区地址） | Bearer |
 | POST | `/api/auth/avatar` | 上传头像（JPG/PNG/WEBP，≤5MB） | Bearer |
 | POST | `/api/auth/change-password` | 修改密码 | Bearer |
+| GET | `/api/auth/heartbeat` | 登录会话心跳续期（刷新 `last_active_at`，滑动空闲超时） | Bearer |
+| GET | `/api/auth/sessions` | 登录会话列表（最近 20 条，含 is_current / UA / IP / 过期时间） | Bearer |
+| DELETE | `/api/auth/sessions/{id}` | 撤销指定登录会话（校验归属，撤销当前设备时返回 `current_kicked`） | Bearer |
 | POST | `/api/auth/forgot-password` | 提交忘记密码申请 | 公开 |
 | GET | `/api/auth/password-resets` | 忘记密码申请列表 | admin+ |
 | PATCH | `/api/auth/password-resets/{id}` | 处理忘记密码申请 | admin+ |
@@ -377,9 +396,15 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 | `email` | 邮箱（不可修改） | ❌ |
 | `avatar_url` | 头像 URL | ✅ 上传 JPG/PNG/WEBP（≤5MB） |
 | `role` | 角色 | ❌ 仅 super_admin 可创建用户时指定 |
+| `timezone` | IANA 时区字符串（如 `Asia/Shanghai`）；null = 自动探测浏览器时区 | ✅ 在 `/admin/profile` 下拉选择（65 个 IANA 时区，按大洲分组） |
+| `country` | 国家（存储值为中文名，显示时按当前语言动态转换） | ✅ 在 `/admin/profile` 通过全球 160+ 国家选择器设置 |
+| `region` | 一级行政区（省/州） | ✅ 在 `/admin/profile` 联动选择 |
+| `locality` | 二级行政区（市/郡）；可为空（某些国家仅两级） | ✅ 在 `/admin/profile` 联动选择 |
 
 - 个人资料页：`/admin/profile`（侧边栏底部点击用户名进入）
 - 头像上传：支持 JPG / PNG / WEBP，最大 5MB，存储于后端 `uploads/avatars/`
+- **统一编辑**：基础资料 + 地区选择 + 时区设置整合到 `PersonalInfoCard`，单「确定」按钮一次性提交；时区选择即保存（独立调用 `PUT /api/auth/profile`）
+- **地区选择器**（`LocationSelect`）：全球 160+ 国家，按五大洲分组；国家名通过浏览器 `Intl.DisplayNames` 按当前语言动态显示，语言切换时选项自动重新排序和显示；支持中文名 / 英文名 / 拼音 / 首字母搜索；可自动定位（浏览器 Geolocation + Nominatim 匹配到预设选项）
 
 ### 数据导出
 
@@ -392,6 +417,7 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 - 切换语言：导航栏右上角下拉切换（桌面）/ 抽屉「设置」区切换（移动端）
 - 管理员后台同样支持 4 语言切换（顶栏语言下拉，localStorage 持久化）
 - **表单自动翻译**：报名 / Bug 提交时后端自动检测内容语言（`content_lang`），后台列表按当前显示语言调用 `/api/translations/batch` 批量翻译，结果缓存于 `translation_cache` 表，可随时切换查看原文
+- **地区选择器语言关联**（`LocationSelect`）：全球 160+ 国家的显示名通过浏览器内置 `Intl.DisplayNames([当前locale], { type: "region" })` 动态获取（无需手写各语言国名），国家选项按当前语言用 `localeCompare` 排序；大洲标题走 i18n key（`profile.continentAsia` 等 5 个）；存储值始终为中文名（与后端一致），语言切换时选项自动重新渲染和排序
 
 ### 深浅色主题
 
@@ -400,6 +426,17 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 - 主题持久化到 localStorage，未设置时跟随系统 `prefers-color-scheme`
 - 防 FOUC：通过 `next/script` + `beforeInteractive` 在 hydration 前设置主题类
 - 管理员后台共用相同主题机制
+
+### 时区系统
+
+- **后端 UTC 存储**：所有 datetime 字段存储 UTC，API 返回带大写 Z 的 ISO-8601 字符串；后端禁止做任何时间格式化和时区转换，全量由前端客户端组件渲染
+- **前端全局时区上下文**（`TimezoneContext.tsx`）：暴露 `timezonePref / effectiveTimezone / browserTimezone / ready / setTimezone`
+- **时区选择入口**：管理员后台顶栏（`TimezoneSelect` 组件，65 个 IANA 时区按大洲分组，第一项「自动」探测浏览器）；前台管理员 profile 页；导航栏右侧操作区也有时区下拉
+- **时区状态存储**：登录管理员 → 调用 `PUT /api/auth/profile` 保存到用户资料；游客 → 存 `localStorage` key `gdueca_timezone`
+- **时间组件**：
+  - `FormattedEventTime.tsx`（活动业务时间）：默认主显示北京时间 UTC+8，浏览器时区非 `Asia/Shanghai` 时追加显示浏览器本地对应时间；可选 `showZone` prop 控制时区标签
+  - `FormattedUserActionTime.tsx`（用户行为时间）：按用户当前生效时区渲染绝对时间（`sv-SE` locale 产 `YYYY-MM-DD HH:mm`），hover title 显示相对时间
+  - 两者均有 `ready` 水合保护，SSR 输出 `—` 占位，避免 hydration mismatch
 
 ### 移动端菜单
 
@@ -416,6 +453,22 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 - **IP 黑名单**：支持 IPv4/IPv6/CIDR 段，30s 缓存
 - **JWT Bearer Token**：管理员登录后获取，存于 localStorage，自动附加到请求头
 - **导出接口 token**：通过 query 参数 `?token=xxx` 传递（用于浏览器直接打开下载）
+
+### 登录会话管理
+
+- **会话绑定 JWT jti**：每次登录生成唯一 jti，JWT payload 携带 jti，后端 `login_sessions` 表记录
+- **会话三级校验**：`require_role` 依赖按顺序检查 ① 是否已被撤销（revoked_at）② 是否硬顶过期（expires_at）③ 空闲超时（last_active_at + IDLE_TIMEOUT）；旧 token 无 jti 时放行兼容
+- **空闲超时**：默认 30 分钟滑动续期（每次认证请求刷新 `last_active_at`）；"记住此设备"时延长至 30 天
+- **心跳续期**：前端 `SessionHeartbeat.tsx` 挂载于两棵布局树，页面可见时每 4 分钟调 `GET /api/auth/heartbeat` 刷新；回到前台（admin 路径外）时立即补跳并 401 自动登出
+- **前端登录页三选项**：保存账号密码（base64 存 `gdueca_saved_creds`）、自动登录（`gdueca_autologin`）、记住此设备（30 天）
+- **会话管理卡片**（`LoginSessionsCard`，前后台 profile 共用）：展示最近 20 条登录记录（设备名 / 型号 / IP / 浏览器 UA / 过期时间 / 撤销时间），可展开查看详情，可撤销（踢出）其他设备；撤销当前设备时自动 logout 并跳 `/admin/login`
+
+### IP 属地定位
+
+- **登录记录物理地点**：后端使用 `maxminddb 3.2.0` + `GeoLite2-City.mmdb` 离线数据库解析登录 IP 归属地
+- **位置格式**：中国大陆 → "省/自治区 + 市"（如「广东 广州」）；国际 → "国家英文 + 下一级行政区"（如「United States California」）
+- **多数据源**：同时内置 `ip2region.xdb` 作为备用数据源
+- **概览页访问来源卡片**：仪表盘首页展示独立 IP 数、总事件数及明细表（IP / 地区徽章 / 来源小徽章 × 次数 / 次数 / 最近访问）；地区分类包括：本机回环、校园内网（私有地址段）、公网·地区未知、未知
 
 ## 性能与 SEO
 
