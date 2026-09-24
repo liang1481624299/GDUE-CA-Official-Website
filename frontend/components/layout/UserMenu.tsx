@@ -27,6 +27,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useI18n } from "@/i18n/provider";
 import { fetchProfile } from "@/lib/api/auth";
+import { API_BASE_URL } from "@/lib/api/client";
 import type { AdminUser } from "@/types/api";
 import { User, LayoutDashboard, LogOut, Loader2, LogIn } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -62,8 +63,7 @@ function hashHue(name: string): number {
 function avatarFullUrl(url: string | null | undefined): string {
   if (!url) return "";
   if (url.startsWith("http")) return url;
-  const apiBase = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
-  const base = apiBase.replace(/\/+$/, "");
+  const base = API_BASE_URL.replace(/\/+$/, "");
   return url.startsWith("/") ? `${base}${url}` : `${base}/${url}`;
 }
 

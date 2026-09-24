@@ -3,7 +3,7 @@
  *
  * 管理员登录、当前用户、个人资料、头像上传、改密、忘记密码、安全问题恢复。
  */
-import { apiFetch } from "./client";
+import { apiFetch, API_BASE_URL } from "./client";
 import type {
   LoginRequest,
   LoginResponse,
@@ -83,7 +83,7 @@ export async function uploadAvatar(file: File): Promise<AvatarUploadOut> {
       : null;
 
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000"}/api/auth/avatar`,
+    `${API_BASE_URL}/api/auth/avatar`,
     {
       method: "POST",
       headers: token ? { Authorization: `Bearer ${token}` } : {},

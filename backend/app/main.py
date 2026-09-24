@@ -108,10 +108,13 @@ app = FastAPI(
 )
 
 # ---------- CORS ----------
+# 本项目鉴权使用 Bearer Token（Authorization 头），不依赖 Cookie，
+# 因此 allow_credentials 可设为 False，配合 allow_origins=["*"] 允许任意来源。
+# 生产环境可通过 CORS_ORIGINS 环境变量限定来源。
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list or ["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )

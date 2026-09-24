@@ -11,9 +11,19 @@
  * 公开接口（报名/Bug）不带 token；管理接口由调用方传 withAuth=true。
  */
 
-/** 后端 API 基础地址（运行时读取环境变量，回退到本地开发地址） */
+/**
+ * 后端 API 基础地址
+ *
+ * 优先级：NEXT_PUBLIC_API_BASE_URL 环境变量 > 动态推导
+ * - 服务端（RSC/SSR）：回退到 http://localhost:8000（前后端同机）
+ * - 客户端（浏览器）：从 window.location 动态推导（协议+主机名+8000端口）
+ *   确保其他设备通过局域网 IP / 域名访问时 API 请求也指向同一服务器
+ */
 export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+  process.env.NEXT_PUBLIC_API_BASE_URL ??
+  (typeof window !== "undefined"
+    ? `${window.location.protocol}//${window.location.hostname}:8000`
+    : "http://localhost:8000");
 
 /** 标准化后端错误响应：FastAPI 通常返回 { detail: string | [{msg}] ] } */
 export class ApiError extends Error {
