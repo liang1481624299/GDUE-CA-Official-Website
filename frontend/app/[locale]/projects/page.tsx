@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getDictionary, getLocale } from "@/i18n/dictionary";
 import { getAllProjects, getProject, getAllTechStacks, getAllProjectYears } from "@/lib/content";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { DirectionalTransition } from "@/components/shared/DirectionalTransition";
 import { ProjectList } from "@/components/projects/ProjectList";
 import { notFound } from "next/navigation";
 import { locales } from "@/lib/i18n";
@@ -21,11 +22,15 @@ export default async function ProjectsPage({
   const years = getAllProjectYears();
 
   return (
-    <>
-      <PageHeader title={dict.projects.title} subtitle={dict.projects.subtitle} />
+    <DirectionalTransition>
+      <PageHeader
+        title={dict.projects.title}
+        subtitle={dict.projects.subtitle}
+        transitionName="page-title-projects"
+      />
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
         <ProjectList projects={projects} techStacks={techStacks} years={years} />
       </div>
-    </>
+    </DirectionalTransition>
   );
 }

@@ -5,7 +5,7 @@
  * 顶部三个卡片按钮：活动报名 / 社团报名 / 查询报名结果
  * 点击切换到对应表单或查询界面
  */
-import { useState } from "react";
+import { useState, ViewTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CalendarDays, Users, Search } from "lucide-react";
 import { useI18n } from "@/i18n/provider";
@@ -14,10 +14,19 @@ import { Button } from "@/components/ui/button";
 import { EventJoinForm } from "@/components/join/EventJoinForm";
 import { ClubJoinForm } from "@/components/join/ClubJoinForm";
 import { ReceiptQuery } from "@/components/shared/ReceiptQuery";
+import { DirectionalTransition } from "@/components/shared/DirectionalTransition";
 
 type FormMode = "event" | "club" | "query";
 
 export default function RegisterPage() {
+  return (
+    <DirectionalTransition>
+      <RegisterContent />
+    </DirectionalTransition>
+  );
+}
+
+function RegisterContent() {
   const { t } = useI18n();
   const [mode, setMode] = useState<FormMode | null>(null);
 
@@ -26,7 +35,10 @@ export default function RegisterPage() {
     return (
       <div className="container mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center mb-12">
-          <h1 className="text-3xl md:text-4xl font-bold mb-3">{t("register.title")}</h1>
+          {/* 与首页快速导航「加入」卡片标题共享过渡 */}
+          <ViewTransition name="page-title-join" share="text-morph" default="none">
+            <h1 className="text-3xl md:text-4xl font-bold mb-3">{t("register.title")}</h1>
+          </ViewTransition>
           <p className="text-muted-foreground">{t("register.subtitle")}</p>
         </div>
 

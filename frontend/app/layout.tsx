@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Space_Grotesk, JetBrains_Mono } from "next/font/google";
+import { Instrument_Sans, JetBrains_Mono } from "next/font/google";
 import { headers } from "next/headers";
 import Script from "next/script";
 import "@/app/globals.css";
@@ -10,14 +10,16 @@ import "@/app/globals.css";
  * 读取 proxy.ts 生成的 CSP nonce（x-nonce），因此全站为动态渲染
  * 各子 layout（[locale] / admin）负责具体的 Provider 与框架
  */
-const displayFont = Space_Grotesk({
-  variable: "--font-display",
+/** 西文正文 / 标题字体；中文回退到系统黑体（见 globals.css --font-sans） */
+const sansFont = Instrument_Sans({
+  variable: "--font-instrument",
   subsets: ["latin"],
   display: "swap",
 });
 
+/** 日期、编号、数据等辅助信息 */
 const monoFont = JetBrains_Mono({
-  variable: "--font-mono",
+  variable: "--font-jetbrains",
   subsets: ["latin"],
   display: "swap",
 });
@@ -53,14 +55,11 @@ export default async function RootLayout({
   return (
     <html
       lang="zh-CN"
-      className={`${displayFont.variable} ${monoFont.variable} h-full antialiased`}
+      className={`${sansFont.variable} ${monoFont.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>
         <ThemeInitScript nonce={nonce} />
-        <link rel="preconnect" href="https://fonts.googleapis.com" fetchPriority="high" />
-        <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://cdnjs.cloudflare.com" fetchPriority="low" />
       </head>
       <body className="min-h-full flex flex-col bg-background">
         {children}

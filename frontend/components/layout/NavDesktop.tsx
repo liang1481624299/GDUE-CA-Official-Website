@@ -3,23 +3,25 @@
 /**
  * NavDesktop - 桌面端顶部导航栏
  * - 固定 header，三列 grid（左Logo / 中导航居中 / 右操作区）
- * - 滚动时切换背景模糊
+ * - 半透明背景 + 底部细线（克制科技风），始终可辨识
  * - 桌面端显示主题切换、语言切换、报名 CTA、管理员入口
  * - 移动端汉堡按钮触发 NavMobile 抽屉（由本组件持有 mobileOpen 状态并下传）
  *
  * 配套组件：NavMobile.tsx（移动端右侧抽屉，由本组件渲染）
  */
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Terminal, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 import { useI18n } from "@/i18n/provider";
 import { Button } from "@/components/ui/button";
 import { SettingsDropdown } from "@/components/layout/SettingsDropdown";
 import { NavMobile } from "@/components/layout/NavMobile";
 import { UserMenu } from "@/components/layout/UserMenu";
+import { BrandMark } from "@/components/shared/BrandMark";
 import { cn } from "@/lib/utils";
+import { navTransitionTypes } from "@/lib/navTransition";
 
 /** 导航项配置（不含「报名」—— 报名在桌面 CTA 与移动抽屉底部） */
 const navItems = [
@@ -35,15 +37,6 @@ export function NavDesktop() {
   const { locale, t } = useI18n();
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-
-  /** 检测滚动状态，添加背景模糊效果 */
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 10);
-    handleScroll();
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   /** 构建带语言前缀的路径 */
   function localePath(href: string) {
@@ -65,24 +58,19 @@ export function NavDesktop() {
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
-        className={cn(
-          "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
-          scrolled
-            ? "bg-background/80 backdrop-blur-md border-b border-border shadow-sm"
-            : "bg-transparent"
-        )}
+        // 常驻导航栏：页面过渡时单独成组保持静止（见 globals.css persistent-nav）
+        style={{ viewTransitionName: "persistent-nav" }}
+        className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/85 backdrop-blur-md"
       >
         <nav className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* 三列 grid：左Logo / 中导航（真正居中）/ 右操作区 */}
           <div className="grid h-16 grid-cols-2 md:grid-cols-[1fr_auto_1fr] items-center">
             <Link
               href={localePath("")}
-              className="flex items-center gap-2 font-display font-bold text-lg justify-self-start"
+              transitionTypes={navTransitionTypes(pathname, locale, "")}
+              className="justify-self-start rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <Terminal className="h-5 w-5" />
-              </span>
-              <span className="hidden sm:inline">GDUECA</span>
+              <BrandMark hideWordmarkOnMobile />
             </Link>
 
             {/* 桌面端导航 - 居中 */}
@@ -91,11 +79,13 @@ export function NavDesktop() {
                 <Link
                   key={item.key}
                   href={localePath(item.href)}
+                  transitionTypes={navTransitionTypes(pathname, locale, item.href)}
+                  aria-current={isActive(item.href) ? "page" : undefined}
                   className={cn(
-                    "px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                    "px-3 py-2 rounded-lg text-sm transition-colors",
                     isActive(item.href)
-                      ? "text-primary bg-secondary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                      ? "text-foreground bg-secondary font-medium"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                   )}
                 >
                   {t(item.key)}
@@ -104,12 +94,17 @@ export function NavDesktop() {
             </div>
 
             {/* 右侧操作区 */}
-            <div className="flex items-center gap-1 justify-self-end">
+            <div className="flex items-center gap-2 justify-self-end">
               <div className="hidden md:flex items-center gap-1">
                 <SettingsDropdown />
               </div>
               <Button asChild size="sm" className="hidden md:inline-flex">
-                <Link href={localePath("/join")}>{t("nav.join")}</Link>
+                <Link
+                  href={localePath("/join")}
+                  transitionTypes={navTransitionTypes(pathname, locale, "/join")}
+                >
+                  {t("nav.join")}
+                </Link>
               </Button>
               {/* 用户头像下拉菜单：桌面端可见 */}
               <div className="hidden md:inline-flex items-center">
@@ -119,7 +114,7 @@ export function NavDesktop() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="md:hidden"
+                className="md:hidden h-11 w-11"
                 onClick={() => setMobileOpen(true)}
                 aria-label={t("nav.menu")}
               >

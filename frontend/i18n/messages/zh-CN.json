@@ -43,6 +43,8 @@
     "by": "作者",
     "publishedOn": "发布于",
     "participants": "参与人数",
+    "peopleJoined": "人参与",
+    "viewDetails": "查看详情",
     "techStack": "技术栈",
     "members": "开发成员",
     "cancel": "取消",
@@ -296,8 +298,14 @@
     "filterCompetition": "竞赛",
     "filterRecruitment": "招新活动",
     "filterWorkshop": "工作坊",
+    "countUnit": "场活动",
+    "totalPrefix": "累计",
+    "totalSuffix": "人次参与",
+    "sortByDate": "按时间排序",
+    "dateColumn": "日期",
+    "typeColumn": "类型",
     "chartTitle": "活动参与人数统计",
-    "chartSubtitle": "近一年各活动参与人数趋势"
+    "chartSubtitle": "历年各场活动的参与人数"
   },
   "join": {
     "title": "加入计算机协会",

@@ -43,6 +43,8 @@
     "by": "作者",
     "publishedOn": "公開日",
     "participants": "参加人数",
+    "peopleJoined": "人が参加",
+    "viewDetails": "詳細を見る",
     "techStack": "技術スタック",
     "members": "開発メンバー",
     "cancel": "キャンセル",
@@ -296,8 +298,14 @@
     "filterCompetition": "コンテスト",
     "filterRecruitment": "新歓活動",
     "filterWorkshop": "ワークショップ",
+    "countUnit": "件のイベント",
+    "totalPrefix": "累計",
+    "totalSuffix": "人が参加",
+    "sortByDate": "新しい順",
+    "dateColumn": "日付",
+    "typeColumn": "種類",
     "chartTitle": "活動参加者統計",
-    "chartSubtitle": "過去1年間の各活動の参加者数推移"
+    "chartSubtitle": "歴代イベントごとの参加人数"
   },
   "join": {
     "title": "コンピュータ協会に入会",

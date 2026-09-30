@@ -43,6 +43,8 @@
     "by": "by",
     "publishedOn": "Published on",
     "participants": "Participants",
+    "peopleJoined": "joined",
+    "viewDetails": "View details",
     "techStack": "Tech Stack",
     "members": "Team Members",
     "cancel": "Cancel",
@@ -296,8 +298,14 @@
     "filterCompetition": "Competitions",
     "filterRecruitment": "Recruitment",
     "filterWorkshop": "Workshops",
+    "countUnit": "events",
+    "totalPrefix": "",
+    "totalSuffix": "participants in total",
+    "sortByDate": "Newest first",
+    "dateColumn": "Date",
+    "typeColumn": "Type",
     "chartTitle": "Event Participation Stats",
-    "chartSubtitle": "Participation trends over the past year"
+    "chartSubtitle": "Participants per event over the years"
   },
   "join": {
     "title": "Join the Computer Association",

@@ -1,16 +1,16 @@
 "use client";
 
 /**
- * Footer - 页脚组件
- * 包含社团简介、快速链接、联系方式与版权信息
+ * Footer - 页脚组件（克制科技风）
+ * 四栏：社团标识与简介 / 快速链接 / 联系方式 / 法律信息；底部版权行
  */
 import Link from "next/link";
-import { Terminal, Github, Mail, MapPin } from "lucide-react";
+import { Github, Mail, MapPin } from "lucide-react";
 import { useI18n } from "@/i18n/provider";
+import { BrandMark } from "@/components/shared/BrandMark";
 
 /** 页脚导航链接 */
 const footerLinks = [
-  { key: "nav.home", href: "" },
   { key: "nav.about", href: "/about" },
   { key: "nav.projects", href: "/projects" },
   { key: "nav.events", href: "/events" },
@@ -18,6 +18,14 @@ const footerLinks = [
   { key: "nav.join", href: "/join" },
   { key: "nav.contact", href: "/contact" },
 ] as const;
+
+const legalLinks = [
+  { key: "footer.terms", href: "/terms" },
+  { key: "footer.privacy", href: "/privacy" },
+  { key: "footer.disclaimer", href: "/disclaimer" },
+] as const;
+
+const linkClass = "text-sm text-muted-foreground transition-colors hover:text-foreground";
 
 export function Footer() {
   const { locale, t } = useI18n();
@@ -27,101 +35,72 @@ export function Footer() {
   }
 
   return (
-    <footer className="border-t border-border bg-muted/30">
-      <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* 社团简介 */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 font-display font-bold text-lg">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <Terminal className="h-4 w-4" />
-              </span>
-              GDUECA
-            </div>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {t("footer.description")}
-            </p>
+    <footer className="border-t border-border">
+      <div className="container mx-auto max-w-7xl px-5 sm:px-6 lg:px-8 pt-8 pb-8 md:pt-12 md:pb-10">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-8 md:grid-cols-4 md:gap-8">
+          {/* 社团标识与简介 */}
+          <div className="col-span-2 md:col-span-1 flex flex-col gap-3">
+            <BrandMark />
+            <p className="text-sm text-muted-foreground leading-relaxed">{t("footer.description")}</p>
           </div>
 
           {/* 快速链接 */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+          <nav aria-labelledby="footer-links-title" className="flex flex-col gap-2.5">
+            <h2 id="footer-links-title" className="text-[13px] font-semibold tracking-normal">
               {t("footer.quickLinks")}
-            </h3>
-            <ul className="grid grid-cols-2 gap-2">
+            </h2>
+            <ul className="grid grid-cols-1 gap-2.5">
               {footerLinks.map((item) => (
                 <li key={item.key}>
-                  <Link
-                    href={localePath(item.href)}
-                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                  >
+                  <Link href={localePath(item.href)} className={linkClass}>
                     {t(item.key)}
                   </Link>
                 </li>
               ))}
             </ul>
-          </div>
+          </nav>
 
           {/* 联系方式 */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("footer.connect")}
-            </h3>
-            <div className="space-y-2">
-              <a
-                href="mailto:gdueca@feishu.millennium.dpdns.org"
-                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
-              >
-                <Mail className="h-4 w-4" />
-                gdueca@feishu.millennium.dpdns.org
-              </a>
-              <a
-                href="https://github.com/GDUE-Computer-Association"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
-              >
-                <Github className="h-4 w-4" />
-                github.com/GDUE-Computer-Association
-              </a>
-              <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                <MapPin className="h-4 w-4 mt-0.5 shrink-0" />
-                <span>{t("contact.address")}</span>
-              </div>
-            </div>
+          <div className="flex flex-col gap-2.5">
+            <h2 className="text-[13px] font-semibold tracking-normal">{t("footer.connect")}</h2>
+            <a href="mailto:gdueca@feishu.millennium.dpdns.org" className={`${linkClass} inline-flex items-start gap-2 break-all`}>
+              <Mail className="h-4 w-4 mt-0.5 shrink-0" aria-hidden="true" />
+              gdueca@feishu.millennium.dpdns.org
+            </a>
+            <a
+              href="https://github.com/GDUE-Computer-Association"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`${linkClass} inline-flex items-start gap-2 break-all`}
+            >
+              <Github className="h-4 w-4 mt-0.5 shrink-0" aria-hidden="true" />
+              GDUE-Computer-Association
+            </a>
+            <span className="inline-flex items-start gap-2 text-sm text-muted-foreground">
+              <MapPin className="h-4 w-4 mt-0.5 shrink-0" aria-hidden="true" />
+              {t("contact.address")}
+            </span>
           </div>
+
+          {/* 法律信息 */}
+          <nav aria-label={t("footer.resources")} className="flex flex-col gap-2.5">
+            <h2 className="text-[13px] font-semibold tracking-normal">{t("footer.resources")}</h2>
+            <ul className="grid grid-cols-1 gap-2.5">
+              {legalLinks.map((item) => (
+                <li key={item.key}>
+                  <Link href={localePath(item.href)} className={linkClass}>
+                    {t(item.key)}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
         </div>
 
-        {/* 版权信息 */}
-        <div className="mt-10 pt-6 border-t border-border flex flex-col items-center gap-2">
-          <p className="text-xs text-muted-foreground">
-            {t("footer.copyright")}
-          </p>
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            <Link
-              href={localePath("/terms")}
-              className="hover:text-primary transition-colors"
-            >
-              {t("footer.terms")}
-            </Link>
-            <span className="text-border">|</span>
-            <Link
-              href={localePath("/privacy")}
-              className="hover:text-primary transition-colors"
-            >
-              {t("footer.privacy")}
-            </Link>
-            <span className="text-border">|</span>
-            <Link
-              href={localePath("/disclaimer")}
-              className="hover:text-primary transition-colors"
-            >
-              {t("footer.disclaimer")}
-            </Link>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            {t("footer.madeWith")}
-          </p>
+        {/* 版权行 */}
+        <div className="mt-8 md:mt-10 flex flex-col gap-1.5 border-t border-border pt-4 text-xs md:text-[13px] text-muted-foreground md:flex-row md:justify-between">
+          <p>{t("footer.copyright")}</p>
+          <p>{t("footer.madeWith")}</p>
         </div>
       </div>
     </footer>

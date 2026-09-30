@@ -43,6 +43,8 @@
     "by": "作者",
     "publishedOn": "發佈於",
     "participants": "參與人數",
+    "peopleJoined": "人參與",
+    "viewDetails": "查看詳情",
     "techStack": "技術棧",
     "members": "開發成員",
     "cancel": "取消",
@@ -296,8 +298,14 @@
     "filterCompetition": "競賽",
     "filterRecruitment": "招新活動",
     "filterWorkshop": "工作坊",
+    "countUnit": "場活動",
+    "totalPrefix": "累計",
+    "totalSuffix": "人次參與",
+    "sortByDate": "依時間排序",
+    "dateColumn": "日期",
+    "typeColumn": "類型",
     "chartTitle": "活動參與人數統計",
-    "chartSubtitle": "近一年各活動參與人數趨勢"
+    "chartSubtitle": "歷年各場活動的參與人數"
   },
   "join": {
     "title": "加入計算機協會",
