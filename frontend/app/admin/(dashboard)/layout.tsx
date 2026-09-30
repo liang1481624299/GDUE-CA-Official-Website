@@ -2,7 +2,10 @@
 
 /**
  * /admin/(dashboard) 布局：侧边栏 + 顶栏 + 内容区
- * - 客户端组件，挂载时检测登录状态，未登录跳转 /admin/login
+ * - 客户端组件，挂载时向后端校验登录态（/api/auth/me），禁止匿名访问：
+ *   未登录 / 会话失效 → /admin/login；须改初始密码 → /admin/change-password；
+ *   普通成员（无后台权限）→ 前台个人资料页
+ * - 侧边栏按角色隐藏无权限入口（仅界面层；接口权限由后端强制校验）
  * - 顶部显示当前用户名 + 退出登录
  * - 侧边栏含概览/活动/报名/Bug/设置入口
  */
@@ -30,7 +33,9 @@ import { useAdminLocale } from "@/app/admin/AdminProviders";
 import { locales, localeNames, type Locale } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
-import { getSession, logout, type AdminSession } from "@/lib/auth";
+import { fetchMe } from "@/lib/api/auth";
+import { ApiError } from "@/lib/api/client";
+import { clearLocalSession, isAdminRole, logout, saveSession, type AdminSession } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
 type NavItem = {
@@ -53,19 +58,22 @@ function isGroup(entry: NavEntry): entry is NavGroup {
   return "groupKey" in entry;
 }
 
+/** admin 及以上可见（与后端 require_role(Role.ADMIN) 对应） */
+const ADMIN_UP = ["super_admin", "admin"];
+
 const navEntries: NavEntry[] = [
   { key: "admin.dashboard.overview", href: "/admin", icon: LayoutDashboard },
   { key: "admin.dashboard.activities", href: "/admin/activities", icon: CalendarDays },
   {
     groupKey: "admin.dashboard.formReview",
     items: [
-      { key: "admin.dashboard.registrations", href: "/admin/registrations", icon: ClipboardList },
+      { key: "admin.dashboard.registrations", href: "/admin/registrations", icon: ClipboardList, roles: ADMIN_UP },
       { key: "admin.dashboard.bugs", href: "/admin/bugs", icon: Bug },
-      { key: "admin.dashboard.passwordResets", href: "/admin/password-resets", icon: KeyRound },
+      { key: "admin.dashboard.passwordResets", href: "/admin/password-resets", icon: KeyRound, roles: ADMIN_UP },
     ],
   },
   { key: "admin.dashboard.users", href: "/admin/users", icon: Users },
-  { key: "admin.dashboard.settings", href: "/admin/settings", icon: Settings },
+  { key: "admin.dashboard.settings", href: "/admin/settings", icon: Settings, roles: ADMIN_UP },
 ];
 
 export default function AdminDashboardLayout({
@@ -80,20 +88,38 @@ export default function AdminDashboardLayout({
   const [checked, setChecked] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
-  /** 路由守卫：未登录跳转登录页 */
+  /** 路由守卫：以后端校验结果为准（本地缓存可被篡改，不能作为授权依据） */
   useEffect(() => {
-    const s = getSession();
-    if (!s) {
-      router.replace("/admin/login");
-      return;
-    }
-    setSession(s);
-    setChecked(true);
+    let cancelled = false;
+    fetchMe()
+      .then((me) => {
+        if (cancelled) return;
+        const s = { username: me.username, role: me.role };
+        saveSession(s);
+        if (me.must_change_password) {
+          router.replace("/admin/change-password");
+          return;
+        }
+        if (!isAdminRole(me.role)) {
+          router.replace("/zh-CN/profile");
+          return;
+        }
+        setSession(s);
+        setChecked(true);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        if (err instanceof ApiError && err.status === 401) clearLocalSession();
+        router.replace("/admin/login");
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [router]);
 
   /** 退出登录 */
-  function handleLogout() {
-    logout();
+  async function handleLogout() {
+    await logout();
     router.replace("/admin/login");
   }
 

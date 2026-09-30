@@ -1,19 +1,31 @@
-"""FastAPI 入口：应用创建、路由注册、启动时初始化超级管理员。"""
+"""FastAPI 入口：应用创建、路由注册、安全中间件、启动时初始化超级管理员。"""
+import logging
 import os
+import secrets
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.api import activities, admin_stats, auth, bug_report, query, register, system, translations
+from app.api.auth import security_answer_digest
 from app.core.config import get_settings
-from app.core.middleware import ip_blacklist_middleware
-from app.core.security import Role, hash_password
+from app.core.csrf import CSRF_HEADER, csrf_middleware
+from app.core.middleware import ip_blacklist_middleware, security_headers_middleware
+from app.core.password_policy import check_password_strength
+from app.core.security import Role, hash_password, is_bcrypt_hash, verify_password
 from app.db.models import Base, SecurityQuestion, SystemSetting, User
 from app.db.session import async_session, engine
 
 settings = get_settings()
+logger = logging.getLogger("gdueca")
+
+# 旧版本预置的弱安全问题（答案可被轻易猜中），启动时自动清除
+_LEGACY_SECURITY_QUESTION = ("计算机协会成立于哪一年？", "2008")
+# 自动生成的初始超管口令写入该文件（权限 0600），首次登录后必须修改并删除此文件
+_INITIAL_PASSWORD_FILE = Path("initial_admin_password.txt")
 
 
 # ---------- 启动时：建表 + 轻量列迁移 + 初始化超级管理员 ----------
@@ -23,6 +35,9 @@ async def _migrate_columns(conn):
 
     expected = {
         "users": [
+            ("failed_login_count", "INTEGER DEFAULT 0"),
+            ("locked_until", "DATETIME NULL"),
+            ("password_changed_at", "DATETIME NULL"),
             ("timezone", "VARCHAR(64) NULL"),
             ("country", "VARCHAR(64) NULL"),
             ("region", "VARCHAR(128) NULL"),
@@ -46,6 +61,11 @@ async def _migrate_columns(conn):
             ("network_domains", "TEXT DEFAULT '[]'"),
         ],
     }
+    if conn.dialect.name == "postgresql":
+        # PostgreSQL 原生 ENUM 需显式追加新角色值
+        await conn.execute(text("ALTER TYPE userrole ADD VALUE IF NOT EXISTS 'MEMBER'"))
+    if conn.dialect.name != "sqlite":
+        return
     for table, columns in expected.items():
         rows = await conn.execute(text(f"PRAGMA table_info({table})"))
         existing = {row[1] for row in rows}
@@ -65,33 +85,54 @@ async def _init_db():
         if not rec:
             s.add(SystemSetting(id=1))
 
-        # 初始化安全问题（单例，id=1）
+        # 安全问题：不再预置默认问题；旧版明文答案迁移为哈希，弱默认问题直接清除
         sec_q = await s.get(SecurityQuestion, 1)
-        if not sec_q:
-            s.add(SecurityQuestion(
-                id=1,
-                question="计算机协会成立于哪一年？",
-                answer="2008",
-            ))
+        if sec_q and (sec_q.question, sec_q.answer) == _LEGACY_SECURITY_QUESTION:
+            await s.delete(sec_q)
+            logger.warning("已清除旧版默认安全问题，请超级管理员在后台重新设置")
+        elif sec_q and not is_bcrypt_hash(sec_q.answer):
+            sec_q.answer = hash_password(security_answer_digest(sec_q.answer))
 
-        # 初始化超级管理员（默认 admin/admin，必须首次登录改密）
+        # 初始化超级管理员：口令不满足强口令策略时自动生成随机强口令
         from sqlalchemy import select
-        existing = await s.execute(
+        existing = (await s.execute(
             select(User).where(User.email == settings.FIRST_SUPERADMIN_EMAIL)
-        )
-        if not existing.scalar_one_or_none():
-            admin = User(
-                username=settings.FIRST_SUPERADMIN_EMAIL.split("@")[0],
+        )).scalar_one_or_none()
+        username = settings.FIRST_SUPERADMIN_EMAIL.split("@")[0]
+        if not existing:
+            password = settings.FIRST_SUPERADMIN_PASSWORD
+            if check_password_strength(password, username, settings.FIRST_SUPERADMIN_EMAIL):
+                password = _generate_strong_password()
+                _INITIAL_PASSWORD_FILE.write_text(
+                    f"{settings.FIRST_SUPERADMIN_EMAIL}\n{password}\n", encoding="utf-8"
+                )
+                os.chmod(_INITIAL_PASSWORD_FILE, 0o600)
+                logger.warning(
+                    "已生成初始超级管理员随机口令，见 %s（首次登录后必须修改，并删除该文件）",
+                    _INITIAL_PASSWORD_FILE.resolve(),
+                )
+            s.add(User(
+                username=username,
                 email=settings.FIRST_SUPERADMIN_EMAIL,
-                password_hash=hash_password(settings.FIRST_SUPERADMIN_PASSWORD),
+                password_hash=hash_password(password),
                 role=Role.SUPER_ADMIN,
                 must_change_password=True,
                 student_id="00000000",
                 real_name="超级管理员",
                 phone="+8613800000000",
-            )
-            s.add(admin)
+            ))
+        elif verify_password("admin", existing.password_hash):
+            # 旧版本默认 admin/admin 仍未修改：强制下次登录改密
+            existing.must_change_password = True
+            logger.warning("超级管理员仍在使用默认弱口令，已强制要求登录后修改")
         await s.commit()
+
+
+def _generate_strong_password() -> str:
+    while True:
+        candidate = secrets.token_urlsafe(12) + secrets.choice("!@#$%^&*") + "Aa9"
+        if not check_password_strength(candidate):
+            return candidate
 
 
 @asynccontextmanager
@@ -105,25 +146,29 @@ app = FastAPI(
     description="广东第二师范学院计算机协会官网 FastAPI 后端 — 活动发布、报名收集、Bug 反馈、权限管理、数据导出",
     version="1.0.0",
     lifespan=lifespan,
+    # 生产环境默认关闭接口文档，减少攻击面
+    docs_url="/docs" if settings.ENABLE_API_DOCS else None,
+    redoc_url="/redoc" if settings.ENABLE_API_DOCS else None,
+    openapi_url="/openapi.json" if settings.ENABLE_API_DOCS else None,
 )
 
-# ---------- CORS ----------
-# 本项目鉴权使用 Bearer Token（Authorization 头），不依赖 Cookie，
-# 因此 allow_credentials 可设为 False，配合 allow_origins=["*"] 允许任意来源。
-# 生产环境可通过 CORS_ORIGINS 环境变量限定来源。
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.cors_origins_list or ["*"],
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# ---------- IP 黑名单 + Host 白名单中间件 ----------
-# 注意：此中间件注册为 ASGI 中间件；若需要全局拦截（包括文档 /health 之外的所有请求），
-# 可移至 middleware.py 并通过 app.middleware("http")(...) 挂载。
-# 这里为简单直接注册。
+# ---------- 中间件（后注册的在外层） ----------
+# 1. CSRF：写请求校验 X-CSRF-Token 与来源（最内层，先于路由执行）
+app.middleware("http")(csrf_middleware)
+# 2. IP 黑名单 + Host 白名单
 app.middleware("http")(ip_blacklist_middleware)
+# 3. 安全响应头（覆盖所有响应，包括被拦截的请求）
+app.middleware("http")(security_headers_middleware)
+# 4. CORS（最外层）：登录态走 Cookie，必须显式列出来源，禁止 "*"
+#    推荐前端通过同源反代访问 /api（Next.js rewrites / Nginx），此时无需 CORS
+if settings.cors_origins_list:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_origins_list,
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+        allow_headers=["Content-Type", CSRF_HEADER],
+    )
 
 
 # ---------- 健康检查 ----------

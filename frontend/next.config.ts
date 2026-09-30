@@ -4,10 +4,26 @@ import type { NextConfig } from "next";
  * Next.js 配置文件
  * - Turbopack 构建工具（Next.js 16 默认启用）
  * - 图片优化配置
- * - HTTP/3 与安全响应头
- * - Priority Hints 相关配置
+ * - 安全响应头（CSP 由 proxy.ts 按请求生成 nonce 后下发）
+ * - /api、/uploads 同源反代到 FastAPI 后端
  */
+
+/** 后端地址（仅服务端使用，不暴露给浏览器） */
+const BACKEND_URL = (process.env.BACKEND_URL ?? "http://127.0.0.1:8000").replace(/\/+$/, "");
+
 const nextConfig: NextConfig = {
+  // 不暴露 X-Powered-By: Next.js（减少指纹信息）
+  poweredByHeader: false,
+
+  // 浏览器统一请求同源 /api/*，由 Next.js 转发到后端：
+  // 登录 Cookie 为第一方 Cookie（SameSite=Strict 生效），无需开放 CORS
+  async rewrites() {
+    return [
+      { source: "/api/:path*", destination: `${BACKEND_URL}/api/:path*` },
+      { source: "/uploads/:path*", destination: `${BACKEND_URL}/uploads/:path*` },
+    ];
+  },
+
   // 图片优化配置
   images: {
     remotePatterns: [
@@ -40,12 +56,21 @@ const nextConfig: NextConfig = {
             value: "nosniff",
           },
           {
+            // 禁止被任何页面嵌入（防点击劫持），与 CSP frame-ancestors 'none' 一致
             key: "X-Frame-Options",
-            value: "SAMEORIGIN",
+            value: "DENY",
           },
           {
             key: "Referrer-Policy",
             value: "strict-origin-when-cross-origin",
+          },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), payment=(), usb=()",
+          },
+          {
+            key: "Cross-Origin-Opener-Policy",
+            value: "same-origin",
           },
         ],
       },

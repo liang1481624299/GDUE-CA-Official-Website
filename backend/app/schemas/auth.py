@@ -1,25 +1,32 @@
 """认证 & 用户 Pydantic 模型。"""
 from datetime import datetime
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, model_validator
 
+from app.core.password_policy import MAX_LENGTH as PASSWORD_MAX_LENGTH
+from app.core.password_policy import validate_password_strength
 from app.core.security import Role
-from app.schemas.common import UTCDatetime
+from app.schemas.common import MultilineText, PlainText, UTCDatetime
+
+# 学号 / 手机号只允许常见字符
+_STUDENT_ID_PATTERN = r"^[A-Za-z0-9\-]{1,32}$"
+_PHONE_PATTERN = r"^\+?[0-9\- ]{5,32}$"
 
 
 class LoginRequest(BaseModel):
-    username: str | None = None
+    username: str | None = Field(default=None, max_length=128)
     email: EmailStr | None = None
-    # 默认 admin/admin 仅 5 字符，放行以便首次登录
-    password: str = Field(min_length=1)
+    # 登录只做校验不做强度检查（强度在设置 / 修改密码时强制）
+    password: str = Field(min_length=1, max_length=PASSWORD_MAX_LENGTH)
     # 勾选「记住此设备」：空闲超时 30 分钟 → 30 天，token 硬顶 30 天
     remember_device: bool = False
 
 
-class TokenResponse(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
+class LoginResponse(BaseModel):
+    """登录成功：凭据通过 HttpOnly Cookie 下发，响应体不返回 token。"""
     role: Role
+    # 登录后轮换的 CSRF 令牌（防会话固定），前端用于后续写请求的 X-CSRF-Token 头
+    csrf_token: str
     username: str
     must_change_password: bool = False
 
@@ -47,21 +54,26 @@ class LoginSessionOut(BaseModel):
 
 
 class UserCreate(BaseModel):
-    username: str = Field(min_length=2, max_length=64)
+    username: PlainText = Field(min_length=2, max_length=64)
     email: EmailStr
-    password: str = Field(min_length=6)
-    role: Role = Role.EDITOR
-    student_id: str = Field(min_length=1, max_length=32)
-    real_name: str = Field(min_length=1, max_length=64)
-    phone: str = Field(min_length=1, max_length=32)
+    password: str = Field(max_length=PASSWORD_MAX_LENGTH)
+    role: Role = Role.MEMBER
+    student_id: str = Field(pattern=_STUDENT_ID_PATTERN)
+    real_name: PlainText = Field(min_length=1, max_length=64)
+    phone: str = Field(pattern=_PHONE_PATTERN)
+
+    @model_validator(mode="after")
+    def _strong_password(self) -> "UserCreate":
+        validate_password_strength(self.password, self.username, self.email)
+        return self
 
 
 class UserUpdate(BaseModel):
     """更新账号信息：自己可改基础资料，super_admin 额外可改 role/is_active"""
-    username: str | None = Field(default=None, min_length=2, max_length=64)
-    real_name: str | None = Field(default=None, min_length=1, max_length=64)
-    student_id: str | None = Field(default=None, min_length=1, max_length=32)
-    phone: str | None = Field(default=None, min_length=1, max_length=32)
+    username: PlainText | None = Field(default=None, min_length=2, max_length=64)
+    real_name: PlainText | None = Field(default=None, min_length=1, max_length=64)
+    student_id: str | None = Field(default=None, pattern=_STUDENT_ID_PATTERN)
+    phone: str | None = Field(default=None, pattern=_PHONE_PATTERN)
     role: Role | None = None
     is_active: bool | None = None
 
@@ -91,16 +103,16 @@ class UserOut(BaseModel):
 # ---------- 个人资料更新 ----------
 class ProfileUpdate(BaseModel):
     """用户自行更新资料：显示名称、真实姓名、手机号、学号、时区"""
-    username: str | None = Field(default=None, min_length=2, max_length=64)
-    real_name: str | None = Field(default=None, min_length=1, max_length=64)
-    phone: str | None = Field(default=None, min_length=1, max_length=32)
-    student_id: str | None = Field(default=None, min_length=1, max_length=32)
+    username: PlainText | None = Field(default=None, min_length=2, max_length=64)
+    real_name: PlainText | None = Field(default=None, min_length=1, max_length=64)
+    phone: str | None = Field(default=None, pattern=_PHONE_PATTERN)
+    student_id: str | None = Field(default=None, pattern=_STUDENT_ID_PATTERN)
     # IANA 时区字符串；空字符串 = 恢复自动探测（存 NULL）；不传 = 不修改
     timezone: str | None = Field(default=None, max_length=64)
     # 三级行政区地址；空字符串 = 清空（存 NULL）；不传 = 不修改
-    country: str | None = Field(default=None, max_length=64)
-    region: str | None = Field(default=None, max_length=128)
-    locality: str | None = Field(default=None, max_length=128)
+    country: PlainText | None = Field(default=None, max_length=64)
+    region: PlainText | None = Field(default=None, max_length=128)
+    locality: PlainText | None = Field(default=None, max_length=128)
 
 
 class AvatarUploadOut(BaseModel):
@@ -109,15 +121,16 @@ class AvatarUploadOut(BaseModel):
 
 # ---------- 修改密码 ----------
 class ChangePasswordRequest(BaseModel):
-    old_password: str = Field(min_length=1)
-    new_password: str = Field(min_length=6)
+    old_password: str = Field(min_length=1, max_length=PASSWORD_MAX_LENGTH)
+    # 强度在接口层结合用户名 / 邮箱校验
+    new_password: str = Field(min_length=1, max_length=PASSWORD_MAX_LENGTH)
 
 
 # ---------- 忘记密码申请 ----------
 class ForgotPasswordRequest(BaseModel):
     contact_email: EmailStr
-    username_hint: str | None = None
-    reason: str = Field(min_length=2, max_length=500)
+    username_hint: PlainText | None = Field(default=None, max_length=128)
+    reason: MultilineText = Field(min_length=2, max_length=500)
 
 
 class PasswordResetOut(BaseModel):
@@ -135,7 +148,7 @@ class PasswordResetOut(BaseModel):
 
 class PasswordResetHandleRequest(BaseModel):
     status: str = Field(pattern="^(handled|rejected)$")
-    admin_note: str | None = None
+    admin_note: MultilineText | None = Field(default=None, max_length=1000)
 
 
 # ---------- 安全问题恢复 ----------
@@ -145,12 +158,13 @@ class SecurityQuestionOut(BaseModel):
 
 
 class SecurityAnswerRequest(BaseModel):
-    answer: str = Field(min_length=1)
-    # 恢复后设置的新密码
-    new_password: str = Field(min_length=6)
+    answer: str = Field(min_length=1, max_length=256)
+    # 恢复后设置的新密码（强度在接口层结合超管用户名校验）
+    new_password: str = Field(min_length=1, max_length=PASSWORD_MAX_LENGTH)
 
 
 # ---------- 安全问题管理（仅 super_admin） ----------
 class SecurityQuestionUpdate(BaseModel):
-    question: str = Field(min_length=2, max_length=256)
-    answer: str = Field(min_length=1, max_length=256)
+    question: PlainText = Field(min_length=2, max_length=256)
+    # 答案需有一定强度，防止被枚举猜中
+    answer: str = Field(min_length=6, max_length=256)

@@ -23,6 +23,7 @@ import {
   fetchSecurityQuestion,
   recoverViaSecurityQuestion,
 } from "@/lib/api/auth";
+import { meetsPasswordPolicy } from "@/lib/passwordPolicy";
 
 export default function RecoverPage() {
   const { t } = useI18n();
@@ -43,7 +44,11 @@ export default function RecoverPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!answer || newPwd.length < 6) return;
+    if (!answer) return;
+    if (!meetsPasswordPolicy(newPwd)) {
+      setError(t("common.passwordPolicy"));
+      return;
+    }
     setLoading(true);
     setError(null);
     try {

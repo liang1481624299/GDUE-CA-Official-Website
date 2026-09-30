@@ -3,8 +3,9 @@
  *
  * 活动报名与社团报名的提交、列表、状态更新、导出。
  */
-import { apiFetch, API_BASE_URL, getToken } from "./client";
+import { apiFetch, API_BASE_URL } from "./client";
 import type {
+  SubmitReceipt,
   Registration,
   RegistrationCreate,
   RegistrationStatus,
@@ -13,7 +14,7 @@ import type {
 
 /** 活动报名：POST /api/registrations/for/{activityId} */
 export function submitRegistration(activityId: number, payload: RegistrationCreate) {
-  return apiFetch<Registration>(`/api/registrations/for/${activityId}`, {
+  return apiFetch<SubmitReceipt>(`/api/registrations/for/${activityId}`, {
     method: "POST",
     body: JSON.stringify(payload),
   });
@@ -21,7 +22,7 @@ export function submitRegistration(activityId: number, payload: RegistrationCrea
 
 /** 社团报名（意向部门入会）：POST /api/registrations/club */
 export function submitClubRegistration(payload: RegistrationCreate) {
-  return apiFetch<Registration>("/api/registrations/club", {
+  return apiFetch<SubmitReceipt>("/api/registrations/club", {
     method: "POST",
     body: JSON.stringify(payload),
   });
@@ -73,7 +74,7 @@ export function batchSetRegistrationStatus(
   );
 }
 
-/** 触发文件下载：浏览器直接打开导出 URL（带 token 通过查询参数） */
+/** 触发文件下载：浏览器直接打开导出 URL（登录态 Cookie 自动携带，URL 中不含任何凭据） */
 export function exportRegistrationsUrl(params: {
   activityId?: number;
   registrationType?: RegistrationType;
@@ -83,7 +84,5 @@ export function exportRegistrationsUrl(params: {
   if (params.activityId) qs.set("activity_id", String(params.activityId));
   if (params.registrationType) qs.set("registration_type", params.registrationType);
   qs.set("fmt", params.fmt);
-  const token = getToken();
-  if (token) qs.set("token", token);
   return `${API_BASE_URL}/api/registrations/export?${qs.toString()}`;
 }

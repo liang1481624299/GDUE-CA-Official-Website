@@ -7,7 +7,7 @@
  * - super_admin 可看到所有人、创建/删除账号、编辑所有人
  */
 import { useState, useEffect, useCallback } from "react";
-import { Loader2, Trash2, Plus, Pencil, ShieldCheck, Shield, UserPen, X } from "lucide-react";
+import { Loader2, Trash2, Plus, Pencil, ShieldCheck, Shield, UserPen, UserRound, X } from "lucide-react";
 import { useI18n } from "@/i18n/provider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,7 +27,7 @@ import {
 } from "@/lib/api/auth";
 import type { AdminUser, AdminRole, UserCreatePayload, UserUpdatePayload } from "@/types/api";
 
-const ROLE_OPTIONS: AdminRole[] = ["super_admin", "admin", "editor"];
+const ROLE_OPTIONS: AdminRole[] = ["super_admin", "admin", "editor", "member"];
 
 export default function UsersPage() {
   const { t } = useI18n();
@@ -48,7 +48,7 @@ export default function UsersPage() {
     username: "",
     email: "",
     password: "",
-    role: "editor",
+    role: "member",
     student_id: "",
     real_name: "",
     phone: "",
@@ -123,7 +123,7 @@ export default function UsersPage() {
         username: "",
         email: "",
         password: "",
-        role: "editor",
+        role: "member",
         student_id: "",
         real_name: "",
         phone: "",
@@ -152,6 +152,13 @@ export default function UsersPage() {
   }
 
   function roleBadge(role: string) {
+    if (role === "member")
+      return (
+        <Badge variant="outline" className="gap-1">
+          <UserRound className="h-3 w-3" />
+          {t("admin.users.roles.member")}
+        </Badge>
+      );
     if (role === "super_admin")
       return (
         <Badge variant="default" className="gap-1">
@@ -350,7 +357,7 @@ export default function UsersPage() {
                           <td className="px-3 py-3">
                             {isSuperAdmin ? (
                               <select
-                                value={editForm.role ?? "editor"}
+                                value={editForm.role ?? "member"}
                                 onChange={(e) => setEditForm({ ...editForm, role: e.target.value as AdminRole })}
                                 className="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-xs"
                               >

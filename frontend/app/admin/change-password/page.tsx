@@ -21,6 +21,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { changePassword } from "@/lib/api/auth";
+import { getSession, isAdminRole } from "@/lib/auth";
+import { meetsPasswordPolicy } from "@/lib/passwordPolicy";
 
 export default function ChangePasswordPage() {
   const { t } = useI18n();
@@ -38,8 +40,8 @@ export default function ChangePasswordPage() {
       setError(t("admin.changePassword.mismatch"));
       return;
     }
-    if (newPwd.length < 6) {
-      setError(t("admin.changePassword.error"));
+    if (!meetsPasswordPolicy(newPwd)) {
+      setError(t("common.passwordPolicy"));
       return;
     }
     setLoading(true);
@@ -47,7 +49,9 @@ export default function ChangePasswordPage() {
     try {
       await changePassword({ old_password: oldPwd, new_password: newPwd });
       setSuccess(true);
-      setTimeout(() => router.replace("/admin"), 1500);
+      // 管理员回后台；普通成员回前台个人资料页
+      const target = isAdminRole(getSession()?.role) ? "/admin" : "/zh-CN/profile";
+      setTimeout(() => router.replace(target), 1500);
     } catch (err) {
       const msg = err instanceof Error ? err.message : t("admin.changePassword.error");
       setError(msg);

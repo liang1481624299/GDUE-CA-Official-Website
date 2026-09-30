@@ -28,6 +28,7 @@ class UserRole(str, Enum):
     SUPER_ADMIN = "super_admin"
     ADMIN = "admin"
     EDITOR = "editor"
+    MEMBER = "member"   # 普通成员：无后台权限
 
 
 class User(Base):
@@ -36,11 +37,16 @@ class User(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     username: Mapped[str] = mapped_column(String(64), unique=True, index=True)
     email: Mapped[str] = mapped_column(String(128), unique=True, index=True)
+    # bcrypt 加盐哈希（不存储原始密码）
     password_hash: Mapped[str] = mapped_column(String(256))
     role: Mapped[UserRole] = mapped_column(SAEnum(UserRole))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     # 默认管理员首次登录后必须改密
     must_change_password: Mapped[bool] = mapped_column(Boolean, default=False)
+    # 登录失败处理：连续失败计数 + 锁定截止时间
+    failed_login_count: Mapped[int] = mapped_column(Integer, default=0)
+    locked_until: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    password_changed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     # --- 账号身份信息（用于身份验证和密码恢复） ---
     student_id: Mapped[str] = mapped_column(String(32), index=True)  # 学号
     real_name: Mapped[str] = mapped_column(String(64))               # 真实姓名
@@ -272,5 +278,6 @@ class SecurityQuestion(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     question: Mapped[str] = mapped_column(String(256))
-    answer: Mapped[str] = mapped_column(String(256))  # 明文存储，仅用于紧急恢复
+    # 答案的 bcrypt 哈希（规范化：去首尾空格 + 小写后再哈希），不存明文
+    answer: Mapped[str] = mapped_column(String(256))
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)

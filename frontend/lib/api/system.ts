@@ -4,11 +4,16 @@
  * 站点设置读写、IP 黑名单管理、网络配置变更历史。
  */
 import { apiFetch } from "./client";
-import type { NetworkConfigHistory, SystemSettings } from "@/types/api";
+import type { NetworkConfigHistory, PublicSystemSettings, SystemSettings } from "@/types/api";
 
+/** 公开站点信息（站点名、页脚、备案、系统时区等；不含安全配置） */
+export function fetchPublicSettings() {
+  return apiFetch<PublicSystemSettings>("/api/system/settings");
+}
+
+/** 完整系统配置（含 IP 黑名单 / 域名 / 网络配置，需 admin） */
 export function fetchSystemSettings() {
-  // 公开可读，不需要 admin 鉴权（GET /api/system/settings 无鉴权）
-  return apiFetch<SystemSettings>("/api/system/settings");
+  return apiFetch<SystemSettings>("/api/system/settings/admin", { withAuth: true });
 }
 
 export function updateSystemSettings(payload: Partial<SystemSettings>) {

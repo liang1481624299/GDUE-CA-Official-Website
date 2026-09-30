@@ -14,9 +14,15 @@ export interface LoginRequest {
   remember_device?: boolean;
 }
 
+/** 公开表单提交回执：只含回执码与提交时间，不回传任何个人信息 */
+export interface SubmitReceipt {
+  receipt_code: string;
+  submitted_at: string;
+}
+
+/** 登录响应：凭据在 HttpOnly Cookie 中，响应体只含展示信息与轮换后的 CSRF 令牌 */
 export interface LoginResponse {
-  access_token: string;
-  token_type: string;
+  csrf_token: string;
   role: string;
   username: string;
   must_change_password: boolean;
@@ -142,13 +148,14 @@ export interface UserCreatePayload {
   username: string;
   email: string;
   password: string;
-  role: "super_admin" | "admin" | "editor";
+  role: AdminRole;
   student_id: string;
   real_name: string;
   phone: string;
 }
 
-export type AdminRole = "super_admin" | "admin" | "editor";
+/** 账号角色：super_admin / admin / editor 可进入后台；member 为普通成员（无后台权限） */
+export type AdminRole = "super_admin" | "admin" | "editor" | "member";
 
 /** 更新账号信息：自己可改基础资料，super_admin 额外可改 role/is_active */
 export interface UserUpdatePayload {
@@ -295,6 +302,13 @@ export interface BugReportCreate {
 
 /* ----------------------- System Settings ----------------------- */
 
+/** 公开站点信息（GET /api/system/settings，访客可读） */
+export type PublicSystemSettings = Pick<
+  SystemSettings,
+  "site_name" | "footer" | "icp_info" | "club_checkin_open" | "system_timezone"
+>;
+
+/** 完整系统配置（GET /api/system/settings/admin，需 admin） */
 export interface SystemSettings {
   site_name: string;
   footer: string | null;

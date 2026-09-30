@@ -50,7 +50,8 @@
     "beijingTime": "Beijing Time",
     "localTime": "Local time",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "passwordPolicy": "At least 10 characters with 3 of: uppercase, lowercase, digits, symbols; no common passwords"
   },
   "home": {
     "hero": {
@@ -254,8 +255,8 @@
     "oldPasswordRequired": "Please enter your current password",
     "newPassword": "New password",
     "newPasswordPlaceholder": "Enter new password",
-    "passwordRule": "At least 8 characters with uppercase, lowercase and numbers",
-    "passwordTooShort": "Password must be at least 8 characters",
+    "passwordRule": "At least 10 characters with 3 of: uppercase, lowercase, digits, symbols; no common passwords",
+    "passwordTooShort": "At least 10 characters with 3 of: uppercase, lowercase, digits, symbols; no common passwords",
     "passwordWeak": "Password must contain uppercase, lowercase and numbers",
     "passwordSame": "New password cannot be the same as current password",
     "confirmPassword": "Confirm new password",
@@ -464,8 +465,6 @@
       "backToSite": "Back to Site",
       "forgotPassword": "Forgot Password?",
       "mustChangeWarning": "Default password detected, please change it first",
-      "savePassword": "Save username & password",
-      "autoLogin": "Automatic sign-in",
       "rememberDevice": "Remember this device (fewer verifications for 30 days)"
     },
     "changePassword": {
@@ -474,7 +473,7 @@
       "oldPassword": "Current Password",
       "oldPasswordPlaceholder": "Enter current password",
       "newPassword": "New Password",
-      "newPasswordPlaceholder": "At least 6 characters",
+      "newPasswordPlaceholder": "At least 10 characters with 3 of: uppercase, lowercase, digits, symbols; no common passwords",
       "confirmPassword": "Confirm New Password",
       "confirmPlaceholder": "Re-enter new password",
       "submit": "Change Password",
@@ -506,7 +505,7 @@
       "securityAnswer": "Answer",
       "securityAnswerPlaceholder": "Enter the answer to the security question",
       "newPassword": "New Password",
-      "newPasswordPlaceholder": "New password to set after recovery (min 6 chars)",
+      "newPasswordPlaceholder": "At least 10 characters with 3 of: uppercase, lowercase, digits, symbols; no common passwords",
       "submit": "Recover Account",
       "submitting": "Recovering...",
       "success": "Account recovered, please log in with new password",
@@ -761,7 +760,7 @@
       "email": "Email",
       "emailPlaceholder": "Used for login",
       "password": "Password",
-      "passwordPlaceholder": "At least 6 characters",
+      "passwordPlaceholder": "At least 10 characters with 3 of: uppercase, lowercase, digits, symbols; no common passwords",
       "role": "Role",
       "save": "Create Account",
       "cancel": "Cancel",
@@ -777,7 +776,8 @@
       "roles": {
         "super_admin": "Super Admin",
         "admin": "Admin",
-        "editor": "Editor"
+        "editor": "Editor",
+        "member": "Member"
       }
     }
   },

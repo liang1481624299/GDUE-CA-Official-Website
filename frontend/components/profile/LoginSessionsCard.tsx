@@ -119,7 +119,7 @@ export function LoginSessionsCard() {
       setKickTarget(null);
       if (res.current_kicked) {
         // 踢掉的是当前设备：本地登出并跳转登录页
-        logout();
+        await logout();
         router.push("/admin/login");
         return;
       }

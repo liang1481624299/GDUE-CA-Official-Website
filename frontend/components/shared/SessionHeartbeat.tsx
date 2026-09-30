@@ -10,7 +10,7 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { heartbeat } from "@/lib/api/auth";
-import { isLogged, logout } from "@/lib/auth";
+import { clearLocalSession, isLogged } from "@/lib/auth";
 import { ApiError } from "@/lib/api/client";
 
 const INTERVAL_MS = 4 * 60 * 1000;
@@ -29,7 +29,7 @@ export function SessionHeartbeat() {
       } catch (err) {
         // 会话已失效/被踢出 → 清除本地登录态
         if (err instanceof ApiError && err.status === 401) {
-          logout();
+          clearLocalSession();
           if (pathname.startsWith("/admin")) {
             window.location.href = "/admin/login";
           }
