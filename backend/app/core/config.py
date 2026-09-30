@@ -59,6 +59,11 @@ class Settings(BaseSettings):
     LOGIN_MAX_FAILURES: int = 5       # 连续失败次数阈值
     LOGIN_LOCK_MINUTES: int = 15      # 锁定时长
 
+    # ---- 日志 ----
+    LOG_LEVEL: str = "INFO"
+    # text：人读友好的单行文本；json：一行一个 JSON，便于日志系统采集
+    LOG_FORMAT: str = "text"
+
     # ---- API 文档（生产环境建议关闭，减少暴露面） ----
     ENABLE_API_DOCS: bool = False
 

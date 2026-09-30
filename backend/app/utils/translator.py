@@ -5,6 +5,7 @@
 - 缓存：TranslationCache 表，避免重复调用外部接口
 """
 import hashlib
+import logging
 import re
 
 import httpx
@@ -12,6 +13,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import TranslationCache
+
+logger = logging.getLogger("gdueca.translator")
 
 SUPPORTED_LANGS = {"zh-CN", "zh-TW", "en", "ja"}
 
@@ -87,10 +90,12 @@ async def translate_text(
     translated: str | None = None
     try:
         translated = await _translate_google(text, target_lang)
-    except Exception:
+    except Exception as e:
+        logger.warning("Google 翻译失败，改用 MyMemory：%s", e.__class__.__name__)
         try:
             translated = await _translate_mymemory(text, sl, target_lang)
-        except Exception:
+        except Exception as e2:
+            logger.warning("MyMemory 翻译失败，返回原文：%s", e2.__class__.__name__)
             return None
 
     if translated and translated.strip() and translated.strip() != text.strip():

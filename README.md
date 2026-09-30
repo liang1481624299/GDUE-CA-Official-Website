@@ -474,6 +474,7 @@ BACKEND_URL=http://127.0.0.1:8000
 | 访问控制 | 管理员 / 普通成员 / 访客三级角色；后台仅内网；可信代理白名单解析真实 IP（防 XFF 伪造）；公开接口不返回安全配置与草稿活动 |
 | 防暴力 / 防刷 | 登录、账号恢复、忘记密码、公开表单、回执查询按 IP 限流 |
 | 安全审计 | 登录成功 / 失败 / 锁定 / 内网拦截、改密、角色变更、账号增删、个人信息导出等写入 `audit_logs`（含来源 IP） |
+| 日志与追踪 | 每个请求分配 traceId（沿用 Nginx `$request_id`，否则后端生成），响应头 `X-Trace-Id` 回传；应用日志统一格式（`LOG_FORMAT=text/json`）且每行带 traceId；审计日志记录 traceId；访问日志不记录查询参数；未捕获异常返回带 `trace_id` 的 500，前端提示中显示错误编号 |
 | 数据备份 | `backend/scripts/backup_db.py`：SQLite 在线一致性快照 / PostgreSQL `pg_dump`，gzip 压缩、0600 权限、按天数轮转 |
 | 其他 | 安全响应头（CSP / X-Frame-Options / nosniff / HSTS / Referrer-Policy）；头像按文件魔数校验；弱 JWT 密钥自动替换；生产默认关闭 `/docs` |
 

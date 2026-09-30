@@ -30,10 +30,13 @@ export const API_BASE_URL =
 export class ApiError extends Error {
   status: number;
   detail: unknown;
-  constructor(status: number, detail: unknown, message?: string) {
+  /** 后端响应头 X-Trace-Id：报障时提供给管理员，可在日志中检索完整请求链路 */
+  traceId: string | null;
+  constructor(status: number, detail: unknown, message?: string, traceId: string | null = null) {
     super(message ?? (typeof detail === "string" ? detail : "API error"));
     this.status = status;
     this.detail = detail;
+    this.traceId = traceId;
   }
 }
 
@@ -142,7 +145,11 @@ export async function apiFetch<T>(
     } catch {
       // 非 JSON 响应，忽略
     }
-    throw new ApiError(res.status, data, extractDetail(data));
+    const traceId = res.headers.get("X-Trace-Id");
+    let message = extractDetail(data);
+    // 服务端错误附带错误编号，便于用户反馈、管理员按 traceId 查日志
+    if (res.status >= 500 && traceId) message += `（错误编号：${traceId.slice(0, 12)}）`;
+    throw new ApiError(res.status, data, message, traceId);
   }
 
   // 204 或空内容

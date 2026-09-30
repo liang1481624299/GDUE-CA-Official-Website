@@ -1,5 +1,6 @@
 """全局中间件：可信代理 IP 解析、IP 黑名单拦截、Host 域名白名单、安全响应头。"""
 import ipaddress
+import logging
 import time
 from functools import lru_cache
 from typing import Awaitable, Callable
@@ -7,6 +8,8 @@ from typing import Awaitable, Callable
 from fastapi import Request, Response
 
 from app.core.config import get_settings
+
+logger = logging.getLogger("gdueca.middleware")
 
 # 内存缓存，避免每个请求都查数据库（生产可换 Redis）
 _ip_blacklist_cache: set[str] = set()
@@ -150,7 +153,8 @@ async def ip_blacklist_middleware(
                 _host_whitelist_cache = set(rec.allowed_hosts or []) if rec else set()
                 _cache_ts = now
         except Exception:
-            pass
+            # 沿用旧缓存继续服务，但要留下记录：黑名单 / 域名白名单可能未生效
+            logger.warning("刷新 IP 黑名单 / 域名白名单缓存失败，沿用旧缓存", exc_info=True)
 
     # IP 检查
     ip = get_client_ip(request)

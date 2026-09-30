@@ -13,13 +13,17 @@ from app.api import activities, admin_stats, auth, bug_report, query, register, 
 from app.api.auth import security_answer_digest
 from app.core.config import get_settings
 from app.core.csrf import CSRF_HEADER, csrf_middleware
+from app.core.log import setup_logging
 from app.core.middleware import ip_blacklist_middleware, security_headers_middleware
 from app.core.password_policy import check_password_strength
 from app.core.security import Role, hash_password, is_bcrypt_hash, verify_password
+from app.core.trace import TRACE_HEADER, trace_middleware
 from app.db.models import Base, SecurityQuestion, SystemSetting, User
 from app.db.session import async_session, engine
 
 settings = get_settings()
+# 统一日志格式（含 traceId）：尽早初始化，覆盖启动阶段与 uvicorn 自身日志
+setup_logging(settings.LOG_LEVEL, settings.LOG_FORMAT)
 logger = logging.getLogger("gdueca")
 
 # 旧版本预置的弱安全问题（答案可被轻易猜中），启动时自动清除
@@ -34,6 +38,7 @@ async def _migrate_columns(conn):
     from sqlalchemy import text
 
     expected = {
+        "audit_logs": [("trace_id", "VARCHAR(64) NULL")],
         "users": [
             ("failed_login_count", "INTEGER DEFAULT 0"),
             ("locked_until", "DATETIME NULL"),
@@ -72,6 +77,9 @@ async def _migrate_columns(conn):
         for col, ddl in columns:
             if col not in existing:
                 await conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {ddl}"))
+    await conn.execute(text(
+        "CREATE INDEX IF NOT EXISTS ix_audit_logs_trace_id ON audit_logs (trace_id)"
+    ))
 
 
 async def _init_db():
@@ -159,7 +167,7 @@ app.middleware("http")(csrf_middleware)
 app.middleware("http")(ip_blacklist_middleware)
 # 3. 安全响应头（覆盖所有响应，包括被拦截的请求）
 app.middleware("http")(security_headers_middleware)
-# 4. CORS（最外层）：登录态走 Cookie，必须显式列出来源，禁止 "*"
+# 4. CORS：登录态走 Cookie，必须显式列出来源，禁止 "*"
 #    推荐前端通过同源反代访问 /api（Next.js rewrites / Nginx），此时无需 CORS
 if settings.cors_origins_list:
     app.add_middleware(
@@ -168,7 +176,10 @@ if settings.cors_origins_list:
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
         allow_headers=["Content-Type", CSRF_HEADER],
+        expose_headers=[TRACE_HEADER],
     )
+# 5. traceId（最外层）：覆盖所有请求，包括被 CORS / 黑名单 / CSRF 拦截的请求
+app.middleware("http")(trace_middleware)
 
 
 # ---------- 健康检查 ----------

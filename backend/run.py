@@ -13,6 +13,8 @@ if __name__ == "__main__":
         "app.main:app",
         host=settings.HOST,
         port=settings.PORT,
+        # 访问日志由 app.core.trace 中间件输出（统一格式 + traceId），关闭 uvicorn 自带的
+        access_log=False,
         reload=False,
         log_level="info",
     )

@@ -14,6 +14,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
+from app.core.log import current_trace_id
+
 
 def utcnow() -> datetime:
     return datetime.now(timezone.utc)
@@ -238,7 +240,16 @@ class AuditLog(Base):
     target: Mapped[str | None] = mapped_column(String(64), nullable=True)   # 如 "activity:5"
     detail: Mapped[str | None] = mapped_column(Text, nullable=True)
     ip: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # 产生该审计记录的请求 traceId，可据此在应用日志中检索完整请求链路
+    trace_id: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, index=True, default=lambda: _trace_or_none()
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+def _trace_or_none() -> str | None:
+    tid = current_trace_id()
+    return None if tid == "-" else tid
 
 
 # ---------- 网络配置变更历史（最近 5 次） ----------

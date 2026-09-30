@@ -27,6 +27,7 @@ gdue-ca.paperee.guru {
     reverse_proxy @backend 127.0.0.1:8000 {
         header_up X-Forwarded-For {remote_host}
         header_up X-Real-IP {remote_host}
+        header_up X-Request-ID {http.request.uuid}   # 链路追踪 traceId
         request_body {
             max_size 6MB
         }
@@ -36,6 +37,7 @@ gdue-ca.paperee.guru {
     reverse_proxy 127.0.0.1:3000 {
         header_up X-Forwarded-For {remote_host}
         header_up X-Real-IP {remote_host}
+        header_up X-Request-ID {http.request.uuid}   # 链路追踪 traceId
     }
 
     header {
@@ -56,6 +58,7 @@ api.paperee.guru {
     reverse_proxy 127.0.0.1:8000 {
         header_up X-Forwarded-For {remote_host}
         header_up X-Real-IP {remote_host}
+        header_up X-Request-ID {http.request.uuid}   # 链路追踪 traceId
         header_up X-Forwarded-Proto {scheme}
         request_body {
             max_size 6MB     # 头像上传 ≤5MB 留余量
