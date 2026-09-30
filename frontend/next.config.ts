@@ -9,7 +9,7 @@ import type { NextConfig } from "next";
  */
 
 /** 后端地址（仅服务端使用，不暴露给浏览器） */
-const BACKEND_URL = (process.env.BACKEND_URL ?? "http://127.0.0.1:8000").replace(/\/+$/, "");
+const BACKEND_URL = (process.env.BACKEND_URL || "http://127.0.0.1:8000").replace(/\/+$/, "");
 
 const nextConfig: NextConfig = {
   // 不暴露 X-Powered-By: Next.js（减少指纹信息）

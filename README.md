@@ -277,6 +277,7 @@ GDUECA/
 
 ```bash
 cd backend
+cp .env.example .env   # 环境变量完整清单及说明见该文件，按需修改
 pip install -r requirements.txt
 python run.py
 # 默认仅监听 http://127.0.0.1:8000（浏览器经前端同源 /api 访问后端）
@@ -314,7 +315,7 @@ pnpm run dev      # 或 npm run dev
 前端通过 `next.config.ts` 的 rewrites 把同源 `/api/*`、`/uploads/*` 转发到后端，浏览器不直接访问 8000 端口。后端地址（默认 `http://127.0.0.1:8000`）**在构建时**读取，修改后需重新 `pnpm build`：
 
 ```bash
-# frontend/.env.local
+# cp frontend/.env.example frontend/.env.local（完整清单及说明见该文件）
 BACKEND_URL=http://127.0.0.1:8000
 # 仅在前后端跨域部署时设置（同时需配置后端 CORS_ORIGINS），一般留空
 # NEXT_PUBLIC_API_BASE_URL=https://api.example.com

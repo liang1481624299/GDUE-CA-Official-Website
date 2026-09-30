@@ -19,11 +19,12 @@
  *   局域网 IP / 域名访问都无需跨域，Cookie 为第一方 Cookie
  * - 服务端（RSC/SSR）：直连后端 BACKEND_URL（默认 http://127.0.0.1:8000）
  */
+// 用 || 而非 ??：.env 中写成空值（VAR=）时视同未设置
 export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ??
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
   (typeof window !== "undefined"
     ? ""
-    : process.env.BACKEND_URL ?? "http://127.0.0.1:8000");
+    : process.env.BACKEND_URL || "http://127.0.0.1:8000");
 
 /** 标准化后端错误响应：FastAPI 通常返回 { detail: string | [{msg}] ] } */
 export class ApiError extends Error {

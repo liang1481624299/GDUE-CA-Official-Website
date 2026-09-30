@@ -25,6 +25,10 @@ _JWT_SECRET_FILE = Path(".jwt_secret")
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
+    # ---- 服务监听（python run.py 使用） ----
+    HOST: str = "127.0.0.1"
+    PORT: int = 8000
+
     # ---- 数据库 ----
     DATABASE_URL: str = "sqlite+aiosqlite:///./assoc.db"
 
