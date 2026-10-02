@@ -20,5 +20,10 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <AdminProviders>{children}</AdminProviders>;
+  // admin-theme：后台沿用原蓝色主题（见 globals.css :root:has(.admin-theme)）
+  return (
+    <div className="admin-theme contents">
+      <AdminProviders>{children}</AdminProviders>
+    </div>
+  );
 }

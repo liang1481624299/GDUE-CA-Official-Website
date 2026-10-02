@@ -3,12 +3,14 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.middleware import get_client_ip
 from app.core.security import Role, require_role
 from app.db.models import AuditLog, NetworkConfigHistory, SystemSetting
 from app.db.session import get_db
 from app.schemas.system import (
     NetworkConfigHistoryOut,
     SystemSettingOut,
+    SystemSettingPublicOut,
     SystemSettingUpdate,
 )
 
@@ -63,9 +65,18 @@ async def _get_or_create_settings(db: AsyncSession) -> SystemSetting:
     return rec
 
 
-# ---------- 读取（公开可读站点基本信息；安全配置需管理员） ----------
-@router.get("/settings", response_model=SystemSettingOut)
+# ---------- 读取：公开接口仅返回站点展示信息 ----------
+@router.get("/settings", response_model=SystemSettingPublicOut)
 async def get_settings(db: AsyncSession = Depends(get_db)):
+    return await _get_or_create_settings(db)
+
+
+# ---------- 读取：完整配置（含安全配置，需 admin） ----------
+@router.get("/settings/admin", response_model=SystemSettingOut)
+async def get_settings_admin(
+    user: dict = Depends(require_role(Role.ADMIN)),
+    db: AsyncSession = Depends(get_db),
+):
     return await _get_or_create_settings(db)
 
 
@@ -92,7 +103,7 @@ async def update_settings(
         if v is not None:
             setattr(rec, k, v)
     uid = int(user["user_id"])
-    client_ip = request.client.host if request.client else None
+    client_ip = get_client_ip(request)
     _log(db, uid, "system.settings.update",
          f"changed: {changed_keys}" if changed_keys else "no-op",
          client_ip)
@@ -125,11 +136,17 @@ async def add_ip_to_blacklist(
     user: dict = Depends(require_role(Role.ADMIN)),
     db: AsyncSession = Depends(get_db),
 ):
+    import ipaddress
+    ip = ip.strip()
+    try:
+        ipaddress.ip_network(ip, strict=False)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="无效的 IP / CIDR")
     rec = await _get_or_create_settings(db)
     if ip not in rec.ip_blacklist:
         rec.ip_blacklist = [*rec.ip_blacklist, ip]
         _log(db, int(user["user_id"]), "ip.blacklist.add", ip,
-             request.client.host if request.client else None)
+             get_client_ip(request))
     return {"blacklist": rec.ip_blacklist}
 
 
@@ -143,5 +160,5 @@ async def remove_ip_from_blacklist(
     rec = await _get_or_create_settings(db)
     rec.ip_blacklist = [x for x in rec.ip_blacklist if x != ip]
     _log(db, int(user["user_id"]), "ip.blacklist.remove", ip,
-         request.client.host if request.client else None)
+         get_client_ip(request))
     return {"blacklist": rec.ip_blacklist}

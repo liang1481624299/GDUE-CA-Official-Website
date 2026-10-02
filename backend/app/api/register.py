@@ -8,9 +8,11 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.middleware import get_client_ip
+from app.core.rate_limit import rate_limit
 from app.core.security import Role, require_role
 from app.db.models import Activity, AuditLog, Registration, RegistrationType
 from app.db.session import get_db
+from app.schemas.common import SubmitReceiptOut, clean_multiline_text
 from app.schemas.register import (
     RegistrationCreate,
     RegistrationOut,
@@ -41,7 +43,16 @@ async def _unique_receipt_code(db: AsyncSession) -> str:
 
 
 # ---------- 活动报名（公开，按活动） ----------
-@router.post("/for/{activity_id}", response_model=RegistrationOut, status_code=status.HTTP_201_CREATED)
+# 公开表单按 IP 限流，防止批量灌水
+_submit_limit = rate_limit("registration.submit", limit=10, window_seconds=600)
+
+
+@router.post(
+    "/for/{activity_id}",
+    response_model=SubmitReceiptOut,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(_submit_limit)],
+)
 async def submit_for_activity(
     activity_id: int,
     req: RegistrationCreate,
@@ -53,7 +64,7 @@ async def submit_for_activity(
         raise HTTPException(status_code=404, detail="活动不存在")
 
     # 状态检查
-    if activity.status not in ("published", "registration_open"):
+    if activity.status.value not in ("published", "registration_open"):
         raise HTTPException(status_code=400, detail="活动当前不接受报名")
     if activity.register_start and datetime.now() < activity.register_start:
         raise HTTPException(status_code=400, detail="报名尚未开始")
@@ -83,11 +94,16 @@ async def submit_for_activity(
     await db.flush()
     _log(db, None, "registration.activity.submit", f"activity:{activity_id}",
          reg.submit_ip)
-    return reg
+    return SubmitReceiptOut(receipt_code=reg.receipt_code, submitted_at=reg.submitted_at)
 
 
 # ---------- 社团报名（公开，意向部门入会，无需关联活动） ----------
-@router.post("/club", response_model=RegistrationOut, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/club",
+    response_model=SubmitReceiptOut,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(_submit_limit)],
+)
 async def submit_club_registration(
     req: RegistrationCreate,
     request: Request,
@@ -107,7 +123,7 @@ async def submit_club_registration(
     db.add(reg)
     await db.flush()
     _log(db, None, "registration.club.submit", None, reg.submit_ip)
-    return reg
+    return SubmitReceiptOut(receipt_code=reg.receipt_code, submitted_at=reg.submitted_at)
 
 
 # ---------- 管理员：列表 + 筛选 ----------
@@ -187,7 +203,7 @@ async def batch_update_registrations(
 async def update_registration_status(
     reg_id: int,
     status: RegistrationStatus | None = Query(default=None),
-    remark: str | None = None,
+    remark: str | None = Query(default=None, max_length=1000),
     request: Request = Request,
     user: dict = Depends(require_role(Role.ADMIN)),
     db: AsyncSession = Depends(get_db),
@@ -203,9 +219,9 @@ async def update_registration_status(
             )
         reg.status = status
     if remark is not None:
-        reg.remark = remark
+        reg.remark = clean_multiline_text(remark)
     _log(db, int(user["user_id"]), "registration.update", f"reg:{reg_id}",
-         request.client.host if request.client else None)
+         get_client_ip(request))
     return reg
 
 
@@ -215,6 +231,7 @@ async def export_registrations(
     activity_id: int | None = Query(default=None),
     registration_type: RegistrationTypeSchema | None = Query(default=None),
     fmt: Literal["csv", "xlsx"] = "xlsx",
+    request: Request = Request,
     user: dict = Depends(require_role(Role.ADMIN)),
     db: AsyncSession = Depends(get_db),
 ):
@@ -233,6 +250,9 @@ async def export_registrations(
 
     result = await db.execute(stmt)
     rows = result.scalars().all()
+    # 个人信息批量导出属于敏感操作，记录审计日志（GB/T 35274）
+    _log(db, int(user["user_id"]), f"registration.export_{fmt}",
+         f"{filename} rows:{len(rows)}", get_client_ip(request))
 
     if fmt == "csv":
         csv_bytes = registrations_to_csv(rows)

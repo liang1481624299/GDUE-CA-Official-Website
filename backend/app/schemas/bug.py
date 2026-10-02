@@ -3,14 +3,14 @@ from datetime import datetime
 
 from pydantic import BaseModel, EmailStr, Field, model_validator
 
-from app.schemas.common import UTCDatetime
+from app.schemas.common import MultilineText, UTCDatetime
 
 
 class BugReportCreate(BaseModel):
     contact_email: EmailStr | None = None
-    contact_phone: str | None = Field(default=None, max_length=48)
-    description: str = Field(min_length=1, max_length=2000)
-    extra: str | None = Field(default=None, max_length=2000)
+    contact_phone: str | None = Field(default=None, pattern=r"^\+?[0-9\- ()]{5,48}$")
+    description: MultilineText = Field(min_length=1, max_length=2000)
+    extra: MultilineText | None = Field(default=None, max_length=2000)
 
     @model_validator(mode="after")
     def check_contact(self) -> "BugReportCreate":

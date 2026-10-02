@@ -43,6 +43,8 @@
     "by": "作者",
     "publishedOn": "公開日",
     "participants": "参加人数",
+    "peopleJoined": "人が参加",
+    "viewDetails": "詳細を見る",
     "techStack": "技術スタック",
     "members": "開発メンバー",
     "cancel": "キャンセル",
@@ -50,7 +52,8 @@
     "beijingTime": "北京時間",
     "localTime": "ローカル時間",
     "yes": "はい",
-    "no": "いいえ"
+    "no": "いいえ",
+    "passwordPolicy": "10文字以上で、英大文字・英小文字・数字・記号のうち3種類以上を含み、よく使われるパスワードは不可"
   },
   "home": {
     "hero": {
@@ -254,8 +257,8 @@
     "oldPasswordRequired": "現在のパスワードを入力してください",
     "newPassword": "新しいパスワード",
     "newPasswordPlaceholder": "新しいパスワードを入力",
-    "passwordRule": "8 文字以上、大文字・小文字・数字を含めてください",
-    "passwordTooShort": "パスワードは 8 文字以上必要です",
+    "passwordRule": "10文字以上で、英大文字・英小文字・数字・記号のうち3種類以上を含み、よく使われるパスワードは不可",
+    "passwordTooShort": "10文字以上で、英大文字・英小文字・数字・記号のうち3種類以上を含み、よく使われるパスワードは不可",
     "passwordWeak": "パスワードには大文字・小文字・数字を含める必要があります",
     "passwordSame": "新しいパスワードは現在のパスワードと同じにできません",
     "confirmPassword": "新しいパスワード（確認）",
@@ -295,8 +298,14 @@
     "filterCompetition": "コンテスト",
     "filterRecruitment": "新歓活動",
     "filterWorkshop": "ワークショップ",
+    "countUnit": "件のイベント",
+    "totalPrefix": "累計",
+    "totalSuffix": "人が参加",
+    "sortByDate": "新しい順",
+    "dateColumn": "日付",
+    "typeColumn": "種類",
     "chartTitle": "活動参加者統計",
-    "chartSubtitle": "過去1年間の各活動の参加者数推移"
+    "chartSubtitle": "歴代イベントごとの参加人数"
   },
   "join": {
     "title": "コンピュータ協会に入会",
@@ -464,8 +473,6 @@
       "backToSite": "サイトに戻る",
       "forgotPassword": "パスワードをお忘れですか？",
       "mustChangeWarning": "デフォルトパスワードが検出されました。先に変更してください",
-      "savePassword": "アカウントとパスワードを保存",
-      "autoLogin": "自動ログイン",
       "rememberDevice": "この端末を記憶する（30日間認証を減らす）"
     },
     "changePassword": {
@@ -474,7 +481,7 @@
       "oldPassword": "現在のパスワード",
       "oldPasswordPlaceholder": "現在のパスワードを入力",
       "newPassword": "新しいパスワード",
-      "newPasswordPlaceholder": "6文字以上",
+      "newPasswordPlaceholder": "10文字以上で、英大文字・英小文字・数字・記号のうち3種類以上を含み、よく使われるパスワードは不可",
       "confirmPassword": "新しいパスワード（確認）",
       "confirmPlaceholder": "新しいパスワードを再入力",
       "submit": "パスワード変更",
@@ -506,7 +513,7 @@
       "securityAnswer": "答え",
       "securityAnswerPlaceholder": "セキュリティの質問の答えを入力",
       "newPassword": "新しいパスワード",
-      "newPasswordPlaceholder": "復元後に設定する新パスワード（6文字以上）",
+      "newPasswordPlaceholder": "10文字以上で、英大文字・英小文字・数字・記号のうち3種類以上を含み、よく使われるパスワードは不可",
       "submit": "アカウント復元",
       "submitting": "復元中...",
       "success": "アカウントが復元されました。新パスワードでログインしてください",
@@ -761,7 +768,7 @@
       "email": "メール",
       "emailPlaceholder": "ログインに使用",
       "password": "パスワード",
-      "passwordPlaceholder": "6 文字以上",
+      "passwordPlaceholder": "10文字以上で、英大文字・英小文字・数字・記号のうち3種類以上を含み、よく使われるパスワードは不可",
       "role": "ロール",
       "save": "アカウント作成",
       "cancel": "キャンセル",
@@ -777,7 +784,8 @@
       "roles": {
         "super_admin": "スーパー管理者",
         "admin": "管理者",
-        "editor": "編集者"
+        "editor": "編集者",
+        "member": "一般メンバー"
       }
     }
   },

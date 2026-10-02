@@ -20,7 +20,8 @@
  */
 import { useEffect, useState } from "react";
 import { fetchProfile } from "@/lib/api/auth";
-import { fetchSystemSettings } from "@/lib/api/system";
+import { fetchPublicSettings } from "@/lib/api/system";
+import { isLogged } from "@/lib/auth";
 import type { AdminUser } from "@/types/api";
 
 const FALLBACK = "Asia/Shanghai";
@@ -36,10 +37,9 @@ function detectBrowserTz(): string {
   return "";
 }
 
-/** 当前是否处于「已登录管理员」状态（仅看 token 存在性） */
+/** 当前是否处于已登录状态（本地展示信息；接口失败时视为未登录） */
 function isLoggedIn(): boolean {
-  if (typeof window === "undefined") return false;
-  return Boolean(window.localStorage.getItem("gdueca_admin_token"));
+  return isLogged();
 }
 
 export interface EffectiveTimezone {
@@ -101,7 +101,7 @@ export function useEffectiveTimezone(): EffectiveTimezone {
     }
 
     tasks.push(
-      fetchSystemSettings()
+      fetchPublicSettings()
         .then((cfg) => {
           if (cfg.system_timezone && cfg.system_timezone.trim()) {
             systemTz = cfg.system_timezone;

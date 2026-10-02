@@ -19,6 +19,7 @@ import { useI18n } from "@/i18n/provider";
 import { Button } from "@/components/ui/button";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { cn } from "@/lib/utils";
+import { navTransitionTypes } from "@/lib/navTransition";
 
 /** 导航项配置（与 NavDesktop 保持一致；不抽到第三个文件以遵守「仅 2 个导航栏 tsx」约束） */
 const navItems = [
@@ -202,6 +203,7 @@ export function NavMobile({
                 <Link
                   key={item.key}
                   href={localePath(item.href)}
+                  transitionTypes={navTransitionTypes(pathname, locale, item.href)}
                   onClick={handleDrawerNavigate}
                   className={cn(
                     "px-4 py-3 rounded-md text-sm font-medium transition-colors",
@@ -316,7 +318,11 @@ export function NavMobile({
             {/* 底部 CTA + 用户菜单 */}
             <div className="p-4 border-t border-border shrink-0 flex items-center gap-3">
               <Button asChild className="flex-1">
-                <Link href={localePath("/join")} onClick={handleDrawerNavigate}>
+                <Link
+                  href={localePath("/join")}
+                  transitionTypes={navTransitionTypes(pathname, locale, "/join")}
+                  onClick={handleDrawerNavigate}
+                >
                   {t("nav.join")}
                 </Link>
               </Button>

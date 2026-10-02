@@ -1,5 +1,5 @@
 """回执码公开查询 + 签到：报名提交后凭回执码查进度 / 到场签到（不返回个人隐私字段）。"""
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Path
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,6 +12,7 @@ from app.db.models import (
     SystemSetting,
     utcnow,
 )
+from app.core.rate_limit import rate_limit
 from app.db.session import get_db
 
 router = APIRouter(prefix="/api/query", tags=["query"])
@@ -53,8 +54,15 @@ def _bug_response(bug: BugReport) -> dict:
     }
 
 
-@router.get("/{receipt_code}")
-async def query_receipt(receipt_code: str, db: AsyncSession = Depends(get_db)):
+# 回执码只含字母数字和连字符；按 IP 限流防止枚举
+ReceiptCode = Path(pattern=r"^[A-Za-z0-9\-]{4,40}$")
+
+
+@router.get(
+    "/{receipt_code}",
+    dependencies=[Depends(rate_limit("receipt.query", limit=30, window_seconds=60))],
+)
+async def query_receipt(receipt_code: str = ReceiptCode, db: AsyncSession = Depends(get_db)):
     code = receipt_code.strip().upper()
 
     reg = (
@@ -73,8 +81,11 @@ async def query_receipt(receipt_code: str, db: AsyncSession = Depends(get_db)):
 
 
 # ---------- 公开签到：报名者凭回执码签到，状态自动变为已签到 ----------
-@router.post("/{receipt_code}/checkin")
-async def checkin_receipt(receipt_code: str, db: AsyncSession = Depends(get_db)):
+@router.post(
+    "/{receipt_code}/checkin",
+    dependencies=[Depends(rate_limit("receipt.checkin", limit=10, window_seconds=60))],
+)
+async def checkin_receipt(receipt_code: str = ReceiptCode, db: AsyncSession = Depends(get_db)):
     code = receipt_code.strip().upper()
 
     reg = (

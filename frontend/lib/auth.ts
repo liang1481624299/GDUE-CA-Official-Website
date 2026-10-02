@@ -1,119 +1,88 @@
 /**
- * 管理员前端鉴权工具
+ * 前端登录态工具
  *
- * - 登录成功后把 JWT 存入 localStorage
- * - 提供 isLogged / logout / requireAuth 等便捷方法
- * - 与 lib/api.ts 的 withAuth 配合：apiFetch 自动读取 token 并附加 Authorization 头
+ * 安全设计：
+ * - 登录凭据（JWT）由后端写入 HttpOnly + SameSite=Strict Cookie，前端脚本无法读取，
+ *   即使页面存在 XSS 也无法窃取登录态
+ * - localStorage 只缓存「用户名 + 角色」用于界面展示（非敏感），真实权限一律以后端校验为准
+ * - 不在浏览器中保存任何密码（记住密码交给浏览器自带的密码管理器）
  */
+import { secureFetch, setCsrfToken } from "@/lib/api/client";
 
-const TOKEN_KEY = "gdueca_admin_token";
-const USER_KEY = "gdueca_admin_user";
+const USER_KEY = "gdueca_user";
+/** 旧版本遗留的本地存储键：令牌 / base64 明文密码 / 自动登录标记，启动时清除 */
+const LEGACY_KEYS = [
+  "gdueca_admin_token",
+  "gdueca_admin_user",
+  "gdueca_saved_creds",
+  "gdueca_autologin",
+];
+
+/** 可进入后台管理的角色（普通成员 member 与访客不可进入） */
+export const ADMIN_ROLES = new Set(["super_admin", "admin", "editor"]);
 
 export interface AdminSession {
-  token: string;
   username: string;
   role: string;
 }
 
-/** 写入登录会话（登录成功后调用） */
-export function saveSession(session: AdminSession) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(TOKEN_KEY, session.token);
-  window.localStorage.setItem(USER_KEY, JSON.stringify({
-    username: session.username,
-    role: session.role,
-  }));
+function purgeLegacyStorage() {
+  try {
+    for (const key of LEGACY_KEYS) window.localStorage.removeItem(key);
+  } catch {
+    /* 存储不可用时忽略 */
+  }
 }
 
-/** 读取当前会话（仅客户端） */
+/** 写入登录会话展示信息（登录成功后调用） */
+export function saveSession(session: AdminSession, csrfToken?: string) {
+  if (typeof window === "undefined") return;
+  purgeLegacyStorage();
+  if (csrfToken) setCsrfToken(csrfToken);
+  window.localStorage.setItem(
+    USER_KEY,
+    JSON.stringify({ username: session.username, role: session.role })
+  );
+}
+
+/** 读取当前会话展示信息（仅客户端；不代表服务端会话仍有效） */
 export function getSession(): AdminSession | null {
   if (typeof window === "undefined") return null;
-  const token = window.localStorage.getItem(TOKEN_KEY);
+  purgeLegacyStorage();
   const userStr = window.localStorage.getItem(USER_KEY);
-  if (!token || !userStr) return null;
+  if (!userStr) return null;
   try {
     const user = JSON.parse(userStr) as { username: string; role: string };
-    return { token, username: user.username, role: user.role };
+    return { username: user.username, role: user.role };
   } catch {
     return null;
   }
 }
 
-/** 是否已登录 */
+/** 是否（可能）已登录：用于决定是否请求需要登录的接口 */
 export function isLogged(): boolean {
   return !!getSession();
 }
 
-/** 退出登录：清除本地存储 */
-export function logout() {
+/** 是否具备后台管理角色 */
+export function isAdminRole(role: string | null | undefined): boolean {
+  return !!role && ADMIN_ROLES.has(role);
+}
+
+/** 仅清除本地展示信息（会话已在服务端失效时使用） */
+export function clearLocalSession() {
   if (typeof window === "undefined") return;
-  window.localStorage.removeItem(TOKEN_KEY);
   window.localStorage.removeItem(USER_KEY);
+  setCsrfToken(null);
 }
 
-/**
- * 客户端路由守卫：在 admin 页面 useEffect 中调用
- * 返回 true 表示通过；false 表示未登录，调用方应跳转 /admin/login
- */
-export function requireAuth(redirectTo = "/admin/login"): boolean {
-  if (!isLogged()) {
-    if (typeof window !== "undefined") {
-      window.location.href = redirectTo;
-    }
-    return false;
-  }
-  return true;
-}
-
-/* ---------- 登录选项：保存账号密码 / 自动登录 ---------- */
-
-const CREDS_KEY = "gdueca_saved_creds";
-const AUTO_LOGIN_KEY = "gdueca_autologin";
-
-export interface SavedCreds {
-  username: string;
-  password: string;
-}
-
-/** 保存账号密码（base64 编码存储，仅作便捷预填；登录页勾选使用） */
-export function saveCreds(creds: SavedCreds) {
+/** 退出登录：服务端撤销会话并清除 Cookie，再清除本地展示信息 */
+export async function logout() {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(
-      CREDS_KEY,
-      window.btoa(unescape(encodeURIComponent(JSON.stringify(creds))))
-    );
+    await secureFetch("/api/auth/logout", { method: "POST" });
   } catch {
-    /* 存储失败静默忽略 */
+    /* 网络异常时仍清除本地信息 */
   }
-}
-
-/** 读取保存的账号密码（未保存返回 null） */
-export function getSavedCreds(): SavedCreds | null {
-  if (typeof window === "undefined") return null;
-  const raw = window.localStorage.getItem(CREDS_KEY);
-  if (!raw) return null;
-  try {
-    return JSON.parse(decodeURIComponent(escape(window.atob(raw)))) as SavedCreds;
-  } catch {
-    return null;
-  }
-}
-
-/** 清除保存的账号密码 */
-export function clearCreds() {
-  if (typeof window === "undefined") return;
-  window.localStorage.removeItem(CREDS_KEY);
-}
-
-/** 自动登录开关 */
-export function isAutoLogin(): boolean {
-  if (typeof window === "undefined") return false;
-  return window.localStorage.getItem(AUTO_LOGIN_KEY) === "1";
-}
-
-export function setAutoLogin(on: boolean) {
-  if (typeof window === "undefined") return;
-  if (on) window.localStorage.setItem(AUTO_LOGIN_KEY, "1");
-  else window.localStorage.removeItem(AUTO_LOGIN_KEY);
+  clearLocalSession();
 }

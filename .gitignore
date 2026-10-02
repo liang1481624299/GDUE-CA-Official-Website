@@ -9,6 +9,9 @@ venv/
 backend/.env
 backend/assoc.db
 backend/uploads/
+backend/backups/
+backend/.jwt_secret
+backend/initial_admin_password.txt
 
 # Node / frontend (also see frontend/.gitignore)
 node_modules/

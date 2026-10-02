@@ -1,7 +1,26 @@
 """系统配置 Pydantic 模型。"""
+import ipaddress
+import re
+
 from pydantic import BaseModel, Field, field_validator
 
-from app.schemas.common import UTCDatetime
+from app.schemas.common import MultilineText, PlainText, UTCDatetime
+
+_HOST_RE = re.compile(
+    r"^(?:\*\.)?(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9](?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?$"
+)
+_ORIGIN_RE = re.compile(r"^https?://[A-Za-z0-9.\-\[\]:]+$")
+
+
+class SystemSettingPublicOut(BaseModel):
+    """公开接口只返回站点展示信息，不暴露 IP 黑名单 / 域名 / 网络等安全配置。"""
+    site_name: str
+    footer: str | None
+    icp_info: str | None
+    club_checkin_open: bool
+    system_timezone: str = "Asia/Shanghai"
+
+    model_config = {"from_attributes": True}
 
 
 class SystemSettingOut(BaseModel):
@@ -24,9 +43,9 @@ class SystemSettingOut(BaseModel):
 
 
 class SystemSettingUpdate(BaseModel):
-    site_name: str | None = Field(default=None, max_length=128)
-    footer: str | None = None
-    icp_info: str | None = Field(default=None, max_length=128)
+    site_name: PlainText | None = Field(default=None, min_length=1, max_length=128)
+    footer: MultilineText | None = Field(default=None, max_length=2000)
+    icp_info: PlainText | None = Field(default=None, max_length=128)
     ip_blacklist: list[str] | None = None
     allowed_hosts: list[str] | None = None
     cors_origins: list[str] | None = None
@@ -37,6 +56,53 @@ class SystemSettingUpdate(BaseModel):
     network_port: int | None = Field(default=None, ge=1, le=65535)
     network_listen_ip: str | None = Field(default=None, max_length=64)
     network_domains: list[str] | None = None
+
+    @field_validator("ip_blacklist")
+    @classmethod
+    def _valid_blacklist(cls, v: list[str] | None) -> list[str] | None:
+        if v is None:
+            return None
+        out = []
+        for item in (x.strip() for x in v):
+            if not item:
+                continue
+            try:
+                ipaddress.ip_network(item, strict=False)
+            except ValueError:
+                raise ValueError(f"无效的 IP / CIDR：{item}")
+            out.append(item)
+        return out
+
+    @field_validator("allowed_hosts")
+    @classmethod
+    def _valid_hosts(cls, v: list[str] | None) -> list[str] | None:
+        if v is None:
+            return None
+        out = []
+        for item in (x.strip() for x in v):
+            if not item:
+                continue
+            try:
+                ipaddress.ip_address(item)
+            except ValueError:
+                if not _HOST_RE.match(item):
+                    raise ValueError(f"无效的域名 / IP：{item}")
+            out.append(item)
+        return out
+
+    @field_validator("cors_origins")
+    @classmethod
+    def _valid_origins(cls, v: list[str] | None) -> list[str] | None:
+        if v is None:
+            return None
+        out = []
+        for item in (x.strip().rstrip("/") for x in v):
+            if not item:
+                continue
+            if not _ORIGIN_RE.match(item):
+                raise ValueError(f"无效的来源（需形如 https://example.com）：{item}")
+            out.append(item)
+        return out
 
     @field_validator("network_listen_ip")
     @classmethod

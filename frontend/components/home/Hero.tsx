@@ -1,115 +1,103 @@
 "use client";
 
 /**
- * Hero - 首页横幅区
- * 包含社团名称、口号、描述、CTA 按钮和统计数据
- * 使用 Framer Motion 入场动画
+ * Hero - 首页横幅区（克制科技风）
+ * 左：状态胶囊 + 大标题 + 口号 + 简介 + 行动按钮；右：2×2 数据格（细线分隔）
+ * 小屏上下堆叠；入场使用轻量 Framer Motion 淡入
  */
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, Sparkles, Code2, Users, Calendar, Trophy } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useI18n } from "@/i18n/provider";
 import { Button } from "@/components/ui/button";
+
+const fadeUp = (delay: number) => ({
+  initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.45, delay, ease: "easeOut" as const },
+});
 
 export function Hero() {
   const { locale, t } = useI18n();
 
   const stats = [
-    { icon: Users, label: t("home.hero.stat1"), value: "36" },
-    { icon: Code2, label: t("home.hero.stat2"), value: "7" },
-    { icon: Calendar, label: t("home.hero.stat3"), value: "14" },
-    { icon: Trophy, label: t("home.hero.stat4"), value: "2008" },
+    { label: t("home.hero.stat1"), value: "36" },
+    { label: t("home.hero.stat2"), value: "7" },
+    { label: t("home.hero.stat3"), value: "14" },
+    { label: t("home.hero.stat4"), value: "2008" },
   ];
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-background to-accent/5">
-      {/* 网格背景纹理 */}
-      <div className="grid-pattern absolute inset-0 opacity-40" />
-      {/* 装饰渐变光晕 */}
-      <div className="absolute top-1/4 -right-24 h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
-      <div className="absolute bottom-0 -left-24 h-72 w-72 rounded-full bg-accent/10 blur-3xl" />
-
-      <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20 md:py-28 relative">
-        <div className="text-center max-w-3xl mx-auto">
-          {/* 徽章 */}
+    <section className="border-b border-border">
+      <div className="container mx-auto max-w-7xl px-5 sm:px-6 lg:px-8 py-12 md:py-24 grid gap-10 lg:grid-cols-12 lg:gap-20 lg:items-center">
+        <div className="lg:col-span-7 flex flex-col items-start">
+          {/* 状态胶囊 */}
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="inline-flex items-center gap-2 rounded-full bg-secondary px-4 py-1.5 text-sm font-medium text-secondary-foreground mb-6"
+            {...fadeUp(0)}
+            className="inline-flex h-7 items-center gap-2 rounded-full border border-border bg-card px-3 font-mono text-[11px] sm:text-xs text-muted-foreground"
           >
-            <Sparkles className="h-3.5 w-3.5" />
-            {t("home.hero.badge")}
+            <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-signal" />
+            EST. 2008 · {t("home.hero.badge")}
           </motion.div>
 
-          {/* 标题 */}
           <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight"
+            {...fadeUp(0.05)}
+            className="mt-5 md:mt-6 text-[52px] md:text-7xl lg:text-8xl leading-[1.05] font-bold tracking-[-0.03em]"
           >
-            <span className="gradient-text">{t("home.hero.title")}</span>
+            {t("home.hero.title")}
           </motion.h1>
 
-          {/* 副标题 */}
           <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="mt-4 text-xl md:text-2xl text-muted-foreground font-display"
+            {...fadeUp(0.1)}
+            className="mt-3 text-lg md:text-2xl font-medium leading-snug"
           >
             {t("home.hero.subtitle")}
           </motion.p>
 
-          {/* 描述 */}
           <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="mt-6 text-base md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed"
+            {...fadeUp(0.15)}
+            className="mt-4 max-w-xl text-[15px] md:text-[17px] leading-relaxed md:leading-[1.7] text-muted-foreground text-pretty"
           >
             {t("home.hero.description")}
           </motion.p>
 
-          {/* CTA 按钮 */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="mt-8 flex flex-wrap items-center justify-center gap-4"
+            {...fadeUp(0.2)}
+            className="mt-6 md:mt-8 flex w-full flex-col gap-3 sm:w-auto sm:flex-row"
           >
-            <Button asChild size="lg" className="gap-2">
-              <Link href={`/${locale}/join`}>
+            <Button asChild size="lg">
+              <Link href={`/${locale}/join`} transitionTypes={["nav-forward"]}>
                 {t("home.hero.cta1")}
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight />
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline">
-              <Link href={`/${locale}/about`}>{t("home.hero.cta2")}</Link>
+              <Link href={`/${locale}/about`} transitionTypes={["nav-forward"]}>
+                {t("home.hero.cta2")}
+              </Link>
             </Button>
           </motion.div>
         </div>
 
-        {/* 统计数据 */}
+        {/* 数据格：1px 间隙透出分隔线颜色 */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
-          className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 max-w-3xl mx-auto"
+          {...fadeUp(0.25)}
+          className="lg:col-span-5 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-border bg-border"
         >
           {stats.map((stat, i) => (
             <div
-              key={i}
-              className="flex flex-col items-center gap-1 rounded-xl border border-border bg-card/50 backdrop-blur-sm p-4"
+              key={stat.label}
+              className="flex h-[104px] md:h-[150px] flex-col justify-between bg-card p-4 md:px-7 md:py-6"
             >
-              <stat.icon className="h-5 w-5 text-primary" />
-              <span className="text-2xl md:text-3xl font-bold font-display">
-                {stat.value}
+              <span aria-hidden="true" className="hidden md:block font-mono text-xs text-muted-foreground">
+                /0{i + 1}
               </span>
-              <span className="text-xs md:text-sm text-muted-foreground text-center">
-                {stat.label}
-              </span>
+              <div className="mt-auto flex flex-col gap-1">
+                <span className="text-[34px] md:text-[52px] leading-none font-semibold tracking-[-0.03em]">
+                  {stat.value}
+                </span>
+                <span className="text-[13px] md:text-sm text-muted-foreground">{stat.label}</span>
+              </div>
             </div>
           ))}
         </motion.div>

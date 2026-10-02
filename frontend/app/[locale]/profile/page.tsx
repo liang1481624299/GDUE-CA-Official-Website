@@ -4,7 +4,7 @@
  * /[locale]/profile —— 前台个人资料页
  *
  * 使用公开 Navbar/Footer 前台布局，不引用 admin 布局。
- * 登录状态：通过 localStorage 里的 admin token 判断。
+ * 登录状态：本地登录展示信息 + 后端接口校验（登录凭据在 HttpOnly Cookie 中）。
  *   - 已登录 → ProfileEditForm（资料编辑 + 时区设置）
  *   - 未登录 → 提示需要登录，跳转 /admin/login
  */
@@ -13,6 +13,7 @@ import Link from "next/link";
 import { useI18n } from "@/i18n/provider";
 import { Loader2 } from "lucide-react";
 import { ProfileEditForm } from "@/components/profile/ProfileEditForm";
+import { isLogged } from "@/lib/auth";
 
 export default function ProfilePage() {
   const { locale, t } = useI18n();
@@ -20,8 +21,8 @@ export default function ProfilePage() {
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    // 客户端挂载后检查 token
-    setLoggedIn(Boolean(window.localStorage.getItem("gdueca_admin_token")));
+    // 客户端挂载后检查登录态
+    setLoggedIn(isLogged());
     setChecking(false);
   }, []);
 
@@ -39,7 +40,7 @@ export default function ProfilePage() {
         <h1 className="text-2xl font-bold">{t("admin.profile.title")}</h1>
         <p className="text-muted-foreground">{t("profile.loginRequired")}</p>
         <Link
-          href={`/${locale}/admin/login`}
+          href="/admin/login"
           className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
         >
           {t("profile.goLogin")}

@@ -1,21 +1,25 @@
 import type { Metadata } from "next";
-import { Space_Grotesk, JetBrains_Mono } from "next/font/google";
+import { Instrument_Sans, JetBrains_Mono } from "next/font/google";
+import { headers } from "next/headers";
 import Script from "next/script";
 import "@/app/globals.css";
 
 /**
  * 根 layout：所有路由（含 / 和 /admin）共享
  * 负责 <html><body>、字体变量、防 FOUC 主题脚本、全局 CSS
+ * 读取 proxy.ts 生成的 CSP nonce（x-nonce），因此全站为动态渲染
  * 各子 layout（[locale] / admin）负责具体的 Provider 与框架
  */
-const displayFont = Space_Grotesk({
-  variable: "--font-display",
+/** 西文正文 / 标题字体；中文回退到系统黑体（见 globals.css --font-sans） */
+const sansFont = Instrument_Sans({
+  variable: "--font-instrument",
   subsets: ["latin"],
   display: "swap",
 });
 
+/** 日期、编号、数据等辅助信息 */
 const monoFont = JetBrains_Mono({
-  variable: "--font-mono",
+  variable: "--font-jetbrains",
   subsets: ["latin"],
   display: "swap",
 });
@@ -29,11 +33,12 @@ export const metadata: Metadata = {
 };
 
 /** 防 FOUC 主题初始化脚本：在 hydration 前根据 localStorage/系统偏好设置主题 */
-function ThemeInitScript() {
+function ThemeInitScript({ nonce }: { nonce?: string }) {
   return (
     <Script
       id="gdueca-theme-init"
       strategy="beforeInteractive"
+      nonce={nonce}
       suppressHydrationWarning
     >
       {`(function(){try{var s=localStorage.getItem('gdueca-theme');var t=s||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');if(t==='dark')document.documentElement.classList.add('dark');}catch(e){}})();`}
@@ -41,22 +46,20 @@ function ThemeInitScript() {
   );
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
     <html
       lang="zh-CN"
-      className={`${displayFont.variable} ${monoFont.variable} h-full antialiased`}
+      className={`${sansFont.variable} ${monoFont.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>
-        <ThemeInitScript />
-        <link rel="preconnect" href="https://fonts.googleapis.com" fetchPriority="high" />
-        <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://cdnjs.cloudflare.com" fetchPriority="low" />
+        <ThemeInitScript nonce={nonce} />
       </head>
       <body className="min-h-full flex flex-col bg-background">
         {children}

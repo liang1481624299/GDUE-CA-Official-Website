@@ -12,21 +12,22 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default:
-          "bg-primary text-primary-foreground shadow hover:bg-primary/90 hover:-translate-y-0.5",
+        default: "bg-primary text-primary-foreground hover:bg-primary/85",
         destructive:
-          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:
-          "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground hover:-translate-y-0.5",
+          "border border-border bg-card hover:bg-accent hover:text-accent-foreground",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        /** 强调行动（如「加入我们」CTA），全页至多一处 */
+        signal: "bg-signal text-signal-foreground font-semibold hover:bg-signal/90",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
         default: "h-10 px-4 py-2",
         sm: "h-8 rounded-md px-3 text-xs",
-        lg: "h-12 rounded-md px-8 text-base",
+        lg: "h-12 rounded-[10px] px-6 text-[15px]",
         icon: "h-10 w-10",
       },
     },

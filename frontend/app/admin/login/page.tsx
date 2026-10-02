@@ -1,13 +1,15 @@
 "use client";
 
 /**
- * /admin/login - 管理员 Web 登录页
- * 表单提交 POST /api/auth/login，成功后写入 localStorage 并跳转 /admin
+ * /admin/login - 账号登录页（管理员 / 普通成员共用）
+ * 表单提交 POST /api/auth/login，登录凭据由后端写入 HttpOnly Cookie
  * - 如返回 must_change_password=true，跳转 /admin/change-password
- * - 登录选项：保存账号密码 / 自动登录 / 记住此设备（减少验证频率）
+ * - 管理员进入 /admin；普通成员进入前台个人资料页（无后台权限）
+ * - 登录选项：记住此设备（减少验证频率）；不在浏览器保存任何密码，
+ *   如需记住密码请使用浏览器自带的密码管理器
  * - 底部含「忘记密码」和「账号恢复」入口
  */
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -24,15 +26,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { login } from "@/lib/api/auth";
-import {
-  saveSession,
-  isLogged,
-  saveCreds,
-  getSavedCreds,
-  clearCreds,
-  isAutoLogin,
-  setAutoLogin,
-} from "@/lib/auth";
+import { getSession, isAdminRole, saveSession } from "@/lib/auth";
+
+/** 登录后的落地页：管理员 → 后台；普通成员 → 前台个人资料 */
+function homeFor(role: string | undefined) {
+  return isAdminRole(role) ? "/admin" : "/zh-CN/profile";
+}
 
 export default function AdminLoginPage() {
   const { t } = useI18n();
@@ -42,71 +41,31 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // 登录选项
-  const [savePassword, setSavePassword] = useState(false);
-  const [autoLogin, setAutoLogin] = useState(false);
   const [rememberDevice, setRememberDevice] = useState(false);
-  const autoSubmitted = useRef(false);
 
-  async function doLogin(
-    u: string,
-    p: string,
-    remember: boolean,
-    keepCreds: boolean,
-    keepAuto: boolean
-  ) {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await login({ username: u, password: p, remember_device: remember });
-      saveSession({
-        token: res.access_token,
-        username: res.username,
-        role: res.role,
-      });
-      // 按勾选保存/清除凭据与自动登录标记
-      if (keepCreds) saveCreds({ username: u, password: p });
-      else clearCreds();
-      setAutoLogin(keepAuto && keepCreds);
-      // 默认密码 → 强制改密
-      if (res.must_change_password) {
-        router.replace("/admin/change-password");
-      } else {
-        router.replace("/admin");
-      }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : t("admin.login.error");
-      setError(msg);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  /** 已登录用户直接进入仪表盘；未登录则预填凭据 + 自动登录 */
+  /** 已登录用户直接进入对应首页（会话失效时目标页会再跳回登录页） */
   useEffect(() => {
-    if (isLogged()) {
-      router.replace("/admin");
-      return;
-    }
-    const creds = getSavedCreds();
-    if (creds) {
-      setUsername(creds.username);
-      setPassword(creds.password);
-      setSavePassword(true);
-    }
-    if (isAutoLogin()) {
-      setAutoLogin(true);
-      if (creds && !autoSubmitted.current) {
-        autoSubmitted.current = true;
-        void doLogin(creds.username, creds.password, false, true, true);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const session = getSession();
+    if (session) router.replace(homeFor(session.role));
   }, [router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!username || !password) return;
-    await doLogin(username, password, rememberDevice, savePassword, autoLogin);
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await login({ username, password, remember_device: rememberDevice });
+      saveSession({ username: res.username, role: res.role }, res.csrf_token);
+      // 初始 / 被重置的密码 → 强制改密
+      router.replace(res.must_change_password ? "/admin/change-password" : homeFor(res.role));
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : t("admin.login.error");
+      setError(msg);
+    } finally {
+      setPassword("");
+      setLoading(false);
+    }
   }
 
   return (
@@ -159,31 +118,6 @@ export default function AdminLoginPage() {
 
               {/* 登录选项 */}
               <div className="space-y-2.5 pt-1">
-                <label className="flex items-center gap-2.5 text-sm cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    className="size-4 rounded accent-primary cursor-pointer"
-                    checked={savePassword}
-                    onChange={(e) => {
-                      setSavePassword(e.target.checked);
-                      if (!e.target.checked) setAutoLogin(false);
-                    }}
-                  />
-                  {t("admin.login.savePassword")}
-                </label>
-                <label className="flex items-center gap-2.5 text-sm cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    className="size-4 rounded accent-primary cursor-pointer"
-                    checked={autoLogin}
-                    disabled={!savePassword}
-                    onChange={(e) => {
-                      setAutoLogin(e.target.checked);
-                      if (e.target.checked) setSavePassword(true);
-                    }}
-                  />
-                  {t("admin.login.autoLogin")}
-                </label>
                 <label className="flex items-center gap-2.5 text-sm cursor-pointer select-none">
                   <input
                     type="checkbox"

@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
  * 用于技术栈标签、文章标签等
  */
 const badgeVariants = cva(
-  "inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
   {
     variants: {
       variant: {
@@ -17,9 +17,9 @@ const badgeVariants = cva(
           "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
         destructive:
           "border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80",
-        outline: "text-foreground",
-        accent:
-          "border-transparent bg-accent/10 text-accent border-accent/20",
+        outline: "border-border text-foreground",
+        /** 技术栈 / 标签：中性浅底胶囊 */
+        accent: "border-border bg-secondary text-secondary-foreground",
       },
     },
     defaultVariants: {

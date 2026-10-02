@@ -6,7 +6,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.security import Role, require_role
+from app.core.middleware import get_client_ip
+from app.core.security import Role, get_optional_user, require_role, role_at_least
 from app.db.models import Activity, AuditLog
 from app.db.session import get_db
 from app.schemas.activity import ActivityCreate, ActivityOut, ActivityUpdate
@@ -18,14 +19,25 @@ def _log(db: AsyncSession, uid: int | None, action: str, target: str | None, ip:
     db.add(AuditLog(user_id=uid, action=action, target=target, ip=ip))
 
 
-# ---------- 公开：获取已发布活动 ----------
+# 访客 / 普通成员可见的活动状态（草稿、归档仅后台可见）
+_PUBLIC_STATUSES = ["published", "registration_open", "ended"]
+
+
+def _can_see_all(user: dict | None) -> bool:
+    return bool(user) and role_at_least(Role.EDITOR, Role(user["role"]))
+
+
+# ---------- 公开：获取已发布活动（管理员可查看全部） ----------
 @router.get("", response_model=list[ActivityOut])
 async def list_activities(
     status_filter: Literal["all", "published", "registration_open"] = "published",
-    category: str | None = None,
+    category: str | None = Query(default=None, max_length=64),
+    user: dict | None = Depends(get_optional_user),
     db: AsyncSession = Depends(get_db),
 ):
     stmt = select(Activity)
+    if status_filter == "all" and not _can_see_all(user):
+        stmt = stmt.where(Activity.status.in_(_PUBLIC_STATUSES))
     if status_filter == "published":
         stmt = stmt.where(Activity.status.in_(["published", "registration_open"]))
     elif status_filter == "registration_open":
@@ -38,9 +50,13 @@ async def list_activities(
 
 
 @router.get("/{activity_id}", response_model=ActivityOut)
-async def get_activity(activity_id: int, db: AsyncSession = Depends(get_db)):
+async def get_activity(
+    activity_id: int,
+    user: dict | None = Depends(get_optional_user),
+    db: AsyncSession = Depends(get_db),
+):
     a = await db.get(Activity, activity_id)
-    if not a:
+    if not a or (a.status.value not in _PUBLIC_STATUSES and not _can_see_all(user)):
         raise HTTPException(status_code=404, detail="活动不存在")
     return a
 
@@ -57,7 +73,7 @@ async def create_activity(
     db.add(a)
     await db.flush()
     _log(db, int(user["user_id"]), "activity.create", f"activity:{a.id}",
-         request.client.host if request.client else None)
+         get_client_ip(request))
     return a
 
 
@@ -76,7 +92,7 @@ async def update_activity(
         setattr(a, k, v)
     a.updated_at = datetime.now()
     _log(db, int(user["user_id"]), "activity.update", f"activity:{activity_id}",
-         request.client.host if request.client else None)
+         get_client_ip(request))
     return a
 
 
@@ -92,4 +108,4 @@ async def delete_activity(
         raise HTTPException(status_code=404, detail="活动不存在")
     await db.delete(a)
     _log(db, int(user["user_id"]), "activity.delete", f"activity:{activity_id}",
-         request.client.host if request.client else None)
+         get_client_ip(request))

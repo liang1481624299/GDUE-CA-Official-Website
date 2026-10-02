@@ -24,6 +24,19 @@ HEADERS_CN = [
 ]
 
 
+# 以这些字符开头的单元格会被 Excel / WPS 当作公式执行（CSV 注入 / 公式注入）
+_FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r", "\uff1d", "\uff0b", "\uff0d", "\uff20")
+
+
+# 访客自由填写的列（区号 / 手机号 / 学号已由格式校验约束，不做处理以免显示多余引号）
+_FREE_TEXT_KEYS = {"name", "college", "major", "email", "remark"}
+
+
+def _neutralize(s: str) -> str:
+    """以公式字符开头时前置单引号，Excel / WPS 按纯文本显示而不执行。"""
+    return "'" + s if s.startswith(_FORMULA_PREFIXES) else s
+
+
 def _fmt(v) -> str:
     if v is None:
         return ""
@@ -46,7 +59,10 @@ def registrations_to_csv(rows: list[Registration]) -> bytes:
     for i, r in enumerate(rows, 1):
         row = [str(i)]
         for _, key in HEADERS_CN[1:]:
-            row.append(esc(_fmt(getattr(r, key))))
+            text = _fmt(getattr(r, key))
+            if key in _FREE_TEXT_KEYS:
+                text = _neutralize(text)
+            row.append(esc(text))
         lines.append(",".join(row))
     text = "\r\n".join(lines) + "\r\n"
     return ("\ufeff" + text).encode("utf-8")  # BOM 让 Excel 正确识别 UTF-8
@@ -73,6 +89,7 @@ def registrations_to_xlsx(rows: list[Registration]) -> bytes:
         for col, (_, key) in enumerate(HEADERS_CN, start=1):
             value = str(i) if key == "index" else _fmt(getattr(r, key))
             cell = ws.cell(row=i + 1, column=col, value=value)
+            cell.data_type = "s"  # 一律按字符串写入，禁止 openpyxl 把 "=..." 识别为公式
             if key in TEXT_COLUMNS:
                 cell.number_format = "@"  # 强制文本，不做任何数值解析
 

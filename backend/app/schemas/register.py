@@ -5,7 +5,7 @@ from enum import Enum
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
-from app.schemas.common import UTCDatetime
+from app.schemas.common import MultilineText, PlainText, UTCDatetime
 
 # 常见国家/地区区号
 PHONE_COUNTRY_CODES = [
@@ -97,15 +97,15 @@ _PHONE_DIGITS_FALLBACK = re.compile(r"^\d{6,15}$")
 
 class RegistrationCreate(BaseModel):
     """访客提交报名的请求体（活动报名 & 社团报名共用）。"""
-    name: str = Field(min_length=1, max_length=64)
-    student_id: str = Field(min_length=1, max_length=32)
-    college: str = Field(min_length=1, max_length=128)
-    major: str = Field(min_length=1, max_length=128)
+    name: PlainText = Field(min_length=1, max_length=64)
+    student_id: str = Field(pattern=r"^[A-Za-z0-9\-]{1,32}$")
+    college: PlainText = Field(min_length=1, max_length=128)
+    major: PlainText = Field(min_length=1, max_length=128)
     phone_cc: str = Field(..., description="国家区号，如 +86")
     phone_number: str = Field(..., description="本地手机号，不含区号")
     email: EmailStr | None = None
-    position: str | None = Field(default=None, max_length=64, description="意向部门")
-    introduction: str | None = Field(default=None, max_length=2000, description="自我介绍")
+    position: PlainText | None = Field(default=None, max_length=64, description="意向部门")
+    introduction: MultilineText | None = Field(default=None, max_length=2000, description="自我介绍")
 
     @field_validator("phone_cc")
     @classmethod

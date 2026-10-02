@@ -43,6 +43,8 @@
     "by": "作者",
     "publishedOn": "發佈於",
     "participants": "參與人數",
+    "peopleJoined": "人參與",
+    "viewDetails": "查看詳情",
     "techStack": "技術棧",
     "members": "開發成員",
     "cancel": "取消",
@@ -50,7 +52,8 @@
     "beijingTime": "北京時間",
     "localTime": "本地時間",
     "yes": "是",
-    "no": "否"
+    "no": "否",
+    "passwordPolicy": "至少 10 位，包含大寫字母、小寫字母、數字、特殊字元中的至少 3 類，且不能是常見弱密碼"
   },
   "home": {
     "hero": {
@@ -254,8 +257,8 @@
     "oldPasswordRequired": "請輸入目前密碼",
     "newPassword": "新密碼",
     "newPasswordPlaceholder": "輸入新密碼",
-    "passwordRule": "至少 8 位，需包含大寫字母、小寫字母和數字",
-    "passwordTooShort": "密碼至少需要 8 位",
+    "passwordRule": "至少 10 位，包含大寫字母、小寫字母、數字、特殊字元中的至少 3 類，且不能是常見弱密碼",
+    "passwordTooShort": "至少 10 位，包含大寫字母、小寫字母、數字、特殊字元中的至少 3 類，且不能是常見弱密碼",
     "passwordWeak": "密碼必須包含大寫字母、小寫字母和數字",
     "passwordSame": "新密碼不能與目前密碼相同",
     "confirmPassword": "確認新密碼",
@@ -295,8 +298,14 @@
     "filterCompetition": "競賽",
     "filterRecruitment": "招新活動",
     "filterWorkshop": "工作坊",
+    "countUnit": "場活動",
+    "totalPrefix": "累計",
+    "totalSuffix": "人次參與",
+    "sortByDate": "依時間排序",
+    "dateColumn": "日期",
+    "typeColumn": "類型",
     "chartTitle": "活動參與人數統計",
-    "chartSubtitle": "近一年各活動參與人數趨勢"
+    "chartSubtitle": "歷年各場活動的參與人數"
   },
   "join": {
     "title": "加入計算機協會",
@@ -464,8 +473,6 @@
       "backToSite": "返回官網",
       "forgotPassword": "忘記密碼？",
       "mustChangeWarning": "偵測到預設密碼，請先修改密碼",
-      "savePassword": "儲存帳號密碼",
-      "autoLogin": "自動登入",
       "rememberDevice": "記住此裝置（30 天內減少驗證）"
     },
     "changePassword": {
@@ -474,7 +481,7 @@
       "oldPassword": "目前密碼",
       "oldPasswordPlaceholder": "請輸入目前密碼",
       "newPassword": "新密碼",
-      "newPasswordPlaceholder": "至少 6 位",
+      "newPasswordPlaceholder": "至少 10 位，包含大寫字母、小寫字母、數字、特殊字元中的至少 3 類，且不能是常見弱密碼",
       "confirmPassword": "確認新密碼",
       "confirmPlaceholder": "再次輸入新密碼",
       "submit": "修改密碼",
@@ -506,7 +513,7 @@
       "securityAnswer": "答案",
       "securityAnswerPlaceholder": "請輸入安全問題的答案",
       "newPassword": "新密碼",
-      "newPasswordPlaceholder": "恢復後設定的新密碼（至少 6 位）",
+      "newPasswordPlaceholder": "至少 10 位，包含大寫字母、小寫字母、數字、特殊字元中的至少 3 類，且不能是常見弱密碼",
       "submit": "恢復帳號",
       "submitting": "恢復中...",
       "success": "帳號已恢復，請用新密碼登入",
@@ -761,7 +768,7 @@
       "email": "郵箱",
       "emailPlaceholder": "用於登錄",
       "password": "密碼",
-      "passwordPlaceholder": "至少 6 位",
+      "passwordPlaceholder": "至少 10 位，包含大寫字母、小寫字母、數字、特殊字元中的至少 3 類，且不能是常見弱密碼",
       "role": "角色",
       "save": "創建帳號",
       "cancel": "取消",
@@ -777,7 +784,8 @@
       "roles": {
         "super_admin": "超級管理員",
         "admin": "管理員",
-        "editor": "編輯"
+        "editor": "編輯",
+        "member": "一般成員"
       }
     }
   },

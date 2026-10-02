@@ -1,6 +1,7 @@
 import { getDictionary } from "@/i18n/dictionary";
 import type { Locale } from "@/lib/i18n";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { DirectionalTransition } from "@/components/shared/DirectionalTransition";
 import { SectionHeading } from "@/components/shared/SectionHeading";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -56,7 +57,7 @@ export default async function AboutPage({
   ];
 
   return (
-    <>
+    <DirectionalTransition>
       <PageHeader title={dict.about.title} subtitle={dict.about.subtitle} />
 
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
@@ -125,6 +126,6 @@ export default async function AboutPage({
           </div>
         </section>
       </div>
-    </>
+    </DirectionalTransition>
   );
 }

@@ -4,10 +4,10 @@
  * Bug 反馈的提交、列表、状态切换。
  */
 import { apiFetch } from "./client";
-import type { BugReport, BugReportCreate } from "@/types/api";
+import type { BugReport, BugReportCreate, SubmitReceipt } from "@/types/api";
 
 export function submitBugReport(payload: BugReportCreate) {
-  return apiFetch<BugReport>("/api/bugs", {
+  return apiFetch<SubmitReceipt>("/api/bugs", {
     method: "POST",
     body: JSON.stringify(payload),
   });

@@ -18,7 +18,7 @@
  * 权限动态渲染（从后端 role 字段读取，不硬写）：
  *   - 游客：下拉只有「登录」，不展示后台入口
  *   - 已登录 super_admin / admin / editor：显示「个人设置」+「后台」+「退出登录」
- *   - 已登录非管理员（本项目暂不会出现，留作扩展）：显示「个人设置」+「退出登录」，不展示后台
+ *   - 已登录普通成员 member：显示「个人设置」+「退出登录」，不展示后台
  *
  * 双重防护：前端只隐藏入口；后端接口仍保留原有权限校验，
  *           防止手动输入 URL 越权。
@@ -27,20 +27,12 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useI18n } from "@/i18n/provider";
 import { fetchProfile } from "@/lib/api/auth";
-import { API_BASE_URL } from "@/lib/api/client";
+import { API_BASE_URL, ApiError } from "@/lib/api/client";
+import { clearLocalSession, isAdminRole, isLogged, logout } from "@/lib/auth";
 import type { AdminUser } from "@/types/api";
 import { User, LayoutDashboard, LogOut, Loader2, LogIn } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const TOKEN_KEY = "gdueca_admin_token";
-
-/** 项目内全部管理员角色；登录后这些角色可见后台入口 */
-const ADMIN_ROLES = new Set(["super_admin", "admin", "editor"]);
-
-function isLoggedIn(): boolean {
-  if (typeof window === "undefined") return false;
-  return Boolean(window.localStorage.getItem(TOKEN_KEY));
-}
 
 /** 把用户名字符串取首字母（多字时取前两个） */
 function getInitials(name: string): string {
@@ -78,13 +70,19 @@ export function UserMenu() {
   const closeTimer = useRef<number | null>(null);
 
   useEffect(() => {
-    const logged = isLoggedIn();
+    const logged = isLogged();
     setLoggedIn(logged);
     if (logged) {
       setLoading(true);
       fetchProfile()
         .then((p) => setProfile(p))
-        .catch(() => { /* token 过期或网络错误，保持 null */ })
+        .catch((err) => {
+          // 会话已失效：清除本地展示信息，回到游客态
+          if (err instanceof ApiError && err.status === 401) {
+            clearLocalSession();
+            setLoggedIn(false);
+          }
+        })
         .finally(() => setLoading(false));
     } else {
       setProfile(null);
@@ -118,15 +116,15 @@ export function UserMenu() {
     closeTimer.current = window.setTimeout(() => setOpen(false), 100);
   };
 
-  const handleLogout = () => {
-    window.localStorage.removeItem(TOKEN_KEY);
+  const handleLogout = async () => {
+    await logout();
     window.location.href = `/admin/login`;
   };
 
   // 点击菜单项后关闭下拉
   const handleItemClick = () => setOpen(false);
 
-  const showBackend = loggedIn && Boolean(profile?.role) && ADMIN_ROLES.has(profile!.role);
+  const showBackend = loggedIn && isAdminRole(profile?.role);
 
   const avatarUrl = !imgError ? avatarFullUrl(profile?.avatar_url) : "";
   const hasImg = Boolean(avatarUrl);

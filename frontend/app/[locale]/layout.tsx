@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import Script from "next/script";
 import { locales, defaultLocale, localeHtmlLang, type Locale } from "@/lib/i18n";
 import { getDictionaryByLocale } from "@/i18n/dictionary";
@@ -35,6 +36,16 @@ export async function generateMetadata({
   };
 }
 
+/** 序列化为可安全嵌入 <script> 的 JSON：转义 < > & 与行分隔符，防止 </script> 截断注入 */
+function safeJsonForScript(value: unknown): string {
+  return JSON.stringify(value)
+    .replace(/</g, "\\u003c")
+    .replace(/>/g, "\\u003e")
+    .replace(/&/g, "\\u0026")
+    .replace(/\u2028/g, "\\u2028")
+    .replace(/\u2029/g, "\\u2029");
+}
+
 /** schema.org EducationalOrganization JSON-LD */
 const orgJsonLd = {
   "@context": "https://schema.org",
@@ -67,6 +78,8 @@ export default async function LocaleLayout({
   const { locale: localeStr } = await params;
   const locale = localeStr as Locale;
   const messages = await getDictionaryByLocale(locale);
+  // proxy.ts 生成的 CSP nonce：手写内联脚本必须携带，否则会被 CSP 拦截
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
 
   // 同步设置 <html lang>（根 layout 默认 zh-CN，此处按当前 locale 修正）
   if (typeof window === "undefined") {
@@ -77,6 +90,7 @@ export default async function LocaleLayout({
     <>
       {/* 设置当前 locale 对应的 html lang（客户端 script 在 hydration 前修正） */}
       <script
+        nonce={nonce}
         dangerouslySetInnerHTML={{
           __html: `document.documentElement.lang=${JSON.stringify(
             localeHtmlLang[locale] || "zh-CN"
@@ -90,6 +104,7 @@ export default async function LocaleLayout({
             async
             src={process.env.NEXT_PUBLIC_UMAMI_SRC}
             data-website-id={process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID}
+            nonce={nonce}
             strategy="afterInteractive"
             fetchPriority="low"
           />
@@ -98,7 +113,8 @@ export default async function LocaleLayout({
       {/* schema.org EducationalOrganization 结构化数据 */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
+        nonce={nonce}
+        dangerouslySetInnerHTML={{ __html: safeJsonForScript(orgJsonLd) }}
       />
 
       <I18nProvider locale={locale} messages={messages}>

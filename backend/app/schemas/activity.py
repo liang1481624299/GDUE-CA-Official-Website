@@ -4,7 +4,7 @@ from enum import Enum
 
 from pydantic import BaseModel, Field
 
-from app.schemas.common import UTCDatetime
+from app.schemas.common import MultilineText, PlainText, SafeUrl, UTCDatetime
 
 
 class ActivityStatus(str, Enum):
@@ -16,25 +16,26 @@ class ActivityStatus(str, Enum):
 
 
 class ActivityCreate(BaseModel):
-    title: str = Field(min_length=1, max_length=200)
-    content: str
-    category: str | None = None
+    title: PlainText = Field(min_length=1, max_length=200)
+    # Markdown 正文：前端用 react-markdown 渲染（不启用原始 HTML），这里只做清洗
+    content: MultilineText = Field(max_length=50_000)
+    category: PlainText | None = Field(default=None, max_length=64)
     status: ActivityStatus = ActivityStatus.DRAFT
     register_start: datetime | None = None
     register_end: datetime | None = None
-    max_participants: int = 0  # 0 = 无上限
-    cover_url: str | None = None
+    max_participants: int = Field(default=0, ge=0, le=100_000)  # 0 = 无上限
+    cover_url: SafeUrl | None = Field(default=None, max_length=512)
 
 
 class ActivityUpdate(BaseModel):
-    title: str | None = Field(default=None, min_length=1, max_length=200)
-    content: str | None = None
-    category: str | None = None
+    title: PlainText | None = Field(default=None, min_length=1, max_length=200)
+    content: MultilineText | None = Field(default=None, max_length=50_000)
+    category: PlainText | None = Field(default=None, max_length=64)
     status: ActivityStatus | None = None
     register_start: datetime | None = None
     register_end: datetime | None = None
-    max_participants: int | None = None
-    cover_url: str | None = None
+    max_participants: int | None = Field(default=None, ge=0, le=100_000)
+    cover_url: SafeUrl | None = Field(default=None, max_length=512)
     checkin_open: bool | None = None  # 签到开关
 
 

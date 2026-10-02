@@ -21,21 +21,16 @@ import {
 } from "@/components/ui/card";
 import { updateProfile, changePassword } from "@/lib/api/auth";
 import { getSession, saveSession } from "@/lib/auth";
+import { meetsPasswordPolicy, passwordClassCount } from "@/lib/passwordPolicy";
 import { CheckCircle2, Loader2, KeyRound, UserCog, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /** 用户名格式：≥4 字符，字母/数字/下划线 */
 const USERNAME_RE = /^[A-Za-z0-9_]{4,}$/;
-/** 密码强度：≥8 位，含大写+小写+数字 */
+/** 密码强度提示：不满足强口令策略为 weak，满足后按长度 / 字符类别区分 medium / strong */
 function passwordStrength(pwd: string): "weak" | "medium" | "strong" {
-  let score = 0;
-  if (pwd.length >= 8) score++;
-  if (/[a-z]/.test(pwd) && /[A-Z]/.test(pwd)) score++;
-  if (/\d/.test(pwd)) score++;
-  if (pwd.length >= 12) score++;
-  if (score <= 1) return "weak";
-  if (score <= 2) return "medium";
-  return "strong";
+  if (!meetsPasswordPolicy(pwd)) return "weak";
+  return pwd.length >= 14 && passwordClassCount(pwd) === 4 ? "strong" : "medium";
 }
 
 interface Props {
@@ -74,9 +69,7 @@ export function AccountSecurityCard({ currentUsername, onUsernameUpdated }: Prop
 
   function validatePassword(oldp: string, newp: string, confirm: string): string | null {
     if (!oldp) return t("account.oldPasswordRequired");
-    if (newp.length < 8) return t("account.passwordTooShort");
-    if (!/[a-z]/.test(newp) || !/[A-Z]/.test(newp) || !/\d/.test(newp))
-      return t("account.passwordWeak");
+    if (!meetsPasswordPolicy(newp)) return t("account.passwordTooShort");
     if (newp === oldp) return t("account.passwordSame");
     if (newp !== confirm) return t("account.passwordMismatch");
     return null;

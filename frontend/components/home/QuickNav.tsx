@@ -1,83 +1,66 @@
 "use client";
 
 /**
- * QuickNav - 首页快速导航入口
- * 4 个图标卡片：项目、活动、招新、博客
+ * QuickNav - 首页快速导航（编号宫格）
+ * 4 个入口：项目、活动、招新、博客；桌面 4 列 / 手机 2 列，1px 细线分隔
+ * 点击后前进滑入栏目页，卡片标题与栏目页大标题做共享元素过渡（page-title-*）
  */
+import { ViewTransition } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { FolderGit2, Calendar, UserPlus, BookOpen } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { useI18n } from "@/i18n/provider";
-import { Card, CardContent } from "@/components/ui/card";
 
 export function QuickNav() {
   const { locale, t } = useI18n();
 
   const items = [
-    {
-      icon: FolderGit2,
-      title: t("home.quickNav.projectsTitle"),
-      desc: t("home.quickNav.projectsDesc"),
-      href: "/projects",
-      color: "bg-blue-500/10 text-blue-600",
-    },
-    {
-      icon: Calendar,
-      title: t("home.quickNav.eventsTitle"),
-      desc: t("home.quickNav.eventsDesc"),
-      href: "/events",
-      color: "bg-cyan-500/10 text-cyan-600",
-    },
-    {
-      icon: UserPlus,
-      title: t("home.quickNav.joinTitle"),
-      desc: t("home.quickNav.joinDesc"),
-      href: "/join",
-      color: "bg-indigo-500/10 text-indigo-600",
-    },
-    {
-      icon: BookOpen,
-      title: t("home.quickNav.blogTitle"),
-      desc: t("home.quickNav.blogDesc"),
-      href: "/blog",
-      color: "bg-sky-500/10 text-sky-600",
-    },
+    { title: t("home.quickNav.projectsTitle"), desc: t("home.quickNav.projectsDesc"), href: "/projects" },
+    { title: t("home.quickNav.eventsTitle"), desc: t("home.quickNav.eventsDesc"), href: "/events" },
+    { title: t("home.quickNav.joinTitle"), desc: t("home.quickNav.joinDesc"), href: "/join" },
+    { title: t("home.quickNav.blogTitle"), desc: t("home.quickNav.blogDesc"), href: "/blog" },
   ];
 
   return (
-    <section className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 md:py-24">
-      <div className="text-center mb-10">
-        <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
-          {t("home.quickNav.title")}
-        </h2>
-        <p className="mt-2 text-muted-foreground">{t("home.quickNav.subtitle")}</p>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {items.map((item, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.3, delay: i * 0.1 }}
-          >
-            <Link href={`/${locale}${item.href}`}>
-              <Card className="h-full hover:shadow-md hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
-                <CardContent className="p-6">
-                  <div
-                    className={`inline-flex h-12 w-12 items-center justify-center rounded-lg ${item.color} mb-4`}
+    <section
+      aria-labelledby="quicknav-title"
+      className="border-t border-border"
+    >
+      <div className="container mx-auto max-w-7xl px-5 sm:px-6 lg:px-8 py-10 md:py-14">
+        <div className="flex flex-col gap-1.5 mb-5 md:mb-6">
+          <h2 id="quicknav-title" className="text-[28px] md:text-[32px] leading-tight">
+            {t("home.quickNav.title")}
+          </h2>
+          <p className="text-[15px] md:text-base text-muted-foreground">{t("home.quickNav.subtitle")}</p>
+        </div>
+        <ul className="grid grid-cols-2 lg:grid-cols-4 gap-px overflow-hidden rounded-2xl border border-border bg-border">
+          {items.map((item, i) => (
+            <li key={item.href} className="bg-card">
+              <Link
+                href={`/${locale}${item.href}`}
+                transitionTypes={["nav-forward"]}
+                className="group flex h-[132px] flex-col justify-between p-4 md:px-6 md:py-[22px] transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+              >
+                <div className="flex items-center justify-between text-muted-foreground">
+                  <span className="font-mono text-xs">0{i + 1}</span>
+                  <ArrowUpRight
+                    aria-hidden="true"
+                    className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-foreground"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <ViewTransition
+                    name={`page-title-${item.href.slice(1)}`}
+                    share="text-morph"
+                    default="none"
                   >
-                    <item.icon className="h-6 w-6" />
-                  </div>
-                  <h3 className="font-semibold mb-1 group-hover:text-primary transition-colors">
-                    {item.title}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">{item.desc}</p>
-                </CardContent>
-              </Card>
-            </Link>
-          </motion.div>
-        ))}
+                    <h3 className="text-base md:text-lg font-semibold tracking-normal">{item.title}</h3>
+                  </ViewTransition>
+                  <p className="text-[13px] md:text-sm leading-normal text-muted-foreground">{item.desc}</p>
+                </div>
+              </Link>
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   );

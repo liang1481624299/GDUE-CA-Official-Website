@@ -8,10 +8,12 @@ from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.middleware import get_client_ip
+from app.core.rate_limit import rate_limit
 from app.core.security import Role, require_role
 from app.db.models import AuditLog, BugReport
 from app.db.session import get_db
 from app.schemas.bug import BugReportCreate, BugReportOut
+from app.schemas.common import SubmitReceiptOut
 from app.utils.translator import detect_lang
 
 router = APIRouter(prefix="/api/bugs", tags=["bugs"])
@@ -47,7 +49,12 @@ class BugBatchUpdate(BaseModel):
 
 
 # ---------- 访客提交 ----------
-@router.post("", response_model=BugReportOut, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=SubmitReceiptOut,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(rate_limit("bug.submit", limit=10, window_seconds=600))],
+)
 async def submit_bug(
     req: BugReportCreate,
     request: Request,
@@ -62,7 +69,7 @@ async def submit_bug(
     db.add(bug)
     await db.flush()
     _log(db, None, "bug.submit", f"bug:{bug.id}", bug.submit_ip)
-    return bug
+    return SubmitReceiptOut(receipt_code=bug.receipt_code, submitted_at=bug.created_at)
 
 
 # ---------- 管理员列表 ----------

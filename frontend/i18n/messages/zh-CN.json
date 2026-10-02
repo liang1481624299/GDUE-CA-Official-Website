@@ -43,6 +43,8 @@
     "by": "作者",
     "publishedOn": "发布于",
     "participants": "参与人数",
+    "peopleJoined": "人参与",
+    "viewDetails": "查看详情",
     "techStack": "技术栈",
     "members": "开发成员",
     "cancel": "取消",
@@ -50,7 +52,8 @@
     "beijingTime": "北京时间",
     "localTime": "本地时间",
     "yes": "是",
-    "no": "否"
+    "no": "否",
+    "passwordPolicy": "至少 10 位，包含大写字母、小写字母、数字、特殊字符中的至少 3 类，且不能是常见弱口令"
   },
   "home": {
     "hero": {
@@ -254,8 +257,8 @@
     "oldPasswordRequired": "请输入当前密码",
     "newPassword": "新密码",
     "newPasswordPlaceholder": "输入新密码",
-    "passwordRule": "至少 8 位，需包含大写字母、小写字母和数字",
-    "passwordTooShort": "密码至少需要 8 位",
+    "passwordRule": "至少 10 位，包含大写字母、小写字母、数字、特殊字符中的至少 3 类，且不能是常见弱口令",
+    "passwordTooShort": "至少 10 位，包含大写字母、小写字母、数字、特殊字符中的至少 3 类，且不能是常见弱口令",
     "passwordWeak": "密码必须包含大写字母、小写字母和数字",
     "passwordSame": "新密码不能与当前密码相同",
     "confirmPassword": "确认新密码",
@@ -295,8 +298,14 @@
     "filterCompetition": "竞赛",
     "filterRecruitment": "招新活动",
     "filterWorkshop": "工作坊",
+    "countUnit": "场活动",
+    "totalPrefix": "累计",
+    "totalSuffix": "人次参与",
+    "sortByDate": "按时间排序",
+    "dateColumn": "日期",
+    "typeColumn": "类型",
     "chartTitle": "活动参与人数统计",
-    "chartSubtitle": "近一年各活动参与人数趋势"
+    "chartSubtitle": "历年各场活动的参与人数"
   },
   "join": {
     "title": "加入计算机协会",
@@ -464,8 +473,6 @@
       "backToSite": "返回官网",
       "forgotPassword": "忘记密码？",
       "mustChangeWarning": "检测到默认密码，请先修改密码",
-      "savePassword": "保存账号密码",
-      "autoLogin": "自动登录",
       "rememberDevice": "记住此设备（30 天内减少验证）"
     },
     "changePassword": {
@@ -474,7 +481,7 @@
       "oldPassword": "当前密码",
       "oldPasswordPlaceholder": "请输入当前密码",
       "newPassword": "新密码",
-      "newPasswordPlaceholder": "至少 6 位",
+      "newPasswordPlaceholder": "至少 10 位，包含大写字母、小写字母、数字、特殊字符中的至少 3 类，且不能是常见弱口令",
       "confirmPassword": "确认新密码",
       "confirmPlaceholder": "再次输入新密码",
       "submit": "修改密码",
@@ -506,7 +513,7 @@
       "securityAnswer": "答案",
       "securityAnswerPlaceholder": "请输入安全问题的答案",
       "newPassword": "新密码",
-      "newPasswordPlaceholder": "恢复后设置的新密码（至少 6 位）",
+      "newPasswordPlaceholder": "至少 10 位，包含大写字母、小写字母、数字、特殊字符中的至少 3 类，且不能是常见弱口令",
       "submit": "恢复账号",
       "submitting": "恢复中...",
       "success": "账号已恢复，请用新密码登录",
@@ -761,7 +768,7 @@
       "email": "邮箱",
       "emailPlaceholder": "用于登录",
       "password": "密码",
-      "passwordPlaceholder": "至少 6 位",
+      "passwordPlaceholder": "至少 10 位，包含大写字母、小写字母、数字、特殊字符中的至少 3 类，且不能是常见弱口令",
       "role": "角色",
       "save": "创建账号",
       "cancel": "取消",
@@ -777,7 +784,8 @@
       "roles": {
         "super_admin": "超级管理员",
         "admin": "管理员",
-        "editor": "编辑"
+        "editor": "编辑",
+        "member": "普通成员"
       }
     }
   },

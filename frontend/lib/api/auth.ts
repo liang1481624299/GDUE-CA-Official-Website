@@ -3,7 +3,7 @@
  *
  * 管理员登录、当前用户、个人资料、头像上传、改密、忘记密码、安全问题恢复。
  */
-import { apiFetch, API_BASE_URL } from "./client";
+import { apiFetch, secureFetch } from "./client";
 import type {
   LoginRequest,
   LoginResponse,
@@ -77,19 +77,11 @@ export async function uploadAvatar(file: File): Promise<AvatarUploadOut> {
   const formData = new FormData();
   formData.append("file", file);
 
-  const token =
-    typeof window !== "undefined"
-      ? window.localStorage.getItem("gdueca_admin_token")
-      : null;
-
-  const res = await fetch(
-    `${API_BASE_URL}/api/auth/avatar`,
-    {
-      method: "POST",
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      body: formData,
-    }
-  );
+  // 登录态走 HttpOnly Cookie；secureFetch 自动附加 CSRF 头
+  const res = await secureFetch("/api/auth/avatar", {
+    method: "POST",
+    body: formData,
+  });
 
   if (!res.ok) {
     const data = await res.json().catch(() => null);

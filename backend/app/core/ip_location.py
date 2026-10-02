@@ -13,6 +13,7 @@
 
 任一数据源缺失或查询失败均优雅降级（返回 None，前端显示「地区未知」）。
 """
+import logging
 from functools import lru_cache
 from ipaddress import IPv4Address, ip_address
 from pathlib import Path
@@ -111,6 +112,7 @@ def _geolite2_reader():
             from geolite2 import geolite2
             _geo_reader = geolite2.reader()
         except Exception:
+            logging.getLogger("gdueca.ip_location").info("GeoLite2 不可用，英文登录地点将不显示")
             _geo_reader = None
     return _geo_reader
 

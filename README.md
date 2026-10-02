@@ -37,7 +37,7 @@
 | ORM | SQLAlchemy 2.0 异步 |
 | 数据库 | SQLite（开发）/ PostgreSQL（生产可换） |
 | 校验 | Pydantic v2 |
-| 鉴权 | JWT Bearer Token + bcrypt 密码哈希 + 会话三级校验（撤销/硬顶过期/空闲超时） |
+| 鉴权 | JWT（HttpOnly Cookie）+ CSRF 双重令牌 + bcrypt 密码哈希 + 服务端会话校验（撤销/硬顶过期/空闲超时）+ 登录失败锁定 |
 | 时区 | `zoneinfo`（Python 3.9+ 标准库 + `tzdata>=2024.1`），全部 UTC 存储 + 返回带大写 Z ISO 字符串 |
 | IP 属地 | `maxminddb 3.2.0` + GeoLite2-City.mmdb 离线库；备用 `ip2region.xdb` |
 | 导出 | openpyxl（Excel）、CSV（UTF-8 BOM + CRLF） |
@@ -227,15 +227,17 @@ GDUECA/
 
 | 方法 | 路径 | 说明 | 鉴权 |
 | --- | --- | --- | --- |
-| POST | `/api/auth/login` | 登录获取 JWT（支持 `remember_device` 参数，30 天记住设备） | 公开 |
-| GET | `/api/auth/me` | 当前用户信息（含 timezone / country / region / locality） | Bearer |
-| GET | `/api/auth/profile` | 当前用户完整资料（含 timezone / country / region / locality） | Bearer |
-| PUT | `/api/auth/profile` | 更新个人资料（显示名/真实姓名/学号/手机号/时区/三级行政区地址） | Bearer |
-| POST | `/api/auth/avatar` | 上传头像（JPG/PNG/WEBP，≤5MB） | Bearer |
-| POST | `/api/auth/change-password` | 修改密码 | Bearer |
-| GET | `/api/auth/heartbeat` | 登录会话心跳续期（刷新 `last_active_at`，滑动空闲超时） | Bearer |
-| GET | `/api/auth/sessions` | 登录会话列表（最近 20 条，含 is_current / UA / IP / 过期时间） | Bearer |
-| DELETE | `/api/auth/sessions/{id}` | 撤销指定登录会话（校验归属，撤销当前设备时返回 `current_kicked`） | Bearer |
+| GET | `/api/auth/csrf` | 获取 CSRF 令牌（同时下发 `gdueca_csrf` Cookie），所有写请求需在 `X-CSRF-Token` 头回传 | 公开 |
+| POST | `/api/auth/login` | 登录，JWT 写入 HttpOnly Cookie（支持 `remember_device`，30 天记住设备）；失败 5 次锁定 15 分钟 | 公开（限流） |
+| POST | `/api/auth/logout` | 退出登录：服务端撤销会话并清除 Cookie | 登录 |
+| GET | `/api/auth/me` | 当前用户信息（含 timezone / country / region / locality） | 登录 |
+| GET | `/api/auth/profile` | 当前用户完整资料（含 timezone / country / region / locality） | 登录 |
+| PUT | `/api/auth/profile` | 更新个人资料（显示名/真实姓名/学号/手机号/时区/三级行政区地址） | 登录 |
+| POST | `/api/auth/avatar` | 上传头像（JPG/PNG/WEBP，≤5MB） | 登录 |
+| POST | `/api/auth/change-password` | 修改密码 | 登录 |
+| GET | `/api/auth/heartbeat` | 登录会话心跳续期（刷新 `last_active_at`，滑动空闲超时） | 登录 |
+| GET | `/api/auth/sessions` | 登录会话列表（最近 20 条，含 is_current / UA / IP / 过期时间） | 登录 |
+| DELETE | `/api/auth/sessions/{id}` | 撤销指定登录会话（校验归属，撤销当前设备时返回 `current_kicked`） | 登录 |
 | POST | `/api/auth/forgot-password` | 提交忘记密码申请 | 公开 |
 | GET | `/api/auth/password-resets` | 忘记密码申请列表 | admin+ |
 | PATCH | `/api/auth/password-resets/{id}` | 处理忘记密码申请 | admin+ |
@@ -262,7 +264,9 @@ GDUECA/
 | POST | `/api/bugs/batch` | 批量标记已解决 / 重新打开 | admin+ |
 | POST | `/api/translations/batch` | 批量翻译表单内容（带缓存） | editor+ |
 | GET | `/api/query/{receipt_code}` | 回执码公开查询进度（不含个人信息） | 公开 |
-| GET/PUT | `/api/system/settings` | 系统配置 | GET 公开 / PUT admin+ |
+| GET | `/api/system/settings` | 公开站点信息（站点名 / 页脚 / 备案 / 系统时区，不含安全配置） | 公开 |
+| GET | `/api/system/settings/admin` | 完整系统配置（IP 黑名单 / 域名 / 网络配置） | admin+ |
+| PUT | `/api/system/settings` | 修改系统配置 | admin+ |
 | POST/DELETE | `/api/system/ip-blacklist` | IP 黑名单 | admin+ |
 | GET | `/uploads/avatars/{file}` | 头像静态文件 | 公开 |
 | GET | `/health` | 健康检查 | 公开 |
@@ -273,29 +277,31 @@ GDUECA/
 
 ```bash
 cd backend
+cp .env.example .env   # 环境变量完整清单及说明见该文件，按需修改
 pip install -r requirements.txt
 python run.py
-# 监听 http://localhost:8000 + http://[::]:8000（IPv4/IPv6 双栈）
+# 默认仅监听 http://127.0.0.1:8000（浏览器经前端同源 /api 访问后端）
+# 需要其他机器直连后端时：HOST=:: python run.py
 ```
 
-后端启动时会自动建表并创建超级管理员（由 `.env` 中 `FIRST_SUPERADMIN_EMAIL` / `FIRST_SUPERADMIN_PASSWORD` 配置，默认 `admin` / `admin`）。
+后端启动时会自动建表并创建超级管理员（由 `.env` 中 `FIRST_SUPERADMIN_EMAIL` / `FIRST_SUPERADMIN_PASSWORD` 配置）。
 
-> **首次登录强制改密**：默认密码 `admin/admin` 登录后会自动跳转到修改密码页，必须设置新密码（至少 6 位）才能进入后台。
+> **不再有默认弱口令**：`FIRST_SUPERADMIN_PASSWORD` 留空或不满足强口令策略时，后端自动生成随机强口令并写入 `backend/initial_admin_password.txt`（权限 0600）。首次登录强制改密，改密后请删除该文件。旧版本数据库中仍为 `admin/admin` 的超管账号会在启动时被强制要求改密。
 
-### 默认账号
+### 初始账号
 
 | 字段 | 值 |
 | --- | --- |
-| 用户名 | `admin` |
-| 密码 | `admin`（首次登录强制修改） |
+| 用户名 | `admin`（邮箱前缀） |
+| 密码 | 见 `backend/initial_admin_password.txt`（首次登录强制修改） |
 | 邮箱 | `admin@gdue-ca.cn` |
 | 角色 | `super_admin` |
 
 ### 忘记密码 / 账号恢复
 
 - **忘记密码**：登录页点击「忘记密码？」→ 填写联系邮箱 + 原因 → 提交申请 → 管理员在 `/admin/password-resets` 审核后手动联系
-- **安全问题恢复**：所有管理员账号全部失能时，登录页点击「账号恢复」→ 回答安全问题（默认：计算机协会成立于哪一年？答案：2008）→ 重置超管密码并重新启用
-- 安全问题可在 `/admin/settings` 由 super_admin 修改（PUT `/api/auth/security-question`）
+- **安全问题恢复**（仅内网可用，按 IP 限流）：所有管理员账号全部失能时，登录页点击「账号恢复」→ 回答安全问题 → 重置超管密码并重新启用（恢复后仍需首次登录改密）
+- 系统不再预置默认安全问题（旧版默认「2008」会在启动时被清除），需由 super_admin 在 `/admin/settings` 设置（PUT `/api/auth/security-question`）；答案以 bcrypt 哈希存储，至少 6 位
 
 ### 2. 启动前端
 
@@ -306,11 +312,13 @@ pnpm run dev      # 或 npm run dev
 # 访问 http://localhost:3000
 ```
 
-设置后端地址（可选，默认 `http://localhost:8000`）：
+前端通过 `next.config.ts` 的 rewrites 把同源 `/api/*`、`/uploads/*` 转发到后端，浏览器不直接访问 8000 端口。后端地址（默认 `http://127.0.0.1:8000`）**在构建时**读取，修改后需重新 `pnpm build`：
 
 ```bash
-# frontend/.env.local
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+# cp frontend/.env.example frontend/.env.local（完整清单及说明见该文件）
+BACKEND_URL=http://127.0.0.1:8000
+# 仅在前后端跨域部署时设置（同时需配置后端 CORS_ORIGINS），一般留空
+# NEXT_PUBLIC_API_BASE_URL=https://api.example.com
 ```
 
 ### 3. 访问管理员后台
@@ -377,11 +385,17 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 
 ### 管理员角色权限
 
-| 角色 | 权限 |
-| --- | --- |
-| `super_admin` | 全部权限，包含用户管理、安全问题管理 |
-| `admin` | 活动管理、报名审阅 / 导出、Bug 处理、忘记密码申请审核、系统设置 |
-| `editor` | 活动管理、Bug 查看、个人资料编辑 |
+| 角色 | 分类 | 权限 |
+| --- | --- | --- |
+| `super_admin` | 管理员 | 全部权限，包含账号管理、角色分配、安全问题管理 |
+| `admin` | 管理员 | 活动管理、报名审阅 / 导出、Bug 处理、忘记密码申请审核、系统设置 |
+| `editor` | 管理员 | 活动管理、Bug 查看 |
+| `member` | 普通成员 | 仅个人资料、修改密码、登录设备管理；**无后台权限** |
+| （未登录） | 访客 | 仅公开页面与公开表单（报名、Bug 反馈、回执查询） |
+
+- 后台接口全部禁止匿名访问；角色以数据库为准（降权 / 停用立即生效并踢下线）
+- 管理员级账号（`editor` 及以上）**只能从内网登录和使用**（`ADMIN_ALLOWED_NETWORKS`），即使令牌泄露，外网也无法使用
+- 新建账号默认 `member`（最小权限），初始密码首次登录强制修改
 
 ### 账号信息
 
@@ -449,18 +463,32 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 
 ### 安全配置
 
-- **CORS 域名白名单**：在 `/admin/settings` 配置允许的前端来源
-- **IP 黑名单**：支持 IPv4/IPv6/CIDR 段，30s 缓存
-- **JWT Bearer Token**：管理员登录后获取，存于 localStorage，自动附加到请求头
-- **导出接口 token**：通过 query 参数 `?token=xxx` 传递（用于浏览器直接打开下载）
+本站按 GB/T 22239-2019（等保 2.0）、GB/T 35274 个人信息安全规范要求加固：
+
+| 类别 | 措施 |
+| --- | --- |
+| 身份鉴别 | 密码 bcrypt（cost 12）加盐哈希，不存原文；强口令策略（≥10 位、3 类字符、禁止常见弱口令 / 连续序列 / 包含用户名）；连续 5 次失败锁定 15 分钟；首次登录与被重置后强制改密；改密后其他设备强制下线 |
+| 会话安全 | JWT 存于 `HttpOnly + SameSite=Strict (+ Secure)` Cookie，前端脚本无法读取；服务端会话表可撤销；30 分钟空闲超时；浏览器不保存任何密码 |
+| CSRF | 所有写请求校验双重提交令牌（`X-CSRF-Token` 头 = `gdueca_csrf` Cookie）+ Origin/Referer 来源校验；登录后轮换令牌 |
+| XSS | 前端 React 转义输出、Markdown 不渲染原始 HTML；按请求生成 nonce 的严格 CSP（`strict-dynamic`）；后端入口过滤控制字符 / HTML 标签 / `javascript:` 协议；导出 CSV/Excel 防公式注入 |
+| 访问控制 | 管理员 / 普通成员 / 访客三级角色；后台仅内网；可信代理白名单解析真实 IP（防 XFF 伪造）；公开接口不返回安全配置与草稿活动 |
+| 防暴力 / 防刷 | 登录、账号恢复、忘记密码、公开表单、回执查询按 IP 限流 |
+| 安全审计 | 登录成功 / 失败 / 锁定 / 内网拦截、改密、角色变更、账号增删、个人信息导出等写入 `audit_logs`（含来源 IP） |
+| 日志与追踪 | 每个请求分配 traceId（沿用 Nginx `$request_id`，否则后端生成），响应头 `X-Trace-Id` 回传；应用日志统一格式（`LOG_FORMAT=text/json`）且每行带 traceId；审计日志记录 traceId；访问日志不记录查询参数；未捕获异常返回带 `trace_id` 的 500，前端提示中显示错误编号 |
+| 数据备份 | `backend/scripts/backup_db.py`：SQLite 在线一致性快照 / PostgreSQL `pg_dump`，gzip 压缩、0600 权限、按天数轮转 |
+| 其他 | 安全响应头（CSP / X-Frame-Options / nosniff / HSTS / Referrer-Policy）；头像按文件魔数校验；弱 JWT 密钥自动替换；生产默认关闭 `/docs` |
+
+- **IP 黑名单**：支持 IPv4/IPv6/CIDR 段，30s 缓存，在 `/admin/settings` 配置
+- **导出下载**：浏览器直接打开导出 URL，登录态由 Cookie 携带，URL 中不含任何凭据
+- **定期备份**：`crontab -e` 添加 `30 3 * * * cd /srv/gdueca/backend && .venv/bin/python scripts/backup_db.py --keep-days 30`，并定期把 `backups/` 同步到异地、演练恢复
 
 ### 登录会话管理
 
 - **会话绑定 JWT jti**：每次登录生成唯一 jti，JWT payload 携带 jti，后端 `login_sessions` 表记录
-- **会话三级校验**：`require_role` 依赖按顺序检查 ① 是否已被撤销（revoked_at）② 是否硬顶过期（expires_at）③ 空闲超时（last_active_at + IDLE_TIMEOUT）；旧 token 无 jti 时放行兼容
+- **会话校验**：`require_role` 依赖按顺序检查 ① 是否已被撤销（revoked_at）② 是否硬顶过期（expires_at）③ 空闲超时（last_active_at + IDLE_TIMEOUT）④ 账号是否停用 ⑤ 管理员级账号是否来自内网；无 jti 的旧 token 一律拒绝
 - **空闲超时**：默认 30 分钟滑动续期（每次认证请求刷新 `last_active_at`）；"记住此设备"时延长至 30 天
 - **心跳续期**：前端 `SessionHeartbeat.tsx` 挂载于两棵布局树，页面可见时每 4 分钟调 `GET /api/auth/heartbeat` 刷新；回到前台（admin 路径外）时立即补跳并 401 自动登出
-- **前端登录页三选项**：保存账号密码（base64 存 `gdueca_saved_creds`）、自动登录（`gdueca_autologin`）、记住此设备（30 天）
+- **前端登录页选项**：记住此设备（30 天）；已移除「保存账号密码 / 自动登录」（原实现把密码 base64 存在 localStorage，属于明文存储），升级后会自动清除旧数据
 - **会话管理卡片**（`LoginSessionsCard`，前后台 profile 共用）：展示最近 20 条登录记录（设备名 / 型号 / IP / 浏览器 UA / 过期时间 / 撤销时间），可展开查看详情，可撤销（踢出）其他设备；撤销当前设备时自动 logout 并跳 `/admin/login`
 
 ### IP 属地定位
@@ -478,7 +506,7 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 - sitemap.xml + robots.txt
 - schema.org EducationalOrganization 结构化数据
 - Umami 网站统计（非 Google Analytics）
-- ISR/SSG 静态渲染
+- 全站动态渲染（CSP nonce 需按请求生成）
 
 ## 部署
 
@@ -486,17 +514,18 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 
 ```bash
 cd frontend
-pnpm run build
-pnpm start
-# 或部署到 Vercel / Cloudflare Pages
+BACKEND_URL=http://127.0.0.1:8000 pnpm run build   # rewrites 目标在构建时固化
+pnpm start                                         # 仅监听 127.0.0.1:3000
 ```
+
+> ⚠️ 生产环境 Next.js 必须只通过 Nginx / Caddy 对外提供服务（配置见 `deploy/`）：Next.js 转发 `/api` 时不会追加真实客户端 IP，直接对外暴露 3000 端口会让客户端可以伪造 `X-Forwarded-For` 冒充内网。`deploy/` 中的配置已用真实对端覆盖 XFF，并限制 `/admin` 仅内网访问。
 
 ### 后端
 
 ```bash
 cd backend
 # 生产环境推荐 gunicorn + uvicorn worker
-gunicorn -k uvicorn.workers.UvicornWorker -b [::]:8000 app.main:app
+gunicorn -k uvicorn.workers.UvicornWorker -b 127.0.0.1:8000 app.main:app
 ```
 
 ### 多云接入与协议兼容
