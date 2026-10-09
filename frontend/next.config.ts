@@ -15,6 +15,16 @@ const nextConfig: NextConfig = {
   // 不暴露 X-Powered-By: Next.js（减少指纹信息）
   poweredByHeader: false,
 
+  // dev 服务器跨源白名单（仅 development 生效）：
+  // Next 16 默认只允许 localhost 访问 HMR websocket 与跨源资源，
+  // 用回环 IP / 局域网 IP / 域名访问时客户端运行时会被阻塞 → 页面停留在 SSR 初始态（白屏无文字）。
+  allowedDevOrigins: [
+    "127.0.0.1",
+    "172.17.0.100", // 本机局域网/虚拟网卡地址（IP 变动时需同步更新）
+    "gdue-ca.paperee.guru",
+    "*.paperee.guru",
+  ],
+
   // 浏览器统一请求同源 /api/*，由 Next.js 转发到后端：
   // 登录 Cookie 为第一方 Cookie（SameSite=Strict 生效），无需开放 CORS
   async rewrites() {
