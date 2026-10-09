@@ -3,19 +3,65 @@
 /**
  * Announcements - 首页公告栏
  * 桌面：标签 + 三栏公告（细线分隔，单行截断）；手机：纵向列表
- * 按日期从新到旧排列
+ * 数据源：CMS 公告（category=homepage）前 3 条；加载中/失败/为空时回退到 i18n 内置公告
  */
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useI18n } from "@/i18n/provider";
+import { listPublicAnnouncements } from "@/lib/api/announcements";
+import { FormattedUserActionTime } from "@/components/shared/FormattedUserActionTime";
+import type { Announcement } from "@/types/api";
+
+/** 外链新窗口打开，站内链接走 next/link；无链接时直接渲染内容 */
+function AnnouncementLink({
+  href,
+  className,
+  children,
+}: {
+  href: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  if (href.startsWith("/")) {
+    return (
+      <Link href={href} className={className}>
+        {children}
+      </Link>
+    );
+  }
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
+      {children}
+    </a>
+  );
+}
 
 export function Announcements() {
   const { t } = useI18n();
+  const [cmsItems, setCmsItems] = useState<Announcement[] | null>(null);
 
-  const items = [1, 2, 3]
+  useEffect(() => {
+    let cancelled = false;
+    listPublicAnnouncements("homepage")
+      .then((list) => {
+        if (!cancelled) setCmsItems(list.slice(0, 3));
+      })
+      .catch(() => {
+        if (!cancelled) setCmsItems([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const fallbackItems = [1, 2, 3]
     .map((n) => ({
       title: t(`home.announcements.item${n}Title`),
       date: t(`home.announcements.item${n}Date`),
     }))
     .sort((a, b) => b.date.localeCompare(a.date));
+
+  const items = cmsItems && cmsItems.length > 0 ? cmsItems : null;
 
   return (
     <section
@@ -31,21 +77,54 @@ export function Announcements() {
             NOTICE
           </span>
         </div>
-        <ul className="flex flex-col md:flex-row md:flex-1 md:min-w-0">
-          {items.map((item) => (
-            <li
-              key={item.date + item.title}
-              className="flex min-w-0 flex-col gap-1 py-4 first:pt-0 md:py-0 md:flex-1 md:pl-6 border-b last:border-b-0 md:border-b-0 md:border-l border-border"
-            >
-              <time dateTime={item.date} className="font-mono text-xs text-muted-foreground">
-                {item.date}
-              </time>
-              <span className="text-[15px] md:text-sm leading-normal md:truncate" title={item.title}>
-                {item.title}
-              </span>
-            </li>
-          ))}
-        </ul>
+        {items ? (
+          <ul className="flex flex-col md:flex-row md:flex-1 md:min-w-0">
+            {items.map((a) => (
+              <li
+                key={a.id}
+                className="flex min-w-0 flex-col gap-1 py-4 first:pt-0 md:py-0 md:flex-1 md:pl-6 border-b last:border-b-0 md:border-b-0 md:border-l border-border"
+              >
+                <FormattedUserActionTime
+                  utcIso={a.start_at ?? a.created_at}
+                  className="font-mono text-xs text-muted-foreground self-start"
+                />
+                {a.link ? (
+                  <AnnouncementLink href={a.link} className="block min-w-0">
+                    <span
+                      className="text-[15px] md:text-sm leading-normal md:truncate block"
+                      title={a.title}
+                    >
+                      {a.title}
+                    </span>
+                  </AnnouncementLink>
+                ) : (
+                  <span
+                    className="text-[15px] md:text-sm leading-normal md:truncate"
+                    title={a.title}
+                  >
+                    {a.title}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <ul className="flex flex-col md:flex-row md:flex-1 md:min-w-0">
+            {fallbackItems.map((item) => (
+              <li
+                key={item.date + item.title}
+                className="flex min-w-0 flex-col gap-1 py-4 first:pt-0 md:py-0 md:flex-1 md:pl-6 border-b last:border-b-0 md:border-b-0 md:border-l border-border"
+              >
+                <time dateTime={item.date} className="font-mono text-xs text-muted-foreground">
+                  {item.date}
+                </time>
+                <span className="text-[15px] md:text-sm leading-normal md:truncate" title={item.title}>
+                  {item.title}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </section>
   );

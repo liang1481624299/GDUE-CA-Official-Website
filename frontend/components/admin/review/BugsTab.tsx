@@ -1,26 +1,24 @@
+/**
+ * 审核中心 - Bug 反馈 Tab
+ * 迁移自原 /admin/bugs 页：description/extra 按后台显示语言自动翻译（可查看原文）
+ */
 "use client";
 
-/**
- * /admin/bugs - Bug 反馈列表
- * 字段对齐后端 BugReport：receipt_code/content_lang/contact_email/contact_phone/description/extra/resolved/created_at
- * description/extra 按后台显示语言自动翻译（可查看原文）
- */
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { Check, RotateCcw, Languages, CheckCheck, XCircle, Square, SquareCheck } from "lucide-react";
 import { useI18n } from "@/i18n/provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { listBugReports, setBugResolved, batchUpdateBugs } from "@/lib/api/bugReport";
 import { batchTranslate } from "@/lib/api/translations";
+import { StatusBadge } from "./StatusBadge";
+import { BatchBar } from "./BatchBar";
+import { useBatchSelection } from "./useBatchSelection";
+import { FormattedUserActionTime } from "@/components/shared/FormattedUserActionTime";
 import type { BugReport, TranslationResult } from "@/types/api";
-import { Check, RotateCcw, Languages, CheckCheck, Square, SquareCheck } from "lucide-react";
 
-// 简易 t 映射：避免对 zh-CN.json status 子键做条件判断
-function statusLabel(resolved: boolean, t: (k: string) => string) {
-  return resolved ? t("admin.bugs.statuses.resolved") : t("admin.bugs.statuses.open");
-}
-
-export default function BugsPage() {
+export function BugsTab() {
   const { t, locale } = useI18n();
   const search = useSearchParams();
   const [items, setItems] = useState<BugReport[]>([]);
@@ -28,8 +26,8 @@ export default function BugsPage() {
   const [loading, setLoading] = useState(true);
   // 自动翻译：key = b{id}.{field}
   const [trans, setTrans] = useState<Record<string, TranslationResult>>({});
-  // 批量操作：已选中的记录 id
-  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const { selected, toggle: toggleSelect, toggleAll, clear, allSelected, setSelected } =
+    useBatchSelection(items);
   const [batchLoading, setBatchLoading] = useState(false);
 
   async function refresh() {
@@ -46,7 +44,7 @@ export default function BugsPage() {
 
   useEffect(() => {
     refresh();
-    setSelected(new Set());
+    clear();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resolvedFilter]);
 
@@ -90,22 +88,6 @@ export default function BugsPage() {
     }
   }
 
-  // ---------- 批量操作 ----------
-  function toggleSelect(id: number) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
-
-  /** 全选 / 取消全选 */
-  function toggleSelectAll() {
-    const allSelected = items.length > 0 && items.every((b) => selected.has(b.id));
-    setSelected(allSelected ? new Set() : new Set(items.map((b) => b.id)));
-  }
-
   async function batchAction(resolved: boolean) {
     if (selected.size === 0) return;
     if (!confirm(t(resolved ? "admin.bugs.batchConfirmResolve" : "admin.bugs.batchConfirmReopen").replace("{count}", String(selected.size)))) return;
@@ -121,43 +103,27 @@ export default function BugsPage() {
     }
   }
 
-  /** Ctrl+A / Cmd+A 全选（输入框聚焦时不拦截） */
-  useEffect(() => {
-    function onKeydown(e: KeyboardEvent) {
-      if ((e.ctrlKey || e.metaKey) && (e.key === "a" || e.key === "A")) {
-        const tag = (e.target as HTMLElement)?.tagName;
-        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || (e.target as HTMLElement)?.isContentEditable) return;
-        e.preventDefault();
-        toggleSelectAll();
-      }
-    }
-    window.addEventListener("keydown", onKeydown);
-    return () => window.removeEventListener("keydown", onKeydown);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, selected]);
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">{t("admin.bugs.title")}</h1>
+        <select
+          className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+          value={resolvedFilter}
+          onChange={(e) => setResolvedFilter(e.target.value)}
+        >
+          <option value="">{t("admin.bugs.filterStatus")}</option>
+          <option value="open">{t("admin.bugs.statuses.open")}</option>
+          <option value="resolved">{t("admin.bugs.statuses.resolved")}</option>
+        </select>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={toggleSelectAll} disabled={items.length === 0}>
-            {items.length > 0 && items.every((b) => selected.has(b.id)) ? (
+          <Button variant="outline" size="sm" onClick={toggleAll} disabled={items.length === 0}>
+            {allSelected ? (
               <Square className="h-4 w-4 mr-1" />
             ) : (
               <SquareCheck className="h-4 w-4 mr-1" />
             )}
             {t("admin.bugs.selectAll")}
           </Button>
-          <select
-            className="h-8 rounded-md border border-input bg-background px-3 text-sm"
-            value={resolvedFilter}
-            onChange={(e) => setResolvedFilter(e.target.value)}
-          >
-            <option value="">{t("admin.bugs.filterStatus")}</option>
-            <option value="open">{t("admin.bugs.statuses.open")}</option>
-            <option value="resolved">{t("admin.bugs.statuses.resolved")}</option>
-          </select>
         </div>
       </div>
 
@@ -193,9 +159,9 @@ export default function BugsPage() {
                       </button>
                       <h3 className="font-semibold whitespace-pre-wrap">{shown.slice(0, 80)}</h3>
                     </div>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-secondary whitespace-nowrap">
-                      {statusLabel(b.resolved, t)}
-                    </span>
+                    <StatusBadge tone={b.resolved ? "success" : "warning"}>
+                      {b.resolved ? t("admin.bugs.statuses.resolved") : t("admin.bugs.statuses.open")}
+                    </StatusBadge>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap text-xs text-muted-foreground">
                     <code className="font-mono">{b.receipt_code}</code>
@@ -223,13 +189,13 @@ export default function BugsPage() {
                   )}
                   {b.extra && (
                     <p className="text-xs text-muted-foreground whitespace-pre-wrap pt-1 border-t border-border/60">
-                      {t("admin.bugs.colUrl")}: {tv(b, "extra")}
+                      {tv(b, "extra")}
                     </p>
                   )}
                   <div className="flex flex-wrap gap-4 text-xs text-muted-foreground pt-2 border-t border-border">
                     {b.contact_email && <span>{t("admin.bugs.colContact")}: {b.contact_email}</span>}
                     {b.contact_phone && <span>{t("admin.bugs.colContact")}: {b.contact_phone}</span>}
-                    <span>{t("admin.bugs.colCreatedAt")}: {new Date(b.created_at).toLocaleString()}</span>
+                    <span>{t("admin.bugs.colCreatedAt")}: <FormattedUserActionTime utcIso={b.created_at} /></span>
                     <span className="font-mono">IP: {b.submit_ip ?? "-"}</span>
                   </div>
                   <div className="pt-2">
@@ -254,24 +220,28 @@ export default function BugsPage() {
 
       {/* 浮动批量操作栏：有选中项时显示在右下角 */}
       {selected.size > 0 && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-lg border bg-background/95 p-3 shadow-lg backdrop-blur">
-          <span className="text-sm text-muted-foreground whitespace-nowrap">
-            {t("admin.bugs.selected").replace("{count}", String(selected.size))}
-          </span>
-          <div className="flex gap-2">
-            <Button size="sm" onClick={() => batchAction(true)} disabled={batchLoading}>
-              <CheckCheck className="h-4 w-4 mr-1" />
-              {t("admin.bugs.batchResolve")}
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => batchAction(false)} disabled={batchLoading}>
-              <RotateCcw className="h-4 w-4 mr-1" />
-              {t("admin.bugs.batchReopen")}
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())} disabled={batchLoading}>
-              {t("common.cancel")}
-            </Button>
-          </div>
-        </div>
+        <BatchBar
+          countLabel={t("admin.bugs.selected").replace("{count}", String(selected.size))}
+          loading={batchLoading}
+          cancelLabel={t("common.cancel")}
+          onCancel={() => setSelected(new Set())}
+          actions={[
+            {
+              key: "resolve",
+              label: t("admin.bugs.batchResolve"),
+              icon: CheckCheck,
+              variant: "default",
+              onClick: () => batchAction(true),
+            },
+            {
+              key: "reopen",
+              label: t("admin.bugs.batchReopen"),
+              icon: RotateCcw,
+              variant: "outline",
+              onClick: () => batchAction(false),
+            },
+          ]}
+        />
       )}
     </div>
   );

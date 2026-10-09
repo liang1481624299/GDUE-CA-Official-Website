@@ -6,7 +6,7 @@ from pydantic import BaseModel, EmailStr, Field, model_validator
 from app.core.password_policy import MAX_LENGTH as PASSWORD_MAX_LENGTH
 from app.core.password_policy import validate_password_strength
 from app.core.security import Role
-from app.schemas.common import MultilineText, PlainText, UTCDatetime
+from app.schemas.common import LooseEmail, MultilineText, PlainText, UTCDatetime
 
 # 学号 / 手机号只允许常见字符
 _STUDENT_ID_PATTERN = r"^[A-Za-z0-9\-]{1,32}$"
@@ -15,7 +15,7 @@ _PHONE_PATTERN = r"^\+?[0-9\- ]{5,32}$"
 
 class LoginRequest(BaseModel):
     username: str | None = Field(default=None, max_length=128)
-    email: EmailStr | None = None
+    email: LooseEmail | None = None
     # 登录只做校验不做强度检查（强度在设置 / 修改密码时强制）
     password: str = Field(min_length=1, max_length=PASSWORD_MAX_LENGTH)
     # 勾选「记住此设备」：空闲超时 30 分钟 → 30 天，token 硬顶 30 天
@@ -29,6 +29,8 @@ class LoginResponse(BaseModel):
     csrf_token: str
     username: str
     must_change_password: bool = False
+    # 实名状态（前端后台守卫用：未实名的管理员级账号跳转 /realname）
+    realname_verified: bool = True
 
 
 # ---------- 登录会话（设备管理） ----------
@@ -55,7 +57,7 @@ class LoginSessionOut(BaseModel):
 
 class UserCreate(BaseModel):
     username: PlainText = Field(min_length=2, max_length=64)
-    email: EmailStr
+    email: LooseEmail
     password: str = Field(max_length=PASSWORD_MAX_LENGTH)
     role: Role = Role.MEMBER
     student_id: str = Field(pattern=_STUDENT_ID_PATTERN)
@@ -69,19 +71,22 @@ class UserCreate(BaseModel):
 
 
 class UserUpdate(BaseModel):
-    """更新账号信息：自己可改基础资料，super_admin 额外可改 role/is_active"""
+    """更新账号信息：自己可改基础资料，super_admin 额外可改 role/is_active/permission_overrides"""
     username: PlainText | None = Field(default=None, min_length=2, max_length=64)
     real_name: PlainText | None = Field(default=None, min_length=1, max_length=64)
     student_id: str | None = Field(default=None, pattern=_STUDENT_ID_PATTERN)
     phone: str | None = Field(default=None, pattern=_PHONE_PATTERN)
     role: Role | None = None
     is_active: bool | None = None
+    # 模块级权限覆盖（仅 super_admin 可写；None = 不修改）
+    permission_overrides: dict[str, list[str]] | None = None
 
 
 class UserOut(BaseModel):
     id: int
     username: str
-    email: EmailStr
+    # 响应模型不做严格邮箱校验：数据写入时已校验，严格校验曾致占位域账号序列化 500
+    email: str
     role: Role
     is_active: bool
     must_change_password: bool = False
@@ -89,12 +94,19 @@ class UserOut(BaseModel):
     real_name: str
     phone: str
     avatar_url: str | None = None
+    # 实名验证状态（Phase 6）
+    realname_verified: bool = False
+    realname_verified_at: UTCDatetime | None = None
+    realname_submitted_at: UTCDatetime | None = None
+    realname_note: str | None = None
     # IANA 时区；null = 自动探测浏览器时区
     timezone: str | None = None
     # 用户物理位置（三级行政区）
     country: str | None = None       # 国家
     region: str | None = None        # 一级行政区（省/州）
     locality: str | None = None      # 二级行政区（市/郡）；可为空
+    # 模块级权限覆盖；null = 按角色默认矩阵
+    permission_overrides: dict[str, list[str]] | None = None
     created_at: UTCDatetime
 
     model_config = {"from_attributes": True}

@@ -13,6 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { EventJoinForm } from "@/components/join/EventJoinForm";
 import { ClubJoinForm } from "@/components/join/ClubJoinForm";
+import { RecruitmentInfoSection } from "@/components/join/RecruitmentInfoSection";
 import { ReceiptQuery } from "@/components/shared/ReceiptQuery";
 import { DirectionalTransition } from "@/components/shared/DirectionalTransition";
 
@@ -41,6 +42,9 @@ function RegisterContent() {
           </ViewTransition>
           <p className="text-muted-foreground">{t("register.subtitle")}</p>
         </div>
+
+        {/* 最新招新信息（CMS，无数据时不渲染） */}
+        <RecruitmentInfoSection />
 
         <div className="grid md:grid-cols-3 gap-6">
           {/* 活动报名卡片 */}

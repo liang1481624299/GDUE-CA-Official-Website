@@ -5,9 +5,10 @@
  * - 客户端组件，挂载时向后端校验登录态（/api/auth/me），禁止匿名访问：
  *   未登录 / 会话失效 → /admin/login；须改初始密码 → /admin/change-password；
  *   普通成员（无后台权限）→ 前台个人资料页
- * - 侧边栏按角色隐藏无权限入口（仅界面层；接口权限由后端强制校验）
+ * - 侧边栏按模块级有效权限（角色默认 + permission_overrides）显隐入口
+ *   （仅界面层；接口权限由后端强制校验）
  * - 顶部显示当前用户名 + 退出登录
- * - 侧边栏含概览/活动/报名/Bug/设置入口
+ * - 侧边栏含概览/活动/审核中心/人员/设置入口
  */
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -16,8 +17,6 @@ import {
   LayoutDashboard,
   CalendarDays,
   ClipboardList,
-  Bug,
-  KeyRound,
   UserCircle,
   Users,
   Settings,
@@ -25,7 +24,24 @@ import {
   Menu,
   X,
   ExternalLink,
-  ChevronDown,
+  ShieldCheck,
+  Megaphone,
+  FileText,
+  Newspaper,
+  UsersRound,
+  UserPlus,
+  MessageSquare,
+  KeyRound,
+  Fingerprint,
+  BadgeCheck,
+  PenLine,
+  Tags,
+  FileImage,
+  Globe,
+  ShieldBan,
+  ScrollText,
+  Eye,
+  BarChart3,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useI18n } from "@/i18n/provider";
@@ -33,47 +49,117 @@ import { useAdminLocale } from "@/app/admin/AdminProviders";
 import { locales, localeNames, type Locale } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { BanModal } from "@/components/shared/BanModal";
 import { fetchMe } from "@/lib/api/auth";
 import { ApiError } from "@/lib/api/client";
 import { clearLocalSession, isAdminRole, logout, saveSession, type AdminSession } from "@/lib/auth";
+import {
+  hasPermission,
+  type PermissionModule,
+  type PermissionOverrides,
+} from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
 type NavItem = {
   key: string;
   href: string;
   icon: typeof LayoutDashboard;
-  roles?: string[];
+  /** 任一列出模块具有 view 权限即可见；缺省 = 恒可见 */
+  modules?: PermissionModule[];
 };
 
-/** 父标签分组（如「表单审阅」，包含报名/Bug/重置密码三个子项） */
 type NavGroup = {
-  groupKey: string;
+  /** 分组标题 i18n key；缺省 = 无标题组（置顶概览） */
+  labelKey?: string;
   items: NavItem[];
 };
 
-/** 侧边栏条目：平铺项 或 父标签分组 */
-type NavEntry = NavItem | NavGroup;
-
-function isGroup(entry: NavEntry): entry is NavGroup {
-  return "groupKey" in entry;
+/** 侧边栏条目可见性：按有效权限判定 */
+function canAccess(
+  item: NavItem,
+  permCtx: { role: string; overrides: PermissionOverrides | null } | null
+): boolean {
+  if (!item.modules || item.modules.length === 0) return true;
+  if (!permCtx) return false;
+  return item.modules.some((m) => hasPermission(permCtx.role, permCtx.overrides, m, "view"));
 }
 
-/** admin 及以上可见（与后端 require_role(Role.ADMIN) 对应） */
-const ADMIN_UP = ["super_admin", "admin"];
-
-const navEntries: NavEntry[] = [
-  { key: "admin.dashboard.overview", href: "/admin", icon: LayoutDashboard },
-  { key: "admin.dashboard.activities", href: "/admin/activities", icon: CalendarDays },
+/**
+ * 侧边栏 7 分组导航（父标签为不可点击的分组标题）：
+ * 站点内容管理 / 博客文档管理 / 文件资源管理 / 账号与登录设置 /
+ * 系统安全设置 / 权限管理 / 数据统计
+ */
+const navGroups: NavGroup[] = [
+  // 无标题组：概览
   {
-    groupKey: "admin.dashboard.formReview",
     items: [
-      { key: "admin.dashboard.registrations", href: "/admin/registrations", icon: ClipboardList, roles: ADMIN_UP },
-      { key: "admin.dashboard.bugs", href: "/admin/bugs", icon: Bug },
-      { key: "admin.dashboard.passwordResets", href: "/admin/password-resets", icon: KeyRound, roles: ADMIN_UP },
+      { key: "admin.dashboard.overview", href: "/admin", icon: LayoutDashboard, modules: ["dashboard"] },
     ],
   },
-  { key: "admin.dashboard.users", href: "/admin/users", icon: Users },
-  { key: "admin.dashboard.settings", href: "/admin/settings", icon: Settings, roles: ADMIN_UP },
+  {
+    labelKey: "admin.navGroup.content",
+    items: [
+      { key: "admin.dashboard.announcements", href: "/admin/announcements", icon: Megaphone, modules: ["announcements"] },
+      { key: "admin.dashboard.clubAnnouncements", href: "/admin/announcements/club", icon: Megaphone, modules: ["announcements"] },
+      { key: "admin.dashboard.activities", href: "/admin/activities", icon: CalendarDays, modules: ["activities"] },
+      { key: "admin.dashboard.content", href: "/admin/content/club-intro", icon: FileText, modules: ["content"] },
+      { key: "admin.dashboard.members", href: "/admin/members", icon: UsersRound, modules: ["members"] },
+      { key: "admin.dashboard.recruitment", href: "/admin/recruitment", icon: UserPlus, modules: ["recruitment"] },
+      {
+        key: "admin.dashboard.review",
+        href: "/admin/review",
+        icon: ClipboardList,
+        modules: ["review.registrations", "review.bugs", "review.resets"],
+      },
+    ],
+  },
+  {
+    labelKey: "admin.navGroup.blog",
+    items: [
+      { key: "admin.dashboard.blog", href: "/admin/blog", icon: Newspaper, modules: ["blog"] },
+      { key: "admin.dashboard.blogNew", href: "/admin/blog/new", icon: PenLine, modules: ["blog"] },
+      { key: "admin.dashboard.blogTags", href: "/admin/blog/tags", icon: Tags, modules: ["blog_tags"] },
+      { key: "admin.dashboard.comments", href: "/admin/blog/comments", icon: MessageSquare, modules: ["comments"] },
+    ],
+  },
+  {
+    labelKey: "admin.navGroup.media",
+    items: [
+      { key: "admin.dashboard.media", href: "/admin/media", icon: FileImage, modules: ["media"] },
+    ],
+  },
+  {
+    labelKey: "admin.navGroup.account",
+    items: [
+      { key: "admin.dashboard.oauth", href: "/admin/oauth", icon: KeyRound, modules: ["oauth"] },
+      { key: "admin.dashboard.sso", href: "/admin/sso", icon: Fingerprint, modules: ["sso"] },
+      { key: "admin.dashboard.realname", href: "/admin/realname-review", icon: BadgeCheck, modules: ["realname"] },
+    ],
+  },
+  {
+    labelKey: "admin.navGroup.security",
+    items: [
+      { key: "admin.dashboard.settings", href: "/admin/settings", icon: Settings, modules: ["settings"] },
+      { key: "admin.dashboard.securityNetwork", href: "/admin/security/network", icon: Globe, modules: ["security"] },
+      { key: "admin.dashboard.securityIpWhitelist", href: "/admin/security/ip-whitelist", icon: ShieldCheck, modules: ["security"] },
+      { key: "admin.dashboard.securityIpBlacklist", href: "/admin/security/ip-blacklist", icon: ShieldBan, modules: ["security"] },
+    ],
+  },
+  {
+    labelKey: "admin.navGroup.permission",
+    items: [
+      { key: "admin.dashboard.users", href: "/admin/users", icon: Users, modules: ["users"] },
+      { key: "admin.dashboard.auditLogs", href: "/admin/audit-logs", icon: ScrollText, modules: ["audit_logs"] },
+    ],
+  },
+  {
+    labelKey: "admin.navGroup.stats",
+    items: [
+      { key: "admin.stats.visits.title", href: "/admin/stats/visits", icon: Eye, modules: ["stats"] },
+      { key: "admin.stats.activities.title", href: "/admin/stats/activities", icon: BarChart3, modules: ["stats"] },
+      { key: "admin.stats.recruitment.title", href: "/admin/stats/recruitment", icon: UserPlus, modules: ["stats"] },
+    ],
+  },
 ];
 
 export default function AdminDashboardLayout({
@@ -85,6 +171,10 @@ export default function AdminDashboardLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [session, setSession] = useState<AdminSession | null>(null);
+  const [permCtx, setPermCtx] = useState<{
+    role: string;
+    overrides: PermissionOverrides | null;
+  } | null>(null);
   const [checked, setChecked] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
@@ -94,7 +184,11 @@ export default function AdminDashboardLayout({
     fetchMe()
       .then((me) => {
         if (cancelled) return;
-        const s = { username: me.username, role: me.role };
+        const s = {
+          username: me.username,
+          role: me.role,
+          realnameVerified: me.realname_verified,
+        };
         saveSession(s);
         if (me.must_change_password) {
           router.replace("/admin/change-password");
@@ -104,7 +198,16 @@ export default function AdminDashboardLayout({
           router.replace("/zh-CN/profile");
           return;
         }
+        // 实名守卫（Phase 6）：admin/editor 未实名禁止进后台（super_admin 豁免）
+        if (
+          me.role !== "super_admin" &&
+          !me.realname_verified
+        ) {
+          router.replace("/admin/realname");
+          return;
+        }
         setSession(s);
+        setPermCtx({ role: me.role, overrides: me.permission_overrides ?? null });
         setChecked(true);
       })
       .catch((err) => {
@@ -140,11 +243,13 @@ export default function AdminDashboardLayout({
 
   return (
     <div className="min-h-screen flex bg-muted/20">
+      <BanModal />
       {/* 桌面端侧边栏 */}
       <aside className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 border-r border-border bg-background">
         <SidebarContent
           t={t}
           session={session}
+          permCtx={permCtx}
           isActive={isActive}
           onLogout={handleLogout}
         />
@@ -171,6 +276,7 @@ export default function AdminDashboardLayout({
               <SidebarContent
                 t={t}
                 session={session}
+                permCtx={permCtx}
                 isActive={isActive}
                 onLogout={handleLogout}
                 onNavigate={() => setMobileNavOpen(false)}
@@ -244,41 +350,45 @@ function LocaleSelect() {
 function SidebarContent({
   t,
   session,
+  permCtx,
   isActive,
   onLogout,
   onNavigate,
 }: {
   t: (k: string) => string;
   session: AdminSession | null;
+  permCtx: { role: string; overrides: PermissionOverrides | null } | null;
   isActive: (h: string) => boolean;
   onLogout: () => void;
   onNavigate?: () => void;
 }) {
-  // 父标签展开/折叠状态：默认全部展开（key=groupKey，true=折叠）
-  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+  /** 按权限过滤后的分组（空组整组隐藏） */
+  const visibleGroups = navGroups
+    .map((g) => ({ ...g, items: g.items.filter((it) => canAccess(it, permCtx)) }))
+    .filter((g) => g.items.length > 0);
 
-  function toggleGroup(groupKey: string) {
-    setCollapsedGroups((prev) => ({ ...prev, [groupKey]: !prev[groupKey] }));
-  }
+  /** 激活项 = 可见项中与当前路径匹配的最长前缀（父级 href 与子页面区分，如 /admin/blog 与 /admin/blog/new） */
+  const activeHref = visibleGroups
+    .flatMap((g) => g.items)
+    .filter((it) => isActive(it.href))
+    .reduce((best, it) => (it.href.length > best.length ? it.href : best), "");
 
   /** 渲染单个导航项 —— 对齐 shadcn Button ghost 变体完整类名 */
-  function renderNavItem(item: NavItem, grouped = false, tabbable = true) {
+  function renderNavItem(item: NavItem) {
     return (
       <Link
         key={item.href}
         href={item.href}
         onClick={onNavigate}
-        tabIndex={tabbable ? undefined : -1}
         className={cn(
           // Button ghost + size-sm 完整类名
-          "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+          "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
           // Button ghost 变体悬停
           "hover:bg-accent hover:text-accent-foreground",
-          // 侧边栏导航定制：左对齐 + 可选缩进
+          // 侧边栏导航定制：左对齐
           "justify-start w-full px-3 h-8",
-          grouped && "pl-5",
           // 激活态 = 选中（与顶栏 primary 按钮同色系）
-          isActive(item.href)
+          item.href === activeHref
             ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
             : "text-muted-foreground"
         )}
@@ -301,60 +411,17 @@ function SidebarContent({
           </Button>
         )}
       </div>
-      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-        {navEntries.map((entry, idx) => {
-          if (isGroup(entry)) {
-            const open = !collapsedGroups[entry.groupKey];
-            const groupId = `nav-group-${entry.groupKey.replace(/\W+/g, "-")}`;
-            return (
-              <div key={entry.groupKey} className={cn(idx > 0 && "pt-2")}>
-                {/* 父标签：Button ghost + size-sm，加 uppercase 保留分组层级感 + chevron 指示器 */}
-                <button
-                  type="button"
-                  onClick={() => toggleGroup(entry.groupKey)}
-                  aria-expanded={open}
-                  aria-controls={groupId}
-                  className={cn(
-                    // Button ghost + size-sm 完整类名
-                    "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
-                    // Button ghost 变体悬停
-                    "hover:bg-accent hover:text-accent-foreground",
-                    // 侧边栏定制：左对齐 + 高度 + uppercase
-                    "justify-between w-full px-3 h-8 text-xs uppercase tracking-wide text-muted-foreground font-semibold"
-                  )}
-                >
-                  <span>{t(entry.groupKey)}</span>
-                  <ChevronDown
-                    className={cn(
-                      "h-4 w-4 shrink-0 transition-all",
-                      open ? "rotate-180" : "rotate-0"
-                    )}
-                  />
-                </button>
-                {/* 子项容器：与按钮同速（Tailwind transition 默认 150ms + 同款贝塞尔曲线） */}
-                <div
-                  id={groupId}
-                  aria-hidden={!open}
-                  className={cn(
-                    "grid transition-[grid-template-rows] motion-reduce:transition-none",
-                    open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-                  )}
-                >
-                  <div className="overflow-hidden min-h-0">
-                    {entry.items
-                      .filter((item) => !item.roles || (session?.role ? item.roles.includes(session.role) : false))
-                      .map((item) => renderNavItem(item, true, open))}
-                  </div>
-                </div>
+      <nav className="flex-1 overflow-y-auto px-3 pb-6">
+        {visibleGroups.map((group, gi) => (
+          <div key={group.labelKey ?? `group-${gi}`} className="space-y-1">
+            {group.labelKey && (
+              <div className="px-3 pt-4 pb-1 text-xs font-medium text-muted-foreground/80 select-none">
+                {t(group.labelKey)}
               </div>
-            );
-          }
-          // 平铺项
-          if (entry.roles && !(session?.role ? entry.roles.includes(session.role) : false)) {
-            return null;
-          }
-          return renderNavItem(entry);
-        })}
+            )}
+            {group.items.map(renderNavItem)}
+          </div>
+        ))}
       </nav>
       <div className="p-3 border-t border-border">
         <Link

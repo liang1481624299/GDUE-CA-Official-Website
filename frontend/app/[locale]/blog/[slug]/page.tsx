@@ -3,21 +3,19 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Calendar, User } from "lucide-react";
 import { getDictionary } from "@/i18n/dictionary";
-import { getAllBlogPosts, getBlogPost } from "@/lib/content";
-import { locales } from "@/lib/i18n";
+import { getPublicPost } from "@/lib/api/blog";
+import { ApiError } from "@/lib/api/client";
 import { Badge } from "@/components/ui/badge";
 import { MarkdownRenderer } from "@/components/blog/MarkdownRenderer";
+import { CommentsSection } from "@/components/blog/CommentsSection";
+import { FormattedUserActionTime } from "@/components/shared/FormattedUserActionTime";
 
-/** 为所有文章和语言生成静态参数 */
-export async function generateStaticParams() {
-  const posts = getAllBlogPosts();
-  return locales.flatMap((locale) =>
-    posts.map((post) => ({
-      locale,
-      slug: post.slug,
-    }))
-  );
-}
+/**
+ * 技术博客文章详情页 - 数据源：博客 CMS（/api/blog/{slug}）
+ *
+ * ISR 60s；动态渲染（服务端 fetch），非已发布文章一律 404。
+ */
+export const revalidate = 60;
 
 /** 生成 metadata */
 export async function generateMetadata({
@@ -26,12 +24,15 @@ export async function generateMetadata({
   params: Promise<{ locale: string; slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const post = getBlogPost(slug);
-  if (!post) return {};
-  return {
-    title: post.title,
-    description: post.excerpt,
-  };
+  try {
+    const post = await getPublicPost(slug);
+    return {
+      title: post.title,
+      description: post.excerpt ?? undefined,
+    };
+  } catch {
+    return {};
+  }
 }
 
 export default async function BlogPostPage({
@@ -41,9 +42,14 @@ export default async function BlogPostPage({
 }) {
   const { slug, locale } = await params;
   const dict = await getDictionary(locale);
-  const post = getBlogPost(slug);
 
-  if (!post) notFound();
+  let post;
+  try {
+    post = await getPublicPost(slug);
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) notFound();
+    throw e;
+  }
 
   return (
     <article className="container mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-12">
@@ -64,22 +70,28 @@ export default async function BlogPostPage({
         <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-4">
           <span className="flex items-center gap-1.5">
             <Calendar className="h-4 w-4" />
-            {post.date}
+            {/* 后端原始 UTC ISO，客户端按用户时区渲染 */}
+            <FormattedUserActionTime
+              utcIso={post.published_at ?? post.created_at}
+            />
           </span>
           <span className="flex items-center gap-1.5">
             <User className="h-4 w-4" />
-            {post.author}
+            {post.author ?? "—"}
           </span>
         </div>
         <div className="flex flex-wrap gap-2">
           {post.tags.map((tag) => (
-            <Badge key={tag} variant="accent">{tag}</Badge>
+            <Badge key={tag.id} variant="accent">{tag.name}</Badge>
           ))}
         </div>
       </header>
 
       {/* 文章正文 */}
-      <MarkdownRenderer content={post.content} />
+      <MarkdownRenderer content={post.content_md} />
+
+      {/* 评论区（客户端组件自行拉取 /api/blog/{id}/comments） */}
+      <CommentsSection postId={post.id} />
     </article>
   );
 }

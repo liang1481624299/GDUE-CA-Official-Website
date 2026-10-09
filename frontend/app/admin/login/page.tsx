@@ -5,6 +5,7 @@
  * 表单提交 POST /api/auth/login，登录凭据由后端写入 HttpOnly Cookie
  * - 如返回 must_change_password=true，跳转 /admin/change-password
  * - 管理员进入 /admin；普通成员进入前台个人资料页（无后台权限）
+ * - 第三方登录：按 /api/oauth/channels 开关显隐按钮，302 发起授权
  * - 登录选项：记住此设备（减少验证频率）；不在浏览器保存任何密码，
  *   如需记住密码请使用浏览器自带的密码管理器
  * - 底部含「忘记密码」和「账号恢复」入口
@@ -13,7 +14,15 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Loader2, ShieldCheck, ArrowLeft } from "lucide-react";
+import {
+  Loader2,
+  ShieldCheck,
+  ArrowLeft,
+  Github,
+  Apple,
+  Chrome,
+  LayoutGrid,
+} from "lucide-react";
 import { useI18n } from "@/i18n/provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,12 +35,22 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { login } from "@/lib/api/auth";
+import { listPublicOAuthChannels } from "@/lib/api/oauth";
 import { getSession, isAdminRole, saveSession } from "@/lib/auth";
+import type { OAuthProvider } from "@/types/api";
 
 /** 登录后的落地页：管理员 → 后台；普通成员 → 前台个人资料 */
 function homeFor(role: string | undefined) {
   return isAdminRole(role) ? "/admin" : "/zh-CN/profile";
 }
+
+/** 第三方登录渠道品牌图标（仅展示用） */
+const PROVIDER_ICONS: Record<OAuthProvider, React.ReactNode> = {
+  github: <Github className="h-4 w-4" />,
+  microsoft: <LayoutGrid className="h-4 w-4" />,
+  apple: <Apple className="h-4 w-4" />,
+  google: <Chrome className="h-4 w-4" />,
+};
 
 export default function AdminLoginPage() {
   const { t } = useI18n();
@@ -42,12 +61,37 @@ export default function AdminLoginPage() {
   const [error, setError] = useState<string | null>(null);
   // 登录选项
   const [rememberDevice, setRememberDevice] = useState(false);
+  // 第三方登录：已启用的渠道（后端开关控制显隐）
+  const [oauthProviders, setOauthProviders] = useState<OAuthProvider[]>([]);
 
   /** 已登录用户直接进入对应首页（会话失效时目标页会再跳回登录页） */
   useEffect(() => {
     const session = getSession();
     if (session) router.replace(homeFor(session.role));
   }, [router]);
+
+  /** 读取第三方渠道开关；URL 带 oauth_error=1 时展示失败提示 */
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("oauth_error")) {
+      setError(t("admin.login.oauthError"));
+    }
+    listPublicOAuthChannels()
+      .then((channels) =>
+        setOauthProviders(
+          channels.filter((c) => c.enabled).map((c) => c.provider)
+        )
+      )
+      .catch(() => setOauthProviders([]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /** 发起第三方授权：整页跳转后端 302 到授权页 */
+  function startOAuth(provider: OAuthProvider) {
+    setError(null);
+    window.location.href = `/api/oauth/${provider}/login?next=${encodeURIComponent(
+      "/admin"
+    )}`;
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -56,7 +100,14 @@ export default function AdminLoginPage() {
     setError(null);
     try {
       const res = await login({ username, password, remember_device: rememberDevice });
-      saveSession({ username: res.username, role: res.role }, res.csrf_token);
+      saveSession(
+        {
+          username: res.username,
+          role: res.role,
+          realnameVerified: res.realname_verified,
+        },
+        res.csrf_token
+      );
       // 初始 / 被重置的密码 → 强制改密
       router.replace(res.must_change_password ? "/admin/change-password" : homeFor(res.role));
     } catch (err) {
@@ -145,6 +196,33 @@ export default function AdminLoginPage() {
                 )}
               </Button>
             </form>
+
+            {/* 第三方登录：仅展示后端已启用的渠道 */}
+            {oauthProviders.length > 0 && (
+              <>
+                <div className="my-5 flex items-center gap-3">
+                  <span className="h-px flex-1 bg-border" />
+                  <span className="text-xs text-muted-foreground">
+                    {t("admin.login.oauthDivider")}
+                  </span>
+                  <span className="h-px flex-1 bg-border" />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {oauthProviders.map((p) => (
+                    <Button
+                      key={p}
+                      type="button"
+                      variant="outline"
+                      onClick={() => startOAuth(p)}
+                      className="gap-2"
+                    >
+                      {PROVIDER_ICONS[p]}
+                      <span className="capitalize">{p}</span>
+                    </Button>
+                  ))}
+                </div>
+              </>
+            )}
 
             {/* 忘记密码 + 账号恢复 */}
             <div className="mt-4 flex items-center justify-between text-sm">

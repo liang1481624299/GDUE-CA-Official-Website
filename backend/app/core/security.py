@@ -153,19 +153,34 @@ async def _authenticate(request: Request, db: AsyncSession) -> tuple[dict, objec
     return ctx, user
 
 
-def require_role(required: Role, allow_pending_password_change: bool = False):
+def require_role(
+    required: Role,
+    allow_pending_password_change: bool = False,
+    allow_unverified_realname: bool = False,
+):
     """角色权限依赖：确保已登录、会话有效、角色 >= required。
 
     首次登录 / 被重置密码的账号（must_change_password）在改密前只能访问
     显式放行的接口（查看自身信息、修改密码、退出登录）。
+    实名验证（Phase 6）：未实名的管理员级账号（editor+/admin，super_admin 豁免）
+    禁止访问后台业务接口，仅可浏览前台与提交实名材料（realname 接口显式放行）。
     """
     async def _dep(request: Request, db: AsyncSession = Depends(get_db)) -> dict:
         ctx, user = await _authenticate(request, db)
-        if not role_at_least(required, Role(ctx["role"])):
+        role = Role(ctx["role"])
+        if not role_at_least(required, role):
             raise HTTPException(status_code=403, detail="权限不足")
         if user.must_change_password and not allow_pending_password_change:
             raise HTTPException(status_code=403, detail="请先修改初始密码",
                                 headers={"X-Password-Change-Required": "1"})
+        if (
+            is_admin_tier(role)
+            and role != Role.SUPER_ADMIN
+            and not user.realname_verified
+            and not allow_unverified_realname
+        ):
+            raise HTTPException(status_code=403, detail="请先完成实名验证",
+                                headers={"X-Realname-Required": "1"})
         return ctx
     return _dep
 

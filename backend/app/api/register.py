@@ -8,12 +8,13 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.middleware import get_client_ip
+from app.core.permissions import require_permission
 from app.core.rate_limit import rate_limit
-from app.core.security import Role, require_role
-from app.db.models import Activity, AuditLog, Registration, RegistrationType
+from app.db.models import Activity, AuditLog, Registration, RegistrationSource, RegistrationType
 from app.db.session import get_db
 from app.schemas.common import SubmitReceiptOut, clean_multiline_text
 from app.schemas.register import (
+    ManualRegistrationCreate,
     RegistrationCreate,
     RegistrationOut,
     RegistrationStatus,
@@ -135,7 +136,7 @@ async def list_registrations(
     keyword: str | None = None,
     page: int = 1,
     per_page: int = 50,
-    user: dict = Depends(require_role(Role.ADMIN)),
+    user: dict = Depends(require_permission("review.registrations", "view")),
     db: AsyncSession = Depends(get_db),
 ):
     stmt = select(Registration)
@@ -171,7 +172,7 @@ class RegistrationBatchUpdate(BaseModel):
 async def batch_update_registrations(
     body: RegistrationBatchUpdate,
     request: Request = Request,
-    user: dict = Depends(require_role(Role.ADMIN)),
+    user: dict = Depends(require_permission("review.registrations", "manage")),
     db: AsyncSession = Depends(get_db),
 ):
     if not body.ids:
@@ -205,7 +206,7 @@ async def update_registration_status(
     status: RegistrationStatus | None = Query(default=None),
     remark: str | None = Query(default=None, max_length=1000),
     request: Request = Request,
-    user: dict = Depends(require_role(Role.ADMIN)),
+    user: dict = Depends(require_permission("review.registrations", "manage")),
     db: AsyncSession = Depends(get_db),
 ):
     reg = await db.get(Registration, reg_id)
@@ -232,7 +233,7 @@ async def export_registrations(
     registration_type: RegistrationTypeSchema | None = Query(default=None),
     fmt: Literal["csv", "xlsx"] = "xlsx",
     request: Request = Request,
-    user: dict = Depends(require_role(Role.ADMIN)),
+    user: dict = Depends(require_permission("review.registrations", "manage")),
     db: AsyncSession = Depends(get_db),
 ):
     # 必须指定 activity_id 或 registration_type=club
@@ -270,3 +271,52 @@ async def export_registrations(
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             headers={"Content-Disposition": f"attachment; filename={filename}.xlsx"},
         )
+
+
+# ---------- 管理员：手动补录报名（线下报名 / 截止后人工增补） ----------
+@router.post(
+    "/admin/manual",
+    response_model=RegistrationOut,
+    status_code=status.HTTP_201_CREATED,
+)
+async def manual_create_registration(
+    req: ManualRegistrationCreate,
+    request: Request,
+    user: dict = Depends(require_permission("review.registrations", "manage")),
+    db: AsyncSession = Depends(get_db),
+):
+    """管理员手动新增报名名单：不校验报名时间窗与人数上限，status 默认 approved。
+
+    submit_ip 记录操作管理员的 IP（区别于表单提交的报名者 IP），补录原因写入 remark。
+    """
+    activity_id = None
+    if req.registration_type == RegistrationTypeSchema.ACTIVITY:
+        activity = await db.get(Activity, req.activity_id)
+        if not activity:
+            raise HTTPException(status_code=404, detail="活动不存在")
+        activity_id = activity.id
+
+    reg = Registration(
+        registration_type=RegistrationType(req.registration_type.value),
+        activity_id=activity_id,
+        receipt_code=await _unique_receipt_code(db),
+        content_lang=detect_lang(req.introduction or f"{req.college}{req.major}{req.name}"),
+        submit_ip=get_client_ip(request),
+        source=RegistrationSource.MANUAL,
+        status=req.status,
+        remark=clean_multiline_text(req.remark) if req.remark else None,
+        name=req.name,
+        student_id=req.student_id,
+        college=req.college,
+        major=req.major,
+        phone_cc=req.phone_cc,
+        phone_number=req.phone_number,
+        email=req.email,
+        position=req.position,
+        introduction=req.introduction,
+    )
+    db.add(reg)
+    await db.flush()
+    _log(db, int(user["user_id"]), "registration.manual",
+         f"reg:{reg.id} activity:{activity_id}", get_client_ip(request))
+    return reg

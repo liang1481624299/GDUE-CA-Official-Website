@@ -24,6 +24,8 @@ export const ADMIN_ROLES = new Set(["super_admin", "admin", "editor"]);
 export interface AdminSession {
   username: string;
   role: string;
+  /** 实名验证状态：admin/editor 未实名仅可浏览前台，进后台会被守卫跳转 /realname */
+  realnameVerified: boolean;
 }
 
 function purgeLegacyStorage() {
@@ -41,7 +43,11 @@ export function saveSession(session: AdminSession, csrfToken?: string) {
   if (csrfToken) setCsrfToken(csrfToken);
   window.localStorage.setItem(
     USER_KEY,
-    JSON.stringify({ username: session.username, role: session.role })
+    JSON.stringify({
+      username: session.username,
+      role: session.role,
+      realnameVerified: session.realnameVerified,
+    })
   );
 }
 
@@ -52,8 +58,17 @@ export function getSession(): AdminSession | null {
   const userStr = window.localStorage.getItem(USER_KEY);
   if (!userStr) return null;
   try {
-    const user = JSON.parse(userStr) as { username: string; role: string };
-    return { username: user.username, role: user.role };
+    const user = JSON.parse(userStr) as {
+      username: string;
+      role: string;
+      realnameVerified?: boolean;
+    };
+    return {
+      username: user.username,
+      role: user.role,
+      // 旧缓存无该字段时默认按已实名处理，以后端 403 守卫为准
+      realnameVerified: user.realnameVerified !== false,
+    };
   } catch {
     return null;
   }

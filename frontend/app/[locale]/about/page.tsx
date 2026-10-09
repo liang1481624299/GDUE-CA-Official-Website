@@ -3,6 +3,8 @@ import type { Locale } from "@/lib/i18n";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { DirectionalTransition } from "@/components/shared/DirectionalTransition";
 import { SectionHeading } from "@/components/shared/SectionHeading";
+import { ClubIntroCms } from "@/components/about/ClubIntroCms";
+import { MembersSection } from "@/components/about/MembersSection";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CalendarCheck, Briefcase, Handshake, Megaphone, Wallet, Wrench, GraduationCap, Award, MapPin, Clock } from "lucide-react";
@@ -61,6 +63,9 @@ export default async function AboutPage({
       <PageHeader title={dict.about.title} subtitle={dict.about.subtitle} />
 
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
+        {/* 社团介绍（CMS club_intro，未配置时不渲染） */}
+        <ClubIntroCms />
+
         {/* 历史时间线 */}
         <section className="mb-20">
           <SectionHeading title={dict.about.timeline.title} subtitle={dict.about.timeline.subtitle} />
@@ -125,6 +130,9 @@ export default async function AboutPage({
             ))}
           </div>
         </section>
+
+        {/* 社团成员（CMS 现任/往届，无数据时不渲染） */}
+        <MembersSection />
       </div>
     </DirectionalTransition>
   );

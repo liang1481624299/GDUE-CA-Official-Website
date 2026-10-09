@@ -8,6 +8,7 @@ import type {
   SubmitReceipt,
   Registration,
   RegistrationCreate,
+  ManualRegistrationCreate,
   RegistrationStatus,
   RegistrationType,
 } from "@/types/api";
@@ -56,6 +57,15 @@ export function setRegistrationStatus(
   return apiFetch<Registration>(`/api/registrations/${id}?${qs.toString()}`, {
     method: "PATCH",
     withAuth: true,
+  });
+}
+
+/** 管理员手动补录报名：不校验报名时间窗与人数上限，status 默认 approved */
+export function createManualRegistration(payload: ManualRegistrationCreate) {
+  return apiFetch<Registration>("/api/registrations/admin/manual", {
+    method: "POST",
+    withAuth: true,
+    body: JSON.stringify(payload),
   });
 }
 

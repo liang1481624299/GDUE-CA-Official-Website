@@ -26,6 +26,8 @@ export interface LoginResponse {
   role: string;
   username: string;
   must_change_password: boolean;
+  /** 实名验证状态：false 时 admin/editor 角色需先到 /realname 完成实名 */
+  realname_verified: boolean;
 }
 
 /** 登录会话（设备管理） */
@@ -59,12 +61,19 @@ export interface AdminUser {
   avatar_url: string | null;
   /** IANA 时区；null = 自动探测浏览器时区 */
   timezone: string | null;
+  /** 模块级权限覆盖：模块名 → 允许动作列表；null = 全部使用角色默认（仅 super_admin 可写） */
+  permission_overrides: Record<string, string[]> | null;
   /** 用户物理位置：国家 */
   country: string | null;
   /** 一级行政区（省/州） */
   region: string | null;
   /** 二级行政区（市/郡）；可为空 */
   locality: string | null;
+  /** 实名验证：未实名账号禁止进后台，仅可浏览前台 */
+  realname_verified: boolean;
+  realname_verified_at: string | null;
+  realname_submitted_at: string | null;
+  realname_note: string | null;
   created_at: string;
 }
 
@@ -165,6 +174,8 @@ export interface UserUpdatePayload {
   phone?: string;
   role?: AdminRole;
   is_active?: boolean;
+  /** 模块级权限覆盖（仅 super_admin 可写；空对象 = 清除覆盖恢复默认） */
+  permission_overrides?: Record<string, string[]> | null;
 }
 
 /* ----------------------- 翻译 / 回执查询 ----------------------- */
@@ -216,6 +227,10 @@ export interface Activity {
   status: ActivityStatus;
   register_start: string | null;
   register_end: string | null;
+  /** 活动开始时间（Phase 3：发布活动时双必填） */
+  start_at: string | null;
+  /** 活动结束时间（Phase 3：发布活动时双必填） */
+  end_at: string | null;
   max_participants: number;
   cover_url: string | null;
   checkin_open: boolean;
@@ -230,6 +245,8 @@ export interface ActivityCreate {
   status?: ActivityStatus;
   register_start?: string;
   register_end?: string;
+  start_at?: string;
+  end_at?: string;
   max_participants?: number;
   cover_url?: string;
 }
@@ -244,11 +261,15 @@ export type RegistrationStatus =
 
 export type RegistrationType = "activity" | "club";
 
+/** 报名来源：form=公开表单提交 / manual=管理员后台手动补录 */
+export type RegistrationSource = "form" | "manual";
+
 export interface Registration {
   id: number;
   receipt_code: string;
   content_lang: string;
   registration_type: RegistrationType;
+  source: RegistrationSource;
   activity_id: number | null;
   name: string;
   student_id: string;
@@ -276,6 +297,17 @@ export interface RegistrationCreate {
   email?: string;
   position?: string;
   introduction?: string;
+}
+
+/** 管理员手动补录报名（POST /api/registrations/admin/manual） */
+export interface ManualRegistrationCreate extends RegistrationCreate {
+  registration_type: RegistrationType;
+  /** 活动报名必填；社团报名忽略 */
+  activity_id?: number;
+  /** 默认 approved；补录场景通常直接通过 */
+  status?: RegistrationStatus;
+  /** 补录原因等备注，写入 remark */
+  remark?: string;
 }
 
 /* ----------------------- Bug Report ----------------------- */
@@ -340,4 +372,441 @@ export interface NetworkConfigHistory {
   ip: string | null;
   /** 带大写 Z 的 UTC ISO 字符串 */
   created_at: string | null;
+}
+
+/* ===================== CMS 扩展类型骨架（Phase 1 预定义） ===================== */
+/* 各模块的 Create/Update/Out 变体在实现对应 API 时细化；此处先建共用骨架。 */
+
+/** 通用分页响应（后端 utils/crud.paginate 返回结构） */
+export interface Paginated<T> {
+  total: number;
+  items: T[];
+  page: number;
+  page_size: number;
+}
+
+/* ---------- 公告（Phase 3） ---------- */
+export type AnnouncementCategory = "homepage" | "club";
+
+export interface Announcement {
+  id: number;
+  title: string;
+  content: string;
+  link: string | null;
+  start_at: string | null;
+  end_at: string | null;
+  enabled: boolean;
+  priority: number;
+  category: AnnouncementCategory;
+  created_by: number | null;
+  created_at: string;
+}
+
+export interface AnnouncementCreate {
+  title: string;
+  content: string;
+  link?: string;
+  start_at?: string;
+  end_at?: string;
+  enabled?: boolean;
+  priority?: number;
+  category?: AnnouncementCategory;
+}
+
+export type AnnouncementUpdate = Partial<AnnouncementCreate>;
+
+/* ---------- 内容块（Phase 3 社团介绍等） ---------- */
+export interface ContentBlock {
+  id: number;
+  key: string;
+  title: string | null;
+  body_md: string;
+  /** 后端模型 updated_by 不直接返回；保持可选兼容 */
+  updated_by?: number | null;
+  updated_at: string | null;
+}
+
+export interface ContentBlockUpdate {
+  title?: string;
+  body_md: string;
+}
+
+/* ---------- 成员（Phase 3） ---------- */
+export type MemberTerm = "current" | "former";
+
+export interface Member {
+  id: number;
+  name: string;
+  role_title: string;
+  term: MemberTerm;
+  bio: string | null;
+  avatar_url: string | null;
+  display_order: number;
+  archived: boolean;
+  created_at: string;
+}
+
+export interface MemberCreate {
+  name: string;
+  role_title?: string;
+  term?: MemberTerm;
+  bio?: string;
+  avatar_url?: string;
+  display_order?: number;
+  archived?: boolean;
+}
+
+export interface MemberUpdate {
+  name?: string;
+  role_title?: string;
+  term?: MemberTerm;
+  bio?: string;
+  avatar_url?: string;
+  display_order?: number;
+  archived?: boolean;
+}
+
+/* ---------- 招新信息（Phase 3） ---------- */
+export interface RecruitmentInfo {
+  id: number;
+  title: string;
+  content: string;
+  target_dept: string | null;
+  start_at: string | null;
+  end_at: string | null;
+  enabled: boolean;
+  created_at: string;
+}
+
+export interface RecruitmentInfoCreate {
+  title: string;
+  content: string;
+  target_dept?: string;
+  start_at?: string;
+  end_at?: string;
+  enabled?: boolean;
+}
+
+export type RecruitmentInfoUpdate = Partial<RecruitmentInfoCreate>;
+
+/* ---------- 博客（Phase 4） ---------- */
+export type BlogPostStatus = "draft" | "published" | "scheduled" | "archived";
+
+export interface BlogTag {
+  id: number;
+  name: string;
+  slug: string;
+  created_at: string;
+}
+
+export interface BlogPost {
+  id: number;
+  title: string;
+  slug: string;
+  content_md: string;
+  content_html: string;
+  excerpt: string | null;
+  cover_url: string | null;
+  status: BlogPostStatus;
+  published_at: string | null;
+  scheduled_at: string | null;
+  author_id: number | null;
+  /** 作者用户名（后端序列化自 author 关系） */
+  author: string | null;
+  allow_comments: boolean;
+  tags: BlogTag[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BlogPostCreate {
+  title: string;
+  slug?: string;
+  content_md: string;
+  excerpt?: string;
+  cover_url?: string;
+  status?: BlogPostStatus;
+  scheduled_at?: string;
+  allow_comments?: boolean;
+  tag_ids?: number[];
+}
+
+export type BlogPostUpdate = Partial<BlogPostCreate>;
+
+export interface BlogTagCreate {
+  name: string;
+  slug?: string;
+}
+
+/* ---------- 评论（Phase 5） ---------- */
+export type CommentStatus = "visible" | "user_deleted" | "admin_removed";
+
+/** 公开评论（GET /api/blog/{id}/comments）：不返回完整 IP，只返回属地 */
+export interface CommentPublic {
+  id: number;
+  post_id: number;
+  author_name: string;
+  content: string;
+  /** IP 属地中文（ip2region）；"local"/"intranet" 为特殊枚举 */
+  location_zh: string | null;
+  /** IP 属地英文（GeoLite2） */
+  location_en: string | null;
+  created_at: string;
+}
+
+/** 公开评论列表响应：allowed 表示当前是否可提交（双开关判定） */
+export interface CommentListResponse extends Paginated<CommentPublic> {
+  allowed: boolean;
+}
+
+/** 后台评论（GET /api/admin/comments）：含完整 IP + 状态 + 所属文章标题 */
+export interface CommentAdmin {
+  id: number;
+  post_id: number;
+  author_name: string;
+  content: string;
+  submit_ip: string | null;
+  location_zh: string | null;
+  location_en: string | null;
+  status: CommentStatus;
+  created_at: string;
+  deleted_at: string | null;
+  post_title: string | null;
+}
+
+export interface CommentCreate {
+  author_name: string;
+  content: string;
+}
+
+/** 评论全局开关（GET/PUT /api/admin/comments/settings） */
+export interface CommentSettings {
+  comments_enabled: boolean;
+}
+
+/* ---------- 媒体文件（Phase 3/7） ---------- */
+export type MediaCategory = "avatar" | "blog" | "cover" | "member" | "misc";
+
+export interface MediaFile {
+  id: number;
+  filename: string;
+  original_name: string;
+  mime: string;
+  size: number;
+  storage_path: string;
+  uploader_id: number | null;
+  /** 列表接口回填的上传者用户名 */
+  uploader_name: string | null;
+  category: MediaCategory;
+  created_at: string;
+}
+
+/* ---------- 操作日志（Phase 7） ---------- */
+export interface AuditLogInfo {
+  id: number;
+  user_id: number | null;
+  username: string | null;
+  action: string;
+  target: string | null;
+  detail: string | null;
+  ip: string | null;
+  trace_id: string | null;
+  created_at: string;
+}
+
+/* ---------- 数据统计（Phase 7） ---------- */
+/** 活动报名统计快照（含活动名，GET /api/admin/stats/activities） */
+export interface ActivityStatRow extends ActivityStatistics {
+  activity_name: string;
+}
+
+/** 招新统计分组计数 */
+export interface RecruitmentGroupStat {
+  key: string;
+  total: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+}
+
+/** 招新统计（GET /api/admin/stats/recruitment） */
+export interface RecruitmentStats {
+  total: number;
+  by_position: RecruitmentGroupStat[];
+  by_college: RecruitmentGroupStat[];
+  by_status: RecruitmentGroupStat[];
+}
+
+/* ---------- IP 规则（Phase 2） ---------- */
+export type IpRuleType = "whitelist" | "blacklist";
+
+export interface IpRule {
+  id: number;
+  type: IpRuleType;
+  rule: string;
+  label: string | null;
+  reason: string | null;
+  /** null = 永久封禁/永久信任 */
+  expires_at: string | null;
+  /** 白名单可选：绑定账号实现可信 IP 自动登录 */
+  bound_user_id: number | null;
+  created_by: number | null;
+  created_at: string;
+}
+
+export interface IpRuleCreate {
+  type: IpRuleType;
+  rule: string;
+  label?: string;
+  reason?: string;
+  expires_at?: string;
+  bound_user_id?: number;
+}
+
+/** 当前 IP 的封禁状态（GET /api/security/ban-status） */
+export interface BanStatus {
+  banned: boolean;
+  reason: string | null;
+  /** null = 永久封禁 */
+  expires_at: string | null;
+  permanent: boolean;
+}
+
+/** 网络配置（GET/PUT /api/security/network，仅含网络 3 字段） */
+export interface NetworkConfig {
+  network_port: number;
+  network_listen_ip: string;
+  network_domains: string[];
+}
+
+/* ---------- 第三方登录（Phase 6，对齐后端 schemas/oauth.py） ---------- */
+export type OAuthProvider = "github" | "microsoft" | "apple" | "google";
+
+/** 公开渠道开关（登录页显隐按钮，不含凭据） */
+export interface OAuthChannelBrief {
+  provider: OAuthProvider;
+  enabled: boolean;
+}
+
+/** 后台渠道配置输出（secret 永不回传明文，仅展示脱敏掩码） */
+export interface OAuthChannel {
+  provider: OAuthProvider;
+  enabled: boolean;
+  client_id: string | null;
+  has_secret: boolean;
+  secret_masked: string | null;
+  redirect_uri: string | null;
+  updated_at: string | null;
+}
+
+/** 渠道配置更新：client_secret 传明文重新加密保存，空串=清除；"***" 占位不覆盖 */
+export interface OAuthChannelUpdate {
+  enabled?: boolean;
+  client_id?: string;
+  client_secret?: string;
+  redirect_uri?: string;
+}
+
+/** 补资料页读取的第三方预填信息（来自 HttpOnly 票据 Cookie） */
+export interface PendingOAuthProfile {
+  provider: OAuthProvider;
+  email: string | null;
+  name: string | null;
+  avatar: string | null;
+}
+
+/** 补资料请求：用户名手动自定义（禁用第三方昵称） */
+export interface OAuthCompleteRequest {
+  username: string;
+  student_id: string;
+  real_name: string;
+  phone_cc: string;
+  phone_number: string;
+}
+
+/* ---------- SSO 受信应用（Phase 6，对齐后端 schemas/sso.py） ---------- */
+export interface SsoClient {
+  id: number;
+  client_id: string;
+  name: string;
+  redirect_uris: string[];
+  is_active: boolean;
+  created_at: string;
+  /** 仅创建 / 重置 secret 响应中一次性返回明文 */
+  secret: string | null;
+}
+
+export interface SsoClientCreate {
+  name: string;
+  redirect_uris: string[];
+}
+
+export interface SsoClientUpdate {
+  name?: string;
+  redirect_uris?: string[];
+  is_active?: boolean;
+}
+
+/* ---------- 实名验证（Phase 6，对齐后端 schemas/realname.py） ---------- */
+export type RealnameStatus = "pending" | "approved" | "rejected";
+
+export interface RealnameRequest {
+  id: number;
+  user_id: number;
+  username: string | null;
+  student_id: string;
+  real_name: string;
+  /** 区号+号码（后端拼接存储） */
+  phone: string;
+  evidence_url: string | null;
+  status: RealnameStatus;
+  /** 拒绝原因 */
+  note: string | null;
+  submitted_at: string;
+  reviewed_at: string | null;
+  /** 申请者当前实名状态（重复提交边界展示） */
+  user_realname_verified: boolean | null;
+}
+
+/** 用户端实名状态：当前账号实名状态 + 最近一次申请 */
+export interface RealnameStatusOut {
+  verified: boolean;
+  verified_at: string | null;
+  latest: RealnameRequest | null;
+}
+
+/** 提交实名申请 */
+export interface RealnameSubmit {
+  student_id: string;
+  real_name: string;
+  phone_cc: string;
+  phone_number: string;
+  evidence_url?: string;
+}
+
+/** 凭证上传响应 */
+export interface EvidenceUploadOut {
+  url: string;
+}
+
+/* ---------- 活动统计快照（Phase 3） ---------- */
+export interface ActivityStatistics {
+  activity_id: number;
+  total: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+  checked_in: number;
+  generated_at: string;
+}
+
+/* ---------- 访问日志（Phase 7） ---------- */
+export interface VisitLog {
+  id: number;
+  ip_hash: string;
+  path: string;
+  country: string | null;
+  region: string | null;
+  source: string | null;
+  created_at: string;
 }

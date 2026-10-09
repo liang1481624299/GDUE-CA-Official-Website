@@ -7,7 +7,7 @@ venv/
 
 # backend data & secrets
 backend/.env
-backend/assoc.db
+backend/*.db
 backend/uploads/
 backend/backups/
 backend/.jwt_secret

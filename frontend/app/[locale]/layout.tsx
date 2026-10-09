@@ -5,6 +5,7 @@ import { locales, defaultLocale, localeHtmlLang, type Locale } from "@/lib/i18n"
 import { getDictionaryByLocale } from "@/i18n/dictionary";
 import { I18nProvider } from "@/i18n/provider";
 import { SessionHeartbeat } from "@/components/shared/SessionHeartbeat";
+import { BanModal } from "@/components/shared/BanModal";
 import { NavDesktop } from "@/components/layout/NavDesktop";
 import { Footer } from "@/components/layout/Footer";
 
@@ -119,6 +120,7 @@ export default async function LocaleLayout({
 
       <I18nProvider locale={locale} messages={messages}>
         <SessionHeartbeat />
+        <BanModal />
         <NavDesktop />
         <main className="flex-1 pt-16">{children}</main>
         <Footer />

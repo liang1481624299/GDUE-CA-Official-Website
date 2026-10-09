@@ -3,7 +3,7 @@ import re
 from datetime import datetime
 from enum import Enum
 
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
 from app.schemas.common import MultilineText, PlainText, UTCDatetime
 
@@ -143,11 +143,18 @@ class RegistrationType(str, Enum):
     CLUB = "club"
 
 
+class RegistrationSource(str, Enum):
+    FORM = "form"       # 公开表单提交
+    MANUAL = "manual"   # 管理员后台手动补录
+
+
 class RegistrationOut(BaseModel):
     id: int
     receipt_code: str
     content_lang: str
     registration_type: RegistrationType
+    # 报名来源：form=公开表单 / manual=管理员手动补录
+    source: RegistrationSource = RegistrationSource.FORM
     activity_id: int | None
     name: str
     student_id: str
@@ -165,3 +172,24 @@ class RegistrationOut(BaseModel):
     submitted_at: UTCDatetime
 
     model_config = {"from_attributes": True}
+
+
+class ManualRegistrationCreate(RegistrationCreate):
+    """管理员手动补录报名：字段同公开表单，另附类型 / 活动 / 状态 / 备注。
+
+    服务端不校验报名时间窗与人数上限（线下补报名、截止后人工增补场景）。
+    """
+    registration_type: RegistrationType = RegistrationType.ACTIVITY
+    # 活动报名必填；社团报名忽略
+    activity_id: int | None = None
+    status: RegistrationStatus = RegistrationStatus.APPROVED
+    # 管理员备注（补录原因等），写入 remark
+    remark: str | None = Field(default=None, max_length=1000)
+
+    @model_validator(mode="after")
+    def _check_type(self) -> "ManualRegistrationCreate":
+        if self.registration_type == RegistrationType.ACTIVITY and not self.activity_id:
+            raise ValueError("活动报名必须指定活动")
+        if self.registration_type == RegistrationType.CLUB and not self.position:
+            raise ValueError("社团报名必须填写意向部门")
+        return self

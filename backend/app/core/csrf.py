@@ -21,6 +21,9 @@ CSRF_COOKIE = "gdueca_csrf"
 CSRF_HEADER = "x-csrf-token"
 SESSION_COOKIE = "gdueca_session"
 _SAFE_METHODS = {"GET", "HEAD", "OPTIONS", "TRACE"}
+# CSRF 豁免路径：非浏览器上下文、有独立认证方式的写接口
+# （/api/sso/token 由受信应用后端以 client_secret 调用，无浏览器 Cookie 参与）
+CSRF_EXEMPT_PATHS = {"/api/sso/token"}
 
 
 def new_csrf_token() -> str:
@@ -72,6 +75,10 @@ async def csrf_middleware(
     call_next: Callable[[Request], Awaitable[Response]],
 ) -> Response:
     if request.method in _SAFE_METHODS or not request.url.path.startswith("/api/"):
+        return await call_next(request)
+
+    # 有独立认证方式的非浏览器写接口（如 SSO token 端点用 client_secret）
+    if request.url.path in CSRF_EXEMPT_PATHS:
         return await call_next(request)
 
     # 纯 Bearer Token 调用（脚本 / 第三方客户端，非浏览器自动携带凭据）不受 CSRF 影响

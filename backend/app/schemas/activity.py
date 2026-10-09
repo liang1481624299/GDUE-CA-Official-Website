@@ -2,9 +2,9 @@
 from datetime import datetime
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
-from app.schemas.common import MultilineText, PlainText, SafeUrl, UTCDatetime
+from app.schemas.common import MultilineText, PlainText, SafeUrl, UTCNaive, UTCDatetime
 
 
 class ActivityStatus(str, Enum):
@@ -21,10 +21,30 @@ class ActivityCreate(BaseModel):
     content: MultilineText = Field(max_length=50_000)
     category: PlainText | None = Field(default=None, max_length=64)
     status: ActivityStatus = ActivityStatus.DRAFT
-    register_start: datetime | None = None
-    register_end: datetime | None = None
+    register_start: UTCNaive | None = None
+    register_end: UTCNaive | None = None
+    # 活动开始/结束时间（Phase 3：发布活动时双必填）
+    start_at: UTCNaive | None = None
+    end_at: UTCNaive | None = None
     max_participants: int = Field(default=0, ge=0, le=100_000)  # 0 = 无上限
     cover_url: SafeUrl | None = Field(default=None, max_length=512)
+
+    @model_validator(mode="after")
+    def _check_required_times(self) -> "ActivityCreate":
+        """category 可选但 DB 列 NOT NULL，未分类时落空串。"""
+        if self.category is None:
+            self.category = ""
+        """发布（非草稿）活动必须填写活动开始与结束时间。"""
+        if self.status != ActivityStatus.DRAFT:
+            if not self.start_at or not self.end_at:
+                raise ValueError("发布活动必须填写活动开始时间与活动结束时间")
+            if self.start_at >= self.end_at:
+                raise ValueError("活动开始时间必须早于活动结束时间")
+        if self.start_at and self.end_at and self.start_at >= self.end_at:
+            raise ValueError("活动开始时间必须早于活动结束时间")
+        if self.register_start and self.register_end and self.register_start >= self.register_end:
+            raise ValueError("报名开始时间必须早于报名结束时间")
+        return self
 
 
 class ActivityUpdate(BaseModel):
@@ -32,8 +52,10 @@ class ActivityUpdate(BaseModel):
     content: MultilineText | None = Field(default=None, max_length=50_000)
     category: PlainText | None = Field(default=None, max_length=64)
     status: ActivityStatus | None = None
-    register_start: datetime | None = None
-    register_end: datetime | None = None
+    register_start: UTCNaive | None = None
+    register_end: UTCNaive | None = None
+    start_at: UTCNaive | None = None
+    end_at: UTCNaive | None = None
     max_participants: int | None = Field(default=None, ge=0, le=100_000)
     cover_url: SafeUrl | None = Field(default=None, max_length=512)
     checkin_open: bool | None = None  # 签到开关
@@ -47,6 +69,8 @@ class ActivityOut(BaseModel):
     status: ActivityStatus
     register_start: UTCDatetime | None
     register_end: UTCDatetime | None
+    start_at: UTCDatetime | None
+    end_at: UTCDatetime | None
     max_participants: int
     cover_url: str | None
     checkin_open: bool

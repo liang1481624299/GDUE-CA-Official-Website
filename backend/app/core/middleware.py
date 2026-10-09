@@ -1,18 +1,22 @@
-"""全局中间件：可信代理 IP 解析、IP 黑名单拦截、Host 域名白名单、安全响应头。"""
+"""全局中间件：可信代理 IP 解析、IP 黑白名单拦截、Host 域名白名单、安全响应头、限流。"""
 import ipaddress
 import logging
 import time
+from collections import defaultdict
+from datetime import datetime, timezone
 from functools import lru_cache
 from typing import Awaitable, Callable
 
 from fastapi import Request, Response
+from fastapi.responses import JSONResponse
 
 from app.core.config import get_settings
 
 logger = logging.getLogger("gdueca.middleware")
 
-# 内存缓存，避免每个请求都查数据库（生产可换 Redis）
-_ip_blacklist_cache: set[str] = set()
+# IP 规则缓存（替代旧 SystemSetting.ip_blacklist JSON 单字段）
+# 结构：{"whitelist": [(rule_str, bound_user_id|None)], "blacklist": [(rule_str, reason|None, expires_at|None)]}
+_ip_rules_cache: dict[str, list[tuple]] = {"whitelist": [], "blacklist": []}
 _host_whitelist_cache: set[str] = set()
 _cache_ts: float = 0
 _CACHE_TTL = 30  # 秒
@@ -127,15 +131,21 @@ def is_https(request: Request) -> bool:
     return request.url.scheme == "https"
 
 
-async def ip_blacklist_middleware(
+async def ip_rules_middleware(
     request: Request,
     call_next: Callable[[Request], Awaitable[Response]],
 ) -> Response:
     """
-    拦截黑名单 IP。黑名单从数据库 system_settings.ip_blacklist 读取，
-    30 秒缓存一次。命中则直接返回 403，不进入路由层。
+    IP 黑白名单拦截。
+
+    - 黑名单命中：返回 403 JSON `{error:"banned", reason, expires_at, permanent}`，
+      供前端弹窗展示违规原因 + 解封倒计时 + 联系管理员。
+    - 白名单命中：设置 `request.state.trusted_ip = True`，供下游依赖豁免网络层限制。
+      若白名单规则绑定了 `bound_user_id`，设置 `request.state.trusted_user_id`
+      供登录中间件实现 opt-in 可信 IP 自动登录。
+    - 旧 SystemSetting.ip_blacklist 已在启动时迁移为永久 ip_rules，此处不再读取。
     """
-    global _ip_blacklist_cache, _host_whitelist_cache, _cache_ts
+    global _ip_rules_cache, _host_whitelist_cache, _cache_ts
 
     # 跳过健康检查
     if request.url.path == "/health":
@@ -145,22 +155,62 @@ async def ip_blacklist_middleware(
     now = time.time()
     if now - _cache_ts > _CACHE_TTL:
         try:
-            from app.db.models import SystemSetting
+            from datetime import datetime as _dt
+            from app.db.models import IpRule, IpRuleType, SystemSetting
             from app.db.session import async_session
             async with async_session() as s:
+                from sqlalchemy import select
+                rows = (await s.execute(
+                    select(IpRule).where(IpRule.type == IpRuleType.BLACKLIST)
+                )).scalars().all()
+                blacklist = [
+                    (r.rule, r.reason, r.expires_at.replace(tzinfo=timezone.utc) if r.expires_at else None)
+                    for r in rows
+                ]
+                rows = (await s.execute(
+                    select(IpRule).where(IpRule.type == IpRuleType.WHITELIST)
+                )).scalars().all()
+                whitelist = [
+                    (r.rule, r.bound_user_id,
+                     r.expires_at.replace(tzinfo=timezone.utc) if r.expires_at else None)
+                    for r in rows
+                ]
+                _ip_rules_cache = {"whitelist": whitelist, "blacklist": blacklist}
                 rec = await s.get(SystemSetting, 1)
-                _ip_blacklist_cache = set(rec.ip_blacklist or []) if rec else set()
                 _host_whitelist_cache = set(rec.allowed_hosts or []) if rec else set()
                 _cache_ts = now
         except Exception:
-            # 沿用旧缓存继续服务，但要留下记录：黑名单 / 域名白名单可能未生效
-            logger.warning("刷新 IP 黑名单 / 域名白名单缓存失败，沿用旧缓存", exc_info=True)
+            # 沿用旧缓存继续服务，但要留下记录：规则可能未生效
+            logger.warning("刷新 IP 规则 / 域名白名单缓存失败，沿用旧缓存", exc_info=True)
 
     # IP 检查
     ip = get_client_ip(request)
-    if ip and any(_ip_hit_rule(ip, r) for r in _ip_blacklist_cache):
-        return Response(status_code=403, content="你的 IP 已被列入黑名单",
-                        media_type="text/plain; charset=utf-8")
+    if ip:
+        # 白名单优先（可信 IP 豁免黑名单）
+        trusted = False
+        for rule, bound_uid, exp in _ip_rules_cache["whitelist"]:
+            if exp and now >= exp.timestamp():
+                continue
+            if _ip_hit_rule(ip, rule):
+                trusted = True
+                if bound_uid:
+                    request.state.trusted_user_id = str(bound_uid)
+                break
+        request.state.trusted_ip = trusted
+
+        if not trusted:
+            for rule, reason, exp in _ip_rules_cache["blacklist"]:
+                if exp and now >= exp.timestamp():
+                    continue
+                if _ip_hit_rule(ip, rule):
+                    body: dict = {"error": "banned", "reason": reason or ""}
+                    if exp:
+                        body["expires_at"] = exp.isoformat(timespec="seconds").replace("+00:00", "Z")
+                        body["permanent"] = False
+                    else:
+                        body["expires_at"] = None
+                        body["permanent"] = True
+                    return JSONResponse(status_code=403, content=body)
 
     # Host 检查
     host = get_request_host(request)
@@ -168,6 +218,48 @@ async def ip_blacklist_middleware(
         return Response(status_code=403, content="域名不在白名单内",
                         media_type="text/plain; charset=utf-8")
 
+    return await call_next(request)
+
+
+# 向后兼容旧引用（system.py / 其他模块可能仍 import ip_blacklist_middleware）
+ip_blacklist_middleware = ip_rules_middleware
+
+
+# ---------- 限流（令牌桶，内存） ----------
+# 默认每分钟每 IP 120 次、突发 30 次；可经 env RATE_LIMIT_PER_MIN / RATE_LIMIT_BURST 覆盖
+_settings = get_settings()
+_RATE_PER_MIN = max(1, _settings.RATE_LIMIT_PER_MIN)
+_BURST = max(1, _settings.RATE_LIMIT_BURST)
+# 限流豁免：健康检查、公开静态资源
+_RATE_EXEMPT_PATHS = ("/health",)
+# 令牌桶：{ip: [tokens, last_refill_ts]}
+_rate_buckets: dict[str, list] = defaultdict(lambda: [_BURST, time.time()])
+
+
+async def rate_limit_middleware(
+    request: Request,
+    call_next: Callable[[Request], Awaitable[Response]],
+) -> Response:
+    """基于 IP 的令牌桶限流。超限返回 429 + Retry-After。"""
+    path = request.url.path
+    if path.startswith(_RATE_EXEMPT_PATHS) or path.startswith("/uploads/"):
+        return await call_next(request)
+
+    ip = get_client_ip(request) or "unknown"
+    bucket = _rate_buckets[ip]
+    now = time.time()
+    # 按速率补充令牌
+    refill = (now - bucket[1]) * (_RATE_PER_MIN / 60.0)
+    bucket[0] = min(_BURST, bucket[0] + refill)
+    bucket[1] = now
+    if bucket[0] < 1:
+        retry_after = max(1, int(60 / _RATE_PER_MIN))
+        return JSONResponse(
+            status_code=429,
+            content={"error": "rate_limited", "detail": "请求过于频繁，请稍后重试"},
+            headers={"Retry-After": str(retry_after)},
+        )
+    bucket[0] -= 1
     return await call_next(request)
 
 

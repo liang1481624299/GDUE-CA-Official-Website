@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.middleware import get_client_ip
-from app.core.security import Role, require_role
+from app.core.permissions import require_permission
 from app.db.models import AuditLog, NetworkConfigHistory, SystemSetting
 from app.db.session import get_db
 from app.schemas.system import (
@@ -74,7 +74,7 @@ async def get_settings(db: AsyncSession = Depends(get_db)):
 # ---------- 读取：完整配置（含安全配置，需 admin） ----------
 @router.get("/settings/admin", response_model=SystemSettingOut)
 async def get_settings_admin(
-    user: dict = Depends(require_role(Role.ADMIN)),
+    user: dict = Depends(require_permission("settings", "view")),
     db: AsyncSession = Depends(get_db),
 ):
     return await _get_or_create_settings(db)
@@ -85,7 +85,7 @@ async def get_settings_admin(
 async def update_settings(
     req: SystemSettingUpdate,
     request: Request,
-    user: dict = Depends(require_role(Role.ADMIN)),
+    user: dict = Depends(require_permission("settings", "manage")),
     db: AsyncSession = Depends(get_db),
 ):
     rec = await _get_or_create_settings(db)
@@ -117,7 +117,7 @@ async def update_settings(
 # ---------- 网络配置变更历史（需 admin，最多 5 条） ----------
 @router.get("/network-config/history", response_model=list[NetworkConfigHistoryOut])
 async def get_network_config_history(
-    user: dict = Depends(require_role(Role.ADMIN)),
+    user: dict = Depends(require_permission("settings", "view")),
     db: AsyncSession = Depends(get_db),
 ):
     rows = await db.execute(
@@ -133,7 +133,7 @@ async def get_network_config_history(
 async def add_ip_to_blacklist(
     ip: str,
     request: Request,
-    user: dict = Depends(require_role(Role.ADMIN)),
+    user: dict = Depends(require_permission("settings", "manage")),
     db: AsyncSession = Depends(get_db),
 ):
     import ipaddress
@@ -154,7 +154,7 @@ async def add_ip_to_blacklist(
 async def remove_ip_from_blacklist(
     ip: str,
     request: Request,
-    user: dict = Depends(require_role(Role.ADMIN)),
+    user: dict = Depends(require_permission("settings", "manage")),
     db: AsyncSession = Depends(get_db),
 ):
     rec = await _get_or_create_settings(db)

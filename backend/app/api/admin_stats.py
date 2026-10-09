@@ -20,7 +20,7 @@ from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.security import Role, require_role
+from app.core.permissions import require_permission
 from app.db.models import AuditLog, BugReport, Registration
 from app.db.session import get_db
 from app.schemas.common import UTCDatetime
@@ -62,7 +62,7 @@ class AccessStatsOut(BaseModel):
 
 @router.get("/access", response_model=AccessStatsOut)
 async def get_access_stats(
-    user: Annotated[dict, Depends(require_role(Role.EDITOR))],
+    user: Annotated[dict, Depends(require_permission("dashboard", "view"))],
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """聚合后台操作与游客表单提交的 IP 来源统计（概览页访问来源卡片）。"""

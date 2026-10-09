@@ -24,6 +24,15 @@ const nextConfig: NextConfig = {
     ];
   },
 
+  // 旧审核页书签兜底：三类审核已合并至统一审核中心 /admin/review?tab=
+  async redirects() {
+    return [
+      { source: "/admin/registrations", destination: "/admin/review?tab=registrations", permanent: false },
+      { source: "/admin/bugs", destination: "/admin/review?tab=bugs", permanent: false },
+      { source: "/admin/password-resets", destination: "/admin/review?tab=resets", permanent: false },
+    ];
+  },
+
   // 图片优化配置
   images: {
     remotePatterns: [

@@ -62,6 +62,14 @@ class User(Base):
     region: Mapped[str | None] = mapped_column(String(128), nullable=True)
     # 二级行政区（市/郡）；为空时仅 country + region 两级
     locality: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    # 模块级权限覆盖（JSON）：{"activities": ["view"], "review.bugs": ["view", "manage"]}
+    # null = 完全按角色默认矩阵；仅 super_admin 可写
+    permission_overrides: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    # 实名验证（Phase 6）：未实名账号禁止进后台，仅可浏览前台
+    realname_verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    realname_verified_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    realname_submitted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    realname_note: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 
@@ -114,6 +122,9 @@ class Activity(Base):
     status: Mapped[ActivityStatus] = mapped_column(SAEnum(ActivityStatus), default=ActivityStatus.DRAFT)
     register_start: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     register_end: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    # 活动开始/结束时间（Phase 3：状态自动识别 + 双必填校验由后端强制）
+    start_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
+    end_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
     max_participants: Mapped[int] = mapped_column(Integer, default=0)  # 0 = 无上限
     cover_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     # 签到开关：管理员在活动开始时手动开放，报名者凭回执码签到
@@ -138,6 +149,11 @@ class RegistrationType(str, Enum):
     CLUB = "club"           # 社团报名（意向部门入会）
 
 
+class RegistrationSource(str, Enum):
+    FORM = "form"       # 用户通过公开表单提交
+    MANUAL = "manual"   # 管理员后台手动补录（线下报名 / 截止后增补）
+
+
 class Registration(Base):
     __tablename__ = "registrations"
 
@@ -151,6 +167,10 @@ class Registration(Base):
     # 报名类型：activity 需关联活动，club 无需关联
     registration_type: Mapped[RegistrationType] = mapped_column(
         SAEnum(RegistrationType), default=RegistrationType.ACTIVITY, index=True
+    )
+    # 报名来源：form=公开表单提交；manual=管理员后台手动补录
+    source: Mapped[RegistrationSource] = mapped_column(
+        SAEnum(RegistrationSource), default=RegistrationSource.FORM, server_default="form"
     )
     activity_id: Mapped[int | None] = mapped_column(
         ForeignKey("activities.id"), nullable=True, index=True
@@ -228,6 +248,8 @@ class SystemSetting(Base):
     network_port: Mapped[int] = mapped_column(Integer, default=443)
     network_listen_ip: Mapped[str] = mapped_column(String(64), default="0.0.0.0")
     network_domains: Mapped[list[str]] = mapped_column(JSON, default=list)
+    # 博客评论全局开关（关闭后全部文章评论区禁止提交）
+    comments_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
 # ---------- 操作日志 ----------
@@ -282,6 +304,32 @@ class PasswordResetRequest(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
 
 
+# ---------- IP 规则（黑白名单，替代 system_settings.ip_blacklist JSON） ----------
+class IpRuleType(str, Enum):
+    WHITELIST = "whitelist"   # 可信 IP：豁免网络层限制；绑定账号可自动登录（opt-in）
+    BLACKLIST = "blacklist"   # 全站拦截：带违规原因 + 封禁时长（临时倒计时 / 永久）
+
+
+class IpRule(Base):
+    """IP 黑白名单规则，支持单 IP 与 CIDR；白名单可选绑定账号实现自动登录。"""
+    __tablename__ = "ip_rules"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    type: Mapped[IpRuleType] = mapped_column(SAEnum(IpRuleType), index=True)
+    # 规则原文：单 IP（192.168.1.1）或 CIDR（10.0.0.0/24）；IPv6 同样支持
+    rule: Mapped[str] = mapped_column(String(64), index=True)
+    # 可选标签（如「办公室」「恶意爬虫 2026-10」）
+    label: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    # 违规原因（黑名单展示给前端弹窗） / 信任原因（白名单备注）
+    reason: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    # null = 永久；到期时间（UTC，naive 存储）
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
+    # 白名单可选：绑定账号 ID，命中时实现可信 IP 自动登录（opt-in）
+    bound_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
+    created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+
+
 # ---------- 安全问题（单例表，id 固定为 1） ----------
 class SecurityQuestion(Base):
     """紧急恢复用安全问题，所有管理员失能时通过回答问题恢复超级管理员。"""
@@ -292,3 +340,340 @@ class SecurityQuestion(Base):
     # 答案的 bcrypt 哈希（规范化：去首尾空格 + 小写后再哈希），不存明文
     answer: Mapped[str] = mapped_column(String(256))
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
+
+
+# ==================== Phase 3 内容 CMS ====================
+
+# ---------- 首页/社团公告 ----------
+class AnnouncementCategory(str, Enum):
+    HOMEPAGE = "homepage"   # 首页快捷弹窗公告
+    CLUB = "club"           # 社团公告
+
+
+class Announcement(Base):
+    """首页快捷弹窗 + 社团公告 CMS。
+
+    前端公开接口自动过滤：时间生效中（start_at ≤ now ≤ end_at，空值不限）+ 已启用，
+    按 priority 降序展示；过期自动隐藏，无需手动删除。
+    """
+    __tablename__ = "announcements"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    category: Mapped[AnnouncementCategory] = mapped_column(
+        SAEnum(AnnouncementCategory), default=AnnouncementCategory.HOMEPAGE, index=True
+    )
+    title: Mapped[str] = mapped_column(String(200))
+    # 弹窗简短内容（多行文本，前端按纯文本/Markdown 展示，后端做控制字符清洗）
+    content: Mapped[str] = mapped_column(Text)
+    # 可选跳转链接（http(s):// 或站内 / 开头）
+    link: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    # 生效时间窗（NULL = 立即生效/永不失效；均以 UTC 存储）
+    start_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
+    end_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    # 优先级：数字越大越优先展示
+    priority: Mapped[int] = mapped_column(Integer, default=0)
+    created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+
+
+# ---------- 富文本内容块（社团介绍等） ----------
+class ContentBlock(Base):
+    """key 唯一的内容块（社团介绍、招新说明、联系我们等）。
+
+    存原始 Markdown，前端用 Markdown 阅读器渲染。改内容无需重新部署。
+    """
+    __tablename__ = "content_blocks"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    key: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    title: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    body_md: Mapped[str] = mapped_column(Text)
+    updated_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
+
+
+# ---------- 成员管理（现任/往届） ----------
+class MemberTerm(str, Enum):
+    CURRENT = "current"   # 现任
+    FORMER = "former"     # 往届
+
+
+class Member(Base):
+    """社团成员信息，区分现任/往届，支持归档、头像上传。"""
+    __tablename__ = "members"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(64))
+    # 职务（如「会长」「技术部部长」）
+    role_title: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    term: Mapped[MemberTerm] = mapped_column(
+        SAEnum(MemberTerm), default=MemberTerm.CURRENT, index=True
+    )
+    bio: Mapped[str | None] = mapped_column(Text, nullable=True)
+    avatar_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    # 展示顺序：数字越小越靠前；后台可调整
+    display_order: Mapped[int] = mapped_column(Integer, default=0, index=True)
+    # 归档：前端默认不展示归档成员
+    archived: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+# ---------- 招新信息 ----------
+class RecruitmentInfo(Base):
+    """招新信息内容 CMS（独立于招新报名数据）。"""
+    __tablename__ = "recruitment_infos"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    title: Mapped[str] = mapped_column(String(200))
+    content: Mapped[str] = mapped_column(Text)
+    # 目标部门（如「技术部」「策划部」，可选）
+    target_dept: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    start_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
+    end_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+
+
+# ---------- 活动报名统计快照 ----------
+class ActivityStatistics(Base):
+    """已结束活动的报名统计快照。
+
+    活动结束（status=ended）后管理员手动 finalize 时生成；前端只渲染，禁止计算。
+    """
+    __tablename__ = "activity_statistics"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    activity_id: Mapped[int] = mapped_column(
+        ForeignKey("activities.id"), unique=True, index=True
+    )
+    total: Mapped[int] = mapped_column(Integer, default=0)
+    pending: Mapped[int] = mapped_column(Integer, default=0)
+    approved: Mapped[int] = mapped_column(Integer, default=0)
+    rejected: Mapped[int] = mapped_column(Integer, default=0)
+    checked_in: Mapped[int] = mapped_column(Integer, default=0)
+    generated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+# ---------- 媒体文件统一管理 ----------
+class MediaCategory(str, Enum):
+    AVATAR = "avatar"    # 用户头像
+    MEMBER = "member"    # 成员头像
+    COVER = "cover"      # 活动/文章封面
+    BLOG = "blog"        # 博客内嵌图片
+    MISC = "misc"        # 其他
+
+
+class MediaFile(Base):
+    """统一文件资源记录（avatar/member/cover/blog/misc）。
+
+    实际文件存储于 uploads/{category}/，本表记录元数据供后台统一管理。
+    """
+    __tablename__ = "media_files"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    filename: Mapped[str] = mapped_column(String(128), index=True)
+    original_name: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    mime: Mapped[str] = mapped_column(String(64))
+    size: Mapped[int] = mapped_column(Integer)
+    storage_path: Mapped[str] = mapped_column(String(512))
+    uploader_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id"), nullable=True, index=True
+    )
+    category: Mapped[MediaCategory] = mapped_column(
+        SAEnum(MediaCategory), default=MediaCategory.MISC, index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+
+
+# ==================== Phase 4 博客 CMS ====================
+
+class BlogPostStatus(str, Enum):
+    DRAFT = "draft"
+    PUBLISHED = "published"
+    SCHEDULED = "scheduled"   # 定时发布：scheduled_at 到点后惰性转为 published
+    ARCHIVED = "archived"     # 下架归档
+
+
+class BlogPost(Base):
+    """博客文章（Markdown 存储）。
+
+    slug 唯一用于公开 URL；定时发布通过公开接口惰性刷新（scheduled_at ≤ now → published）。
+    """
+    __tablename__ = "blog_posts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    title: Mapped[str] = mapped_column(String(200))
+    slug: Mapped[str] = mapped_column(String(128), unique=True, index=True)
+    # 原始 Markdown 正文（存储原文，渲染交给前端 Markdown 阅读器）
+    content_md: Mapped[str] = mapped_column(Text)
+    excerpt: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    cover_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    status: Mapped[BlogPostStatus] = mapped_column(
+        SAEnum(BlogPostStatus), default=BlogPostStatus.DRAFT, index=True
+    )
+    # 首次发布时间（手工发布或定时到点时写入）
+    published_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
+    # 定时发布时间（仅 status=scheduled 时有意义）
+    scheduled_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
+    author_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    # 是否允许评论（Phase 5 评论系统读取此开关 + 全局开关共同决定）
+    allow_comments: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
+
+    author: Mapped["User"] = relationship(lazy="joined")
+    tags: Mapped[list["BlogTag"]] = relationship(
+        secondary="blog_post_tags", lazy="selectin"
+    )
+    # 文章删除时级联清理评论（ORM 级联；SQLite 未开外键 pragma，不能依赖 DB CASCADE）
+    comments: Mapped[list["Comment"]] = relationship(cascade="all, delete-orphan")
+
+
+class BlogTag(Base):
+    """博客标签：文章多标签绑定，前端按标签筛选。"""
+    __tablename__ = "blog_tags"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    slug: Mapped[str] = mapped_column(String(128), unique=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class BlogPostTag(Base):
+    """文章-标签绑定表（联合主键，级联清理）。"""
+    __tablename__ = "blog_post_tags"
+
+    post_id: Mapped[int] = mapped_column(
+        ForeignKey("blog_posts.id", ondelete="CASCADE"), primary_key=True
+    )
+    tag_id: Mapped[int] = mapped_column(
+        ForeignKey("blog_tags.id", ondelete="CASCADE"), primary_key=True
+    )
+
+
+class CommentStatus(str, Enum):
+    VISIBLE = "visible"              # 正常展示
+    USER_DELETED = "user_deleted"    # 用户自删（软删除，后台仍可见）
+    ADMIN_REMOVED = "admin_removed"  # 管理员下架
+
+
+class Comment(Base):
+    """博客评论（软删除：任何状态都不物理删除，仅文章删除时随父级联清理）。
+
+    访客无账号，评论以「昵称 + 内容」提交；提交 IP 完整存储仅后台可见，
+    公开接口只返回属地（国家/省份粒度）。
+    """
+    __tablename__ = "comments"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    post_id: Mapped[int] = mapped_column(ForeignKey("blog_posts.id"), index=True)
+    author_name: Mapped[str] = mapped_column(String(64))
+    content: Mapped[str] = mapped_column(Text)
+    # 提交者完整 IP：仅后台管理员可见，公开接口绝不返回
+    submit_ip: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # IP 属地：中文 ip2region / 英文 GeoLite2，前端按语言渲染；
+    # "local"=本机回环，"intranet"=校园内网（特殊枚举由前端 i18n 渲染）
+    location_zh: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    location_en: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    status: Mapped[CommentStatus] = mapped_column(
+        SAEnum(CommentStatus), default=CommentStatus.VISIBLE, index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+# ==================== Phase 6 登录体系：第三方 OAuth + SSO + 实名验证 ====================
+
+class OAuthProvider(str, Enum):
+    GITHUB = "github"
+    MICROSOFT = "microsoft"
+    APPLE = "apple"
+    GOOGLE = "google"
+
+
+class OAuthAccount(Base):
+    """第三方登录绑定：provider + openid 唯一，防止重复绑定。
+
+    raw_profile 存第三方返回的原始资料（JSON），供后台排查；不向前端展示。
+    """
+    __tablename__ = "oauth_accounts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    provider: Mapped[OAuthProvider] = mapped_column(SAEnum(OAuthProvider), index=True)
+    # 第三方平台的唯一用户标识（GitHub/Microsoft/Google 数字 id 或 Apple sub）
+    openid: Mapped[str] = mapped_column(String(128))
+    raw_profile: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+
+
+class LoginChannel(Base):
+    """第三方登录渠道配置（每 provider 一行）：开关 + 凭据。
+
+    client_secret 使用 Fernet 对称加密存储（密钥派生自 JWT_SECRET_KEY），
+    接口永不回传明文；Apple 渠道 secret 支持 .p8 签发的 JWT 私钥文本。
+    """
+    __tablename__ = "login_channels"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    provider: Mapped[OAuthProvider] = mapped_column(SAEnum(OAuthProvider), unique=True)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    client_id: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    client_secret_enc: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # 回调地址留空 = 自动按请求 host 生成 /api/oauth/{provider}/callback
+    redirect_uri: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    # 预留扩展配置（如 Apple team_id/key_id、Microsoft tenant）
+    config: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=utcnow, onupdate=utcnow
+    )
+
+
+class SsoClient(Base):
+    """自建 SSO 授权服务器的受信应用。
+
+    client_secret 仅创建/重置时明文返回一次，库中存 bcrypt 哈希；
+    redirect_uris 为 JSON 数组，授权时严格精确匹配。
+    """
+    __tablename__ = "sso_clients"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    client_id: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    client_secret_hash: Mapped[str] = mapped_column(String(256))
+    name: Mapped[str] = mapped_column(String(128))
+    redirect_uris: Mapped[list] = mapped_column(JSON, default=list)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+
+
+class RealnameStatus(str, Enum):
+    PENDING = "pending"      # 待审核
+    APPROVED = "approved"    # 已通过（用户 realname_verified=True）
+    REJECTED = "rejected"    # 已拒绝（note 记原因，可重新提交）
+
+
+class RealnameRequest(Base):
+    """实名验证申请：学号 + 真实姓名 + 手机号 + 可选凭证图片。
+
+    审核通过时同步更新 User（student_id/real_name/phone + realname_verified）。
+    """
+    __tablename__ = "realname_requests"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    student_id: Mapped[str] = mapped_column(String(32))
+    real_name: Mapped[str] = mapped_column(String(64))
+    phone: Mapped[str] = mapped_column(String(32))
+    # 凭证图片 URL（学生证/校园卡照片，可选）
+    evidence_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    status: Mapped[RealnameStatus] = mapped_column(
+        SAEnum(RealnameStatus), default=RealnameStatus.PENDING, index=True
+    )
+    # 拒绝原因（管理员填写）
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    submitted_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    reviewed_by: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id"), nullable=True
+    )

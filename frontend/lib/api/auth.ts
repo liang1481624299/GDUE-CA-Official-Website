@@ -166,11 +166,23 @@ export function updateSecurityQuestion(payload: SecurityQuestionUpdate) {
   });
 }
 
-/* ---------- 用户管理（仅 super_admin） ---------- */
+/* ---------- 用户管理 ---------- */
 
-/** 列出所有管理员账号 */
-export function listUsers() {
-  return apiFetch<AdminUser[]>("/api/auth/users", { withAuth: true });
+/** 列出管理员账号（支持搜索/角色/状态筛选） */
+export function listUsers(params?: {
+  q?: string;
+  role?: string;
+  is_active?: boolean;
+}) {
+  const sp = new URLSearchParams();
+  if (params?.q?.trim()) sp.set("q", params.q.trim());
+  if (params?.role) sp.set("role", params.role);
+  if (params?.is_active !== undefined)
+    sp.set("is_active", String(params.is_active));
+  const qs = sp.toString();
+  return apiFetch<AdminUser[]>(`/api/auth/users${qs ? `?${qs}` : ""}`, {
+    withAuth: true,
+  });
 }
 
 /** 创建管理员账号 */
@@ -190,11 +202,19 @@ export function deleteUser(id: number) {
   });
 }
 
-/** 更新账号信息（自己可改基础资料，super_admin 额外可改 role/is_active） */
+/** 更新账号信息（自己可改基础资料，super_admin 额外可改 role/is_active/permission_overrides） */
 export function updateUser(id: number, payload: UserUpdatePayload) {
   return apiFetch<AdminUser>(`/api/auth/users/${id}`, {
     method: "PUT",
     withAuth: true,
     body: JSON.stringify(payload),
   });
+}
+
+/** super_admin 重置账号密码：生成一次性临时密码，账号下次登录强制改密 */
+export function resetUserPassword(id: number) {
+  return apiFetch<{ temp_password: string }>(
+    `/api/auth/users/${id}/reset-password`,
+    { method: "POST", withAuth: true }
+  );
 }

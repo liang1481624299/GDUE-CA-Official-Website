@@ -67,6 +67,10 @@ class Settings(BaseSettings):
     # ---- API 文档（生产环境建议关闭，减少暴露面） ----
     ENABLE_API_DOCS: bool = False
 
+    # ---- 全局限流（令牌桶，每 IP） ----
+    RATE_LIMIT_PER_MIN: int = 120   # 每分钟补充令牌数
+    RATE_LIMIT_BURST: int = 30      # 桶容量（允许的瞬时突发）
+
     # ---- 初始化超级管理员 ----
     # 首次启动时创建；若口令不满足强口令策略，将自动生成随机强口令并输出到启动日志
     FIRST_SUPERADMIN_EMAIL: str = "admin@gdue-ca.cn"

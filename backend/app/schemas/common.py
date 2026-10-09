@@ -25,6 +25,21 @@ def _utc_z(dt: datetime) -> str:
 UTCDatetime = Annotated[datetime, PlainSerializer(_utc_z, return_type=str)]
 
 
+def _to_naive_utc(v: datetime) -> datetime:
+    """输入时间统一转 naive UTC 存储：带时区 → 先转 UTC 再去 tzinfo；naive 视为 UTC。
+
+    SQLite 存储无时区标记，aware/naive 混存会导致 SQL 比较与 Python 比较
+    （now 与列值）抛 TypeError；所有 Create/Update 的时间字段必须用本类型。
+    """
+    if v.tzinfo is not None:
+        v = v.astimezone(timezone.utc).replace(tzinfo=None)
+    return v
+
+
+# 输入用：Create/Update 模型的时间字段（输出仍用 UTCDatetime 序列化 Z 后缀）
+UTCNaive = Annotated[datetime, AfterValidator(_to_naive_utc)]
+
+
 class SubmitReceiptOut(BaseModel):
     """公开表单提交成功的回执（GB/T 35274 最小化：不回传手机号 / 邮箱 / 提交 IP 等个人信息）。"""
     receipt_code: str
@@ -69,3 +84,18 @@ def _safe_url(v: str) -> str:
 PlainText = Annotated[str, AfterValidator(_plain_text)]
 MultilineText = Annotated[str, AfterValidator(clean_multiline_text)]
 SafeUrl = Annotated[str, AfterValidator(_safe_url)]
+
+# 宽松邮箱：仅校验 local@domain 基本形状（local ≤64 / domain ≤255）
+# email-validator 的 EmailStr 会拒绝 RFC special-use 保留域（club.local / .dev / .test），
+# 曾导致管理员占位账号响应序列化 500、无法创建/登录；占位域由管理员自行保证可用性。
+_LOOSE_EMAIL_RE = re.compile(r"^[^@\s]{1,64}@[^@\s]{1,255}$")
+
+
+def _loose_email(v: str) -> str:
+    v = _clean(v).lower()
+    if not _LOOSE_EMAIL_RE.match(v):
+        raise ValueError("邮箱格式不正确")
+    return v
+
+
+LooseEmail = Annotated[str, AfterValidator(_loose_email)]

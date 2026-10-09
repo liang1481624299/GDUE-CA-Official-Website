@@ -8,8 +8,8 @@ from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.middleware import get_client_ip
+from app.core.permissions import require_permission
 from app.core.rate_limit import rate_limit
-from app.core.security import Role, require_role
 from app.db.models import AuditLog, BugReport
 from app.db.session import get_db
 from app.schemas.bug import BugReportCreate, BugReportOut
@@ -79,7 +79,7 @@ async def list_bugs(
     resolved: bool | None = None,
     page: int = 1,
     per_page: int = 50,
-    user: dict = Depends(require_role(Role.EDITOR)),
+    user: dict = Depends(require_permission("review.bugs", "view")),
     db: AsyncSession = Depends(get_db),
 ):
     stmt = select(BugReport)
@@ -105,7 +105,7 @@ async def mark_bug_resolved(
     bug_id: int,
     resolved: bool = True,
     request: Request = Request,
-    user: dict = Depends(require_role(Role.ADMIN)),
+    user: dict = Depends(require_permission("review.bugs", "manage")),
     db: AsyncSession = Depends(get_db),
 ):
     bug = await db.get(BugReport, bug_id)
@@ -122,7 +122,7 @@ async def mark_bug_resolved(
 async def batch_update_bugs(
     body: BugBatchUpdate,
     request: Request = Request,
-    user: dict = Depends(require_role(Role.ADMIN)),
+    user: dict = Depends(require_permission("review.bugs", "manage")),
     db: AsyncSession = Depends(get_db),
 ):
     if not body.ids:

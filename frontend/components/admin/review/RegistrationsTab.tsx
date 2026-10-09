@@ -1,11 +1,13 @@
+/**
+ * 审核中心 - 报名审核 Tab
+ * 迁移自原 /admin/registrations 页：活动报名 + 社团报名合并列表，
+ * 支持类型/活动/状态筛选、自动翻译、批量审核、导出、手动补录
+ */
 "use client";
 
-/**
- * /admin/registrations - 报名审阅
- * 活动报名 + 社团报名 合并列表，支持按类型/活动/状态筛选
- */
 import { useEffect, useState, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
+import { UserPlus } from "lucide-react";
 import { useI18n } from "@/i18n/provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,6 +25,12 @@ import {
   exportRegistrationsUrl,
 } from "@/lib/api/register";
 import { batchTranslate } from "@/lib/api/translations";
+import { StatusBadge } from "./StatusBadge";
+import { BatchBar } from "./BatchBar";
+import { useBatchSelection } from "./useBatchSelection";
+import { ManualRegistrationDialog } from "./ManualRegistrationDialog";
+import { useEffectivePermissions } from "@/lib/permissions";
+import { FormattedUserActionTime } from "@/components/shared/FormattedUserActionTime";
 import type {
   Activity,
   Registration,
@@ -39,9 +47,11 @@ function typeLabel(t: RegistrationType, tfn: (k: string) => string) {
   return t === "activity" ? tfn("admin.registrations.typeActivity") : tfn("admin.registrations.typeClub");
 }
 
-export default function RegistrationsPage() {
+export function RegistrationsTab() {
   const { t, locale } = useI18n();
   const search = useSearchParams();
+  const { can } = useEffectivePermissions();
+  const canManage = can("review.registrations", "manage");
   const [items, setItems] = useState<Registration[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [activityId, setActivityId] = useState<string>(search.get("activity_id") ?? "");
@@ -49,11 +59,14 @@ export default function RegistrationsPage() {
   const [typeFilter, setTypeFilter] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [detail, setDetail] = useState<Registration | null>(null);
+  // 手动补录弹窗
+  const [manualOpen, setManualOpen] = useState(false);
   // 自动翻译：key = r{id}.{field}
   const [trans, setTrans] = useState<Record<string, TranslationResult>>({});
   const [showOriginal, setShowOriginal] = useState(false);
-  // 批量操作：已选中的记录 id（已签到记录不可选，审核结果不可改）
-  const [selected, setSelected] = useState<Set<number>>(new Set());
+
+  const { selected, toggle, toggleAll, clear, allSelected, someSelected, setSelected } =
+    useBatchSelection(items, (r) => r.status !== "checked_in");
   const [batchLoading, setBatchLoading] = useState(false);
 
   async function refresh() {
@@ -79,7 +92,7 @@ export default function RegistrationsPage() {
 
   useEffect(() => {
     refresh();
-    setSelected(new Set());
+    clear();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activityId, status, typeFilter]);
 
@@ -134,26 +147,6 @@ export default function RegistrationsPage() {
     }
   }
 
-  // ---------- 批量操作 ----------
-  /** 已签到记录的审核结果不可再改，不可选中 */
-  const isSelectable = (r: Registration) => r.status !== "checked_in";
-
-  function toggleSelect(id: number) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
-
-  /** 全选 / 取消全选（跳过已签到） */
-  function toggleSelectAll() {
-    const selectable = items.filter(isSelectable).map((r) => r.id);
-    const allSelected = selectable.length > 0 && selectable.every((id) => selected.has(id));
-    setSelected(allSelected ? new Set() : new Set(selectable));
-  }
-
   async function batchAction(newStatus: "approved" | "rejected") {
     if (selected.size === 0) return;
     if (!confirm(t(`admin.registrations.batchConfirm.${newStatus}`).replace("{count}", String(selected.size)))) return;
@@ -171,21 +164,6 @@ export default function RegistrationsPage() {
       setBatchLoading(false);
     }
   }
-
-  /** Ctrl+A / Cmd+A 全选（输入框聚焦时不拦截） */
-  useEffect(() => {
-    function onKeydown(e: KeyboardEvent) {
-      if ((e.ctrlKey || e.metaKey) && (e.key === "a" || e.key === "A")) {
-        const tag = (e.target as HTMLElement)?.tagName;
-        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || (e.target as HTMLElement)?.isContentEditable) return;
-        e.preventDefault();
-        toggleSelectAll();
-      }
-    }
-    window.addEventListener("keydown", onKeydown);
-    return () => window.removeEventListener("keydown", onKeydown);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, selected]);
 
   function exportFile(fmt: "csv" | "xlsx") {
     // club 类型导出：用 registration_type=club
@@ -207,13 +185,53 @@ export default function RegistrationsPage() {
     );
   }
 
+  const selectable = items.filter((r) => r.status !== "checked_in");
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">{t("admin.registrations.title")}</h1>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={toggleSelectAll} disabled={items.filter(isSelectable).length === 0}>
-            {items.filter(isSelectable).length > 0 && items.filter(isSelectable).every((r) => selected.has(r.id)) ? (
+        <div className="flex flex-wrap gap-3">
+          <select
+            className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+          >
+            <option value="">{t("admin.registrations.filterType")}</option>
+            {TYPES.map((tp) => (
+              <option key={tp} value={tp}>{typeLabel(tp, t)}</option>
+            ))}
+          </select>
+          <select
+            className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+            value={activityId}
+            onChange={(e) => setActivityId(e.target.value)}
+            disabled={typeFilter === "club"}
+          >
+            <option value="">{t("admin.registrations.filterActivity")}</option>
+            {activities.map((a) => (
+              <option key={a.id} value={a.id}>{a.title}</option>
+            ))}
+          </select>
+          <select
+            className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+          >
+            <option value="">{t("admin.registrations.filterStatus")}</option>
+            {STATUSES.map((s) => (
+              <option key={s} value={s}>{t(`admin.registrations.statuses.${s}`)}</option>
+            ))}
+          </select>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {canManage && (
+            <Button variant="outline" size="sm" onClick={() => setManualOpen(true)}>
+              <UserPlus className="h-4 w-4 mr-1" />
+              {t("admin.review.manualCreate")}
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={toggleAll} disabled={selectable.length === 0}>
+            {allSelected ? (
               <Square className="h-4 w-4 mr-1" />
             ) : (
               <SquareCheck className="h-4 w-4 mr-1" />
@@ -229,40 +247,6 @@ export default function RegistrationsPage() {
             {t("admin.registrations.exportXlsx")}
           </Button>
         </div>
-      </div>
-
-      <div className="flex flex-wrap gap-3">
-        <select
-          className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-          value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value)}
-        >
-          <option value="">{t("admin.registrations.filterType")}</option>
-          {TYPES.map((tp) => (
-            <option key={tp} value={tp}>{typeLabel(tp, t)}</option>
-          ))}
-        </select>
-        <select
-          className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-          value={activityId}
-          onChange={(e) => setActivityId(e.target.value)}
-          disabled={typeFilter === "club"}
-        >
-          <option value="">{t("admin.registrations.filterActivity")}</option>
-          {activities.map((a) => (
-            <option key={a.id} value={a.id}>{a.title}</option>
-          ))}
-        </select>
-        <select
-          className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-        >
-          <option value="">{t("admin.registrations.filterStatus")}</option>
-          {STATUSES.map((s) => (
-            <option key={s} value={s}>{t(`admin.registrations.statuses.${s}`)}</option>
-          ))}
-        </select>
       </div>
 
       {loading ? (
@@ -282,31 +266,27 @@ export default function RegistrationsPage() {
                   <th className="px-3 py-2 w-10">
                     <button
                       type="button"
-                      onClick={toggleSelectAll}
+                      onClick={toggleAll}
                       className="flex items-center justify-center text-muted-foreground hover:text-foreground"
                       title={t("admin.registrations.selectAll")}
                     >
-                      {(() => {
-                        const selectable = items.filter(isSelectable).map((r) => r.id);
-                        const allSelected = selectable.length > 0 && selectable.every((id) => selected.has(id));
-                        const someSelected = selectable.some((id) => selected.has(id));
-                        return allSelected ? (
-                          <SquareCheck className="h-4 w-4 text-primary" />
-                        ) : someSelected ? (
-                          <Square className="h-4 w-4 text-primary fill-primary/40" />
-                        ) : (
-                          <Square className="h-4 w-4" />
-                        );
-                      })()}
+                      {allSelected ? (
+                        <SquareCheck className="h-4 w-4 text-primary" />
+                      ) : someSelected ? (
+                        <Square className="h-4 w-4 text-primary fill-primary/40" />
+                      ) : (
+                        <Square className="h-4 w-4" />
+                      )}
                     </button>
                   </th>
-                  <th className="px-3 py-2">类型</th>
+                  <th className="px-3 py-2">{t("admin.registrations.colType")}</th>
                   <th className="px-3 py-2">{t("admin.registrations.colName")}</th>
                   <th className="px-3 py-2">{t("admin.registrations.colStudentId")}</th>
                   <th className="px-3 py-2 hidden md:table-cell">{t("admin.registrations.colCollege")}</th>
                   <th className="px-3 py-2 hidden lg:table-cell">{t("admin.registrations.colMajor")}</th>
                   <th className="px-3 py-2">{t("admin.registrations.colPhone")}</th>
                   <th className="px-3 py-2">{t("admin.registrations.colStatus")}</th>
+                  <th className="px-3 py-2 hidden sm:table-cell">{t("admin.review.colSource")}</th>
                   <th className="px-3 py-2 hidden sm:table-cell">{t("admin.registrations.colSubmittedAt")}</th>
                   <th className="px-3 py-2">{t("admin.activities.actions")}</th>
                 </tr>
@@ -317,10 +297,10 @@ export default function RegistrationsPage() {
                     <td className="px-3 py-2">
                       <button
                         type="button"
-                        onClick={() => toggleSelect(r.id)}
-                        disabled={!isSelectable(r)}
+                        onClick={() => toggle(r.id)}
+                        disabled={r.status === "checked_in"}
                         className="flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed"
-                        title={isSelectable(r) ? t("admin.registrations.selectRow") : t("admin.registrations.checkedInLock")}
+                        title={r.status !== "checked_in" ? t("admin.registrations.selectRow") : t("admin.registrations.checkedInLock")}
                       >
                         {selected.has(r.id) ? (
                           <SquareCheck className="h-4 w-4 text-primary" />
@@ -330,13 +310,9 @@ export default function RegistrationsPage() {
                       </button>
                     </td>
                     <td className="px-3 py-2">
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${
-                        r.registration_type === "club"
-                          ? "bg-emerald-500/10 text-emerald-600"
-                          : "bg-blue-500/10 text-blue-600"
-                      }`}>
+                      <StatusBadge tone={r.registration_type === "club" ? "success" : "info"}>
                         {typeLabel(r.registration_type, t)}
-                      </span>
+                      </StatusBadge>
                     </td>
                     <td className="px-3 py-2 font-medium">
                       {r.name}
@@ -347,12 +323,24 @@ export default function RegistrationsPage() {
                     <td className="px-3 py-2 hidden lg:table-cell">{tv(r, "major")}</td>
                     <td className="px-3 py-2 font-mono text-xs whitespace-nowrap">{r.phone_cc} {r.phone_number}</td>
                     <td className="px-3 py-2">
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-secondary">
+                      <StatusBadge
+                        tone={
+                          r.status === "pending" ? "warning"
+                          : r.status === "approved" ? "success"
+                          : r.status === "rejected" ? "danger"
+                          : "info"
+                        }
+                      >
                         {t(`admin.registrations.statuses.${r.status}`)}
-                      </span>
+                      </StatusBadge>
+                    </td>
+                    <td className="px-3 py-2 hidden sm:table-cell">
+                      <StatusBadge tone={r.source === "manual" ? "info" : "neutral"}>
+                        {r.source === "manual" ? t("admin.review.sourceManual") : t("admin.review.sourceForm")}
+                      </StatusBadge>
                     </td>
                     <td className="px-3 py-2 hidden sm:table-cell text-xs text-muted-foreground whitespace-nowrap">
-                      {new Date(r.submitted_at).toLocaleString()}
+                      <FormattedUserActionTime utcIso={r.submitted_at} />
                     </td>
                     <td className="px-3 py-2">
                       <div className="flex gap-1">
@@ -387,7 +375,11 @@ export default function RegistrationsPage() {
                   </Button>
                 )}
               </div>
-              <DetailRow label="类型" value={typeLabel(detail.registration_type, t)} />
+              <DetailRow label={t("admin.registrations.colType")} value={typeLabel(detail.registration_type, t)} />
+              <DetailRow
+                label={t("admin.review.colSource")}
+                value={detail.source === "manual" ? t("admin.review.sourceManual") : t("admin.review.sourceForm")}
+              />
               <DetailRow label={t("admin.registrations.colStudentId")} value={detail.student_id} />
               <DetailRow label={t("admin.registrations.colCollege")} value={tv(detail, "college")} />
               <DetailRow label={t("admin.registrations.colMajor")} value={tv(detail, "major")} />
@@ -406,13 +398,16 @@ export default function RegistrationsPage() {
               {detail.checked_in_at && (
                 <DetailRow
                   label={t("admin.registrations.checkedInAt")}
-                  value={new Date(detail.checked_in_at).toLocaleString()}
+                  value={<FormattedUserActionTime utcIso={detail.checked_in_at} />}
                 />
               )}
               {detail.remark && (
                 <DetailRow label={t("admin.registrations.remark")} value={detail.remark} />
               )}
-              <DetailRow label={t("admin.registrations.colSubmittedAt")} value={new Date(detail.submitted_at).toLocaleString()} />
+              <DetailRow
+                label={t("admin.registrations.colSubmittedAt")}
+                value={<FormattedUserActionTime utcIso={detail.submitted_at} />}
+              />
               <DetailRow label={t("admin.registrations.submitIp")} value={<code className="text-xs">{detail.submit_ip ?? "-"}</code>} />
               {/* 审核只提供 通过/拒绝；签到由报名者凭回执码在查询页完成 */}
               <div className="flex gap-2 pt-3">
@@ -437,40 +432,37 @@ export default function RegistrationsPage() {
         </DialogContent>
       </Dialog>
 
+      <ManualRegistrationDialog
+        open={manualOpen}
+        onOpenChange={setManualOpen}
+        activities={activities}
+        onCreated={() => refresh()}
+      />
+
       {/* 浮动批量操作栏：有选中项时显示在右下角 */}
       {selected.size > 0 && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-lg border bg-background/95 p-3 shadow-lg backdrop-blur">
-          <span className="text-sm text-muted-foreground whitespace-nowrap">
-            {t("admin.registrations.selected").replace("{count}", String(selected.size))}
-          </span>
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              onClick={() => batchAction("approved")}
-              disabled={batchLoading}
-            >
-              <CheckCheck className="h-4 w-4 mr-1" />
-              {t("admin.registrations.batchApprove")}
-            </Button>
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={() => batchAction("rejected")}
-              disabled={batchLoading}
-            >
-              <XCircle className="h-4 w-4 mr-1" />
-              {t("admin.registrations.batchReject")}
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setSelected(new Set())}
-              disabled={batchLoading}
-            >
-              {t("common.cancel")}
-            </Button>
-          </div>
-        </div>
+        <BatchBar
+          countLabel={t("admin.registrations.selected").replace("{count}", String(selected.size))}
+          loading={batchLoading}
+          cancelLabel={t("common.cancel")}
+          onCancel={() => setSelected(new Set())}
+          actions={[
+            {
+              key: "approve",
+              label: t("admin.registrations.batchApprove"),
+              icon: CheckCheck,
+              variant: "default",
+              onClick: () => batchAction("approved"),
+            },
+            {
+              key: "reject",
+              label: t("admin.registrations.batchReject"),
+              icon: XCircle,
+              variant: "destructive",
+              onClick: () => batchAction("rejected"),
+            },
+          ]}
+        />
       )}
     </div>
   );

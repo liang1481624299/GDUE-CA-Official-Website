@@ -9,16 +9,21 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api import activities, admin_stats, auth, bug_report, query, register, system, translations
+from app.api import activities, admin_stats, announcements, audit, auth, blog, bug_report, comments, content, media, members, oauth, query, realname, recruitment, register, security, sso, stats, system, translations
 from app.api.auth import security_answer_digest
 from app.core.config import get_settings
 from app.core.csrf import CSRF_HEADER, csrf_middleware
+from app.core.exceptions import register_exception_handlers
 from app.core.log import setup_logging
-from app.core.middleware import ip_blacklist_middleware, security_headers_middleware
+from app.core.middleware import (
+    ip_rules_middleware,
+    rate_limit_middleware,
+    security_headers_middleware,
+)
 from app.core.password_policy import check_password_strength
 from app.core.security import Role, hash_password, is_bcrypt_hash, verify_password
 from app.core.trace import TRACE_HEADER, trace_middleware
-from app.db.models import Base, SecurityQuestion, SystemSetting, User
+from app.db.models import Base, IpRule, IpRuleType, SecurityQuestion, SystemSetting, User
 from app.db.session import async_session, engine
 
 settings = get_settings()
@@ -47,11 +52,23 @@ async def _migrate_columns(conn):
             ("country", "VARCHAR(64) NULL"),
             ("region", "VARCHAR(128) NULL"),
             ("locality", "VARCHAR(128) NULL"),
+            ("permission_overrides", "JSON NULL"),
+            # 实名验证（Phase 6）：未实名账号禁止进后台，仅可浏览前台
+            ("realname_verified", "BOOLEAN DEFAULT 0"),
+            ("realname_verified_at", "DATETIME NULL"),
+            ("realname_submitted_at", "DATETIME NULL"),
+            ("realname_note", "TEXT NULL"),
         ],
-        "activities": [("checkin_open", "BOOLEAN DEFAULT 0")],
+        "activities": [
+            ("checkin_open", "BOOLEAN DEFAULT 0"),
+            # Phase 3：活动开始/结束时间（状态自动识别 + 双必填校验）
+            ("start_at", "DATETIME NULL"),
+            ("end_at", "DATETIME NULL"),
+        ],
         "registrations": [
             ("checked_in_at", "DATETIME NULL"),
             ("submit_ip", "VARCHAR(64) NULL"),
+            ("source", "VARCHAR(16) NOT NULL DEFAULT 'form'"),
         ],
         "bug_reports": [("submit_ip", "VARCHAR(64) NULL")],
         "login_sessions": [
@@ -64,6 +81,8 @@ async def _migrate_columns(conn):
             ("network_port", "INTEGER DEFAULT 443"),
             ("network_listen_ip", "VARCHAR(64) DEFAULT '0.0.0.0'"),
             ("network_domains", "TEXT DEFAULT '[]'"),
+            # Phase 5：博客评论全局开关
+            ("comments_enabled", "BOOLEAN DEFAULT 1"),
         ],
     }
     if conn.dialect.name == "postgresql":
@@ -135,6 +154,44 @@ async def _init_db():
             logger.warning("超级管理员仍在使用默认弱口令，已强制要求登录后修改")
         await s.commit()
 
+        # 迁移旧 SystemSetting.ip_blacklist JSON 条目为永久 ip_rules（blacklist）
+        from sqlalchemy import select
+        legacy = (await s.execute(
+            select(SystemSetting).where(SystemSetting.id == 1)
+        )).scalar_one_or_none()
+        if legacy and legacy.ip_blacklist:
+            existing_rules = set((r.type, r.rule) for r in (
+                await s.execute(select(IpRule))
+            ).scalars().all())
+            migrated = 0
+            for ip_entry in legacy.ip_blacklist:
+                key = (IpRuleType.BLACKLIST, ip_entry)
+                if key in existing_rules:
+                    continue
+                s.add(IpRule(
+                    type=IpRuleType.BLACKLIST,
+                    rule=ip_entry,
+                    reason="从旧版 IP 黑名单迁移",
+                    created_by=None,
+                ))
+                migrated += 1
+            if migrated:
+                logger.info("已迁移 %d 条旧版 IP 黑名单条目到 ip_rules 表", migrated)
+
+        # Phase 6 一次性迁移：既有后台账号（super_admin/admin/editor）视为已实名
+        # （由超管创建且已登记学号/真名/手机号）；第三方注册的 member 账号需走实名审核
+        unverified = (await s.execute(
+            select(User).where(
+                User.role.in_([Role.SUPER_ADMIN, Role.ADMIN, Role.EDITOR]),
+                User.realname_verified.is_(False),
+            )
+        )).scalars().all()
+        for u in unverified:
+            u.realname_verified = True
+        if unverified:
+            logger.info("已将 %d 个既有后台账号标记为已实名", len(unverified))
+        await s.commit()
+
 
 def _generate_strong_password() -> str:
     while True:
@@ -160,14 +217,19 @@ app = FastAPI(
     openapi_url="/openapi.json" if settings.ENABLE_API_DOCS else None,
 )
 
+# ---------- 全局异常处理器（禁止向前端输出堆栈） ----------
+register_exception_handlers(app)
+
 # ---------- 中间件（后注册的在外层） ----------
 # 1. CSRF：写请求校验 X-CSRF-Token 与来源（最内层，先于路由执行）
 app.middleware("http")(csrf_middleware)
-# 2. IP 黑名单 + Host 白名单
-app.middleware("http")(ip_blacklist_middleware)
-# 3. 安全响应头（覆盖所有响应，包括被拦截的请求）
+# 2. 限流（令牌桶，每 IP）
+app.middleware("http")(rate_limit_middleware)
+# 3. IP 黑白名单 + Host 白名单
+app.middleware("http")(ip_rules_middleware)
+# 4. 安全响应头（覆盖所有响应，包括被拦截的请求）
 app.middleware("http")(security_headers_middleware)
-# 4. CORS：登录态走 Cookie，必须显式列出来源，禁止 "*"
+# 5. CORS：登录态走 Cookie，必须显式列出来源，禁止 "*"
 #    推荐前端通过同源反代访问 /api（Next.js rewrites / Nginx），此时无需 CORS
 if settings.cors_origins_list:
     app.add_middleware(
@@ -178,7 +240,7 @@ if settings.cors_origins_list:
         allow_headers=["Content-Type", CSRF_HEADER],
         expose_headers=[TRACE_HEADER],
     )
-# 5. traceId（最外层）：覆盖所有请求，包括被 CORS / 黑名单 / CSRF 拦截的请求
+# 6. traceId（最外层）：覆盖所有请求，包括被 CORS / 黑名单 / CSRF 拦截的请求
 app.middleware("http")(trace_middleware)
 
 
@@ -191,13 +253,38 @@ async def health():
 # ---------- 注册路由 ----------
 app.include_router(auth.router)
 app.include_router(activities.router)
+app.include_router(activities.admin_router)
+app.include_router(announcements.public_router)
+app.include_router(announcements.admin_router)
+app.include_router(content.public_router)
+app.include_router(content.admin_router)
+app.include_router(members.public_router)
+app.include_router(members.admin_router)
+app.include_router(recruitment.public_router)
+app.include_router(recruitment.admin_router)
+app.include_router(blog.public_router)
+app.include_router(blog.admin_router)
+app.include_router(comments.public_router)
+app.include_router(comments.admin_router)
+app.include_router(oauth.public_router)
+app.include_router(oauth.admin_router)
+app.include_router(sso.public_router)
+app.include_router(sso.admin_router)
+app.include_router(realname.router)
+app.include_router(realname.admin_router)
 app.include_router(register.router)
 app.include_router(bug_report.router)
 app.include_router(system.router)
 app.include_router(translations.router)
 app.include_router(query.router)
 app.include_router(admin_stats.router)
+app.include_router(stats.router)
+app.include_router(media.router)
+app.include_router(audit.router)
+app.include_router(security.router)
 
-# ---------- 静态文件服务（头像上传） ----------
+# ---------- 静态文件服务（头像上传 + 成员头像 + 博客图片） ----------
 os.makedirs("uploads/avatars", exist_ok=True)
+os.makedirs("uploads/members", exist_ok=True)
+os.makedirs("uploads/blog", exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")

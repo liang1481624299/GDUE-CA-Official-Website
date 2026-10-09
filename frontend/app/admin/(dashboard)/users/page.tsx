@@ -3,11 +3,23 @@
 /**
  * /admin/users - 人员管理
  *
- * - 所有角色可见自己的信息并可编辑
- * - super_admin 可看到所有人、创建/删除账号、编辑所有人
+ * - 筛选（搜索/角色/状态）+ 状态启停 + 重置密码 + 权限矩阵 + 创建账号（Dialog）
+ * - 所有角色可见自己的信息并可编辑；super_admin 可管理所有人
  */
-import { useState, useEffect, useCallback } from "react";
-import { Loader2, Trash2, Plus, Pencil, ShieldCheck, Shield, UserPen, UserRound, X } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import {
+  Loader2,
+  Trash2,
+  Plus,
+  Pencil,
+  ShieldCheck,
+  Shield,
+  UserPen,
+  UserRound,
+  X,
+  KeyRound,
+  SlidersHorizontal,
+} from "lucide-react";
 import { useI18n } from "@/i18n/provider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,19 +27,18 @@ import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   listUsers,
-  createUser,
   deleteUser,
   updateUser,
   fetchProfile,
 } from "@/lib/api/auth";
-import type { AdminUser, AdminRole, UserCreatePayload, UserUpdatePayload } from "@/types/api";
-
-const ROLE_OPTIONS: AdminRole[] = ["super_admin", "admin", "editor", "member"];
+import { UserFilterBar, type UserFilters } from "@/components/admin/users/UserFilterBar";
+import { UserCreateDialog } from "@/components/admin/users/UserCreateDialog";
+import { ResetPasswordDialog } from "@/components/admin/users/ResetPasswordDialog";
+import { PermissionMatrixDialog } from "@/components/admin/users/PermissionMatrixDialog";
+import type { AdminUser, AdminRole, UserUpdatePayload } from "@/types/api";
 
 export default function UsersPage() {
   const { t } = useI18n();
@@ -36,37 +47,39 @@ export default function UsersPage() {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [filters, setFilters] = useState<UserFilters>({ q: "", role: "all", active: "all" });
+  const [createOpen, setCreateOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [creating, setCreating] = useState(false);
+  const [editForm, setEditForm] = useState<UserUpdatePayload>({});
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [togglingId, setTogglingId] = useState<number | null>(null);
+  const [resetTarget, setResetTarget] = useState<AdminUser | null>(null);
+  const [permTarget, setPermTarget] = useState<AdminUser | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // 新建表单
-  const [createForm, setCreateForm] = useState<UserCreatePayload>({
-    username: "",
-    email: "",
-    password: "",
-    role: "member",
-    student_id: "",
-    real_name: "",
-    phone: "",
-  });
+  // 筛选防抖触发
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const firstRender = useRef(true);
 
-  // 编辑表单
-  const [editForm, setEditForm] = useState<UserUpdatePayload>({});
-
-  const load = useCallback(async () => {
+  const load = useCallback(async (f?: UserFilters) => {
+    const filter = f;
     setLoading(true);
     setError(null);
     try {
       const me = await fetchProfile();
       setMyId(me.id);
       setIsSuperAdmin(me.role === "super_admin");
-      if (me.role === "super_admin") {
-        const list = await listUsers();
-        setUsers(list);
+      const canList = me.role !== "member";
+      if (canList) {
+        const list = await listUsers({
+          q: filter?.q || undefined,
+          role: filter && filter.role !== "all" ? filter.role : undefined,
+          is_active:
+            filter && filter.active !== "all" ? filter.active === "active" : undefined,
+        });
+        // 非 super_admin 不展示 super_admin 账号
+        setUsers(me.role === "super_admin" ? list : list.filter((u) => u.role !== "super_admin"));
       } else {
         setUsers([me]);
       }
@@ -78,8 +91,22 @@ export default function UsersPage() {
   }, []);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    load(filters);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => load(filters), 300);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters]);
 
   function startEdit(u: AdminUser) {
     setEditingId(u.id);
@@ -106,34 +133,11 @@ export default function UsersPage() {
       await updateUser(id, editForm);
       setEditingId(null);
       setEditForm({});
-      await load();
+      await load(filters);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setSaving(false);
-    }
-  }
-
-  async function handleCreate() {
-    setCreating(true);
-    setError(null);
-    try {
-      await createUser(createForm);
-      setCreateForm({
-        username: "",
-        email: "",
-        password: "",
-        role: "member",
-        student_id: "",
-        real_name: "",
-        phone: "",
-      });
-      setShowCreateForm(false);
-      await load();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setCreating(false);
     }
   }
 
@@ -143,11 +147,24 @@ export default function UsersPage() {
     setError(null);
     try {
       await deleteUser(id);
-      await load();
+      await load(filters);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setDeletingId(null);
+    }
+  }
+
+  async function handleToggleActive(u: AdminUser, next: boolean) {
+    setTogglingId(u.id);
+    setError(null);
+    try {
+      await updateUser(u.id, { is_active: next });
+      await load(filters);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setTogglingId(null);
     }
   }
 
@@ -183,6 +200,10 @@ export default function UsersPage() {
 
   const canEdit = (u: AdminUser) => isSuperAdmin || u.id === myId;
   const canDelete = (u: AdminUser) => isSuperAdmin && u.id !== myId;
+  const canResetPwd = (u: AdminUser) => isSuperAdmin && u.id !== myId;
+  const canPerm = (u: AdminUser) =>
+    isSuperAdmin && u.id !== myId && u.role !== "super_admin";
+  const canToggleActive = (u: AdminUser) => isSuperAdmin && u.id !== myId;
 
   return (
     <div className="space-y-6">
@@ -198,96 +219,22 @@ export default function UsersPage() {
           </p>
         </div>
         {isSuperAdmin && (
-          <Button onClick={() => setShowCreateForm(!showCreateForm)}>
+          <Button onClick={() => setCreateOpen(true)}>
             <Plus className="h-4 w-4" />
             {t("admin.users.create")}
           </Button>
         )}
       </div>
 
+      {/* 筛选栏（可查看全员时显示） */}
+      {!loading && users.length > 0 && (
+        <UserFilterBar filters={filters} onChange={setFilters} />
+      )}
+
       {error && (
         <Card className="border-destructive">
           <CardContent className="py-3 text-sm text-destructive">
             {error}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* 新建账号表单 */}
-      {showCreateForm && isSuperAdmin && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("admin.users.formTitle")}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField label={t("admin.users.displayName")} required>
-                <Input
-                  value={createForm.username}
-                  onChange={(e) => setCreateForm({ ...createForm, username: e.target.value })}
-                  placeholder={t("admin.users.displayNamePlaceholder")}
-                />
-              </FormField>
-              <FormField label={t("admin.users.realName")} required>
-                <Input
-                  value={createForm.real_name}
-                  onChange={(e) => setCreateForm({ ...createForm, real_name: e.target.value })}
-                  placeholder={t("admin.users.realNamePlaceholder")}
-                />
-              </FormField>
-              <FormField label={t("admin.users.studentId")} required>
-                <Input
-                  value={createForm.student_id}
-                  onChange={(e) => setCreateForm({ ...createForm, student_id: e.target.value })}
-                  placeholder={t("admin.users.studentIdPlaceholder")}
-                />
-              </FormField>
-              <FormField label={t("admin.users.phone")} required>
-                <Input
-                  value={createForm.phone}
-                  onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })}
-                  placeholder={t("admin.users.phonePlaceholder")}
-                />
-              </FormField>
-              <FormField label={t("admin.users.email")} required>
-                <Input
-                  type="email"
-                  value={createForm.email}
-                  onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
-                  placeholder={t("admin.users.emailPlaceholder")}
-                />
-              </FormField>
-              <FormField label={t("admin.users.password")} required>
-                <Input
-                  type="text"
-                  value={createForm.password}
-                  onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
-                  placeholder={t("admin.users.passwordPlaceholder")}
-                />
-              </FormField>
-              <FormField label={t("admin.users.role")} required>
-                <select
-                  value={createForm.role}
-                  onChange={(e) => setCreateForm({ ...createForm, role: e.target.value as AdminRole })}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                >
-                  {ROLE_OPTIONS.map((r) => (
-                    <option key={r} value={r}>
-                      {t(`admin.users.roles.${r}`)}
-                    </option>
-                  ))}
-                </select>
-              </FormField>
-            </div>
-            <div className="flex gap-2 pt-2">
-              <Button onClick={handleCreate} disabled={creating}>
-                {creating && <Loader2 className="h-4 w-4 animate-spin" />}
-                {t("admin.users.save")}
-              </Button>
-              <Button variant="outline" onClick={() => setShowCreateForm(false)}>
-                {t("admin.users.cancel")}
-              </Button>
-            </div>
           </CardContent>
         </Card>
       )}
@@ -300,7 +247,9 @@ export default function UsersPage() {
       ) : users.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
-            {t("admin.users.empty")}
+            {filters.q || filters.role !== "all" || filters.active !== "all"
+              ? t("admin.users.emptyFiltered")
+              : t("admin.users.empty")}
           </CardContent>
         </Card>
       ) : (
@@ -310,13 +259,14 @@ export default function UsersPage() {
               <table className="w-full table-fixed text-sm">
                 <thead className="border-b border-border bg-muted/30">
                   <tr className="text-left">
-                    <th className="px-3 py-3 font-medium text-muted-foreground w-[15%]">{t("admin.users.colDisplayName")}</th>
-                    <th className="px-3 py-3 font-medium text-muted-foreground w-[14%]">{t("admin.users.colRealName")}</th>
-                    <th className="px-3 py-3 font-medium text-muted-foreground w-[13%]">{t("admin.users.colStudentId")}</th>
-                    <th className="px-3 py-3 font-medium text-muted-foreground w-[16%]">{t("admin.users.colPhone")}</th>
-                    <th className="px-3 py-3 font-medium text-muted-foreground w-[17%]">{t("admin.users.colEmail")}</th>
-                    <th className="px-3 py-3 font-medium text-muted-foreground w-[13%]">{t("admin.users.colRole")}</th>
-                    <th className="px-3 py-3 font-medium text-muted-foreground text-right w-[12%]">{t("admin.users.colActions")}</th>
+                    <th className="px-3 py-3 font-medium text-muted-foreground w-[14%]">{t("admin.users.colDisplayName")}</th>
+                    <th className="px-3 py-3 font-medium text-muted-foreground w-[11%]">{t("admin.users.colRealName")}</th>
+                    <th className="px-3 py-3 font-medium text-muted-foreground w-[11%]">{t("admin.users.colStudentId")}</th>
+                    <th className="px-3 py-3 font-medium text-muted-foreground w-[13%]">{t("admin.users.colPhone")}</th>
+                    <th className="px-3 py-3 font-medium text-muted-foreground w-[15%]">{t("admin.users.colEmail")}</th>
+                    <th className="px-3 py-3 font-medium text-muted-foreground w-[12%]">{t("admin.users.colRole")}</th>
+                    <th className="px-3 py-3 font-medium text-muted-foreground w-[9%]">{t("admin.users.colStatus")}</th>
+                    <th className="px-3 py-3 font-medium text-muted-foreground text-right w-[15%]">{t("admin.users.colActions")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -361,7 +311,7 @@ export default function UsersPage() {
                                 onChange={(e) => setEditForm({ ...editForm, role: e.target.value as AdminRole })}
                                 className="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-xs"
                               >
-                                {ROLE_OPTIONS.map((r) => (
+                                {(["super_admin", "admin", "editor", "member"] as AdminRole[]).map((r) => (
                                   <option key={r} value={r}>
                                     {t(`admin.users.roles.${r}`)}
                                   </option>
@@ -370,6 +320,11 @@ export default function UsersPage() {
                             ) : (
                               roleBadge(u.role)
                             )}
+                          </td>
+                          <td className="px-3 py-3">
+                            <Badge variant={u.is_active ? "outline" : "secondary"} className={u.is_active ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}>
+                              {u.is_active ? t("admin.users.statusActive") : t("admin.users.statusDisabled")}
+                            </Badge>
                           </td>
                           <td className="px-3 py-3">
                             <div className="flex justify-end gap-1">
@@ -402,6 +357,23 @@ export default function UsersPage() {
                           <td className="px-3 py-3 text-muted-foreground truncate">{u.email}</td>
                           <td className="px-3 py-3">{roleBadge(u.role)}</td>
                           <td className="px-3 py-3">
+                            {canToggleActive(u) ? (
+                              <input
+                                type="checkbox"
+                                checked={u.is_active}
+                                disabled={togglingId === u.id}
+                                onChange={(e) => handleToggleActive(u, e.target.checked)}
+                                className="h-4 w-4 accent-primary cursor-pointer"
+                                aria-label={t("admin.users.colStatus")}
+                                title={u.is_active ? t("admin.users.statusActive") : t("admin.users.statusDisabled")}
+                              />
+                            ) : (
+                              <Badge variant={u.is_active ? "outline" : "secondary"} className={u.is_active ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}>
+                                {u.is_active ? t("admin.users.statusActive") : t("admin.users.statusDisabled")}
+                              </Badge>
+                            )}
+                          </td>
+                          <td className="px-3 py-3">
                             <div className="flex justify-end gap-1">
                               {canEdit(u) && (
                                 <Button
@@ -411,6 +383,28 @@ export default function UsersPage() {
                                   aria-label="edit"
                                 >
                                   <Pencil className="h-4 w-4" />
+                                </Button>
+                              )}
+                              {canPerm(u) && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => setPermTarget(u)}
+                                  title={t("admin.users.permBtn")}
+                                  aria-label={t("admin.users.permBtn")}
+                                >
+                                  <SlidersHorizontal className="h-4 w-4" />
+                                </Button>
+                              )}
+                              {canResetPwd(u) && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => setResetTarget(u)}
+                                  title={t("admin.users.resetPwdBtn")}
+                                  aria-label={t("admin.users.resetPwdBtn")}
+                                >
+                                  <KeyRound className="h-4 w-4" />
                                 </Button>
                               )}
                               {canDelete(u) && (
@@ -440,26 +434,23 @@ export default function UsersPage() {
           </CardContent>
         </Card>
       )}
-    </div>
-  );
-}
 
-/** 表单字段包装 */
-function FormField({
-  label,
-  required,
-  children,
-}: {
-  label: string;
-  required?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <label className="text-sm font-medium">
-        {label} {required && <span className="text-destructive">*</span>}
-      </label>
-      {children}
+      {/* 新建账号弹窗 */}
+      <UserCreateDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onCreated={() => load(filters)}
+      />
+
+      {/* 重置密码弹窗 */}
+      <ResetPasswordDialog user={resetTarget} onOpenChange={(o) => !o && setResetTarget(null)} />
+
+      {/* 权限矩阵弹窗 */}
+      <PermissionMatrixDialog
+        user={permTarget}
+        onOpenChange={(o) => !o && setPermTarget(null)}
+        onSaved={() => load(filters)}
+      />
     </div>
   );
 }

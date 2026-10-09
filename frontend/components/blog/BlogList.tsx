@@ -11,10 +11,18 @@ import { Calendar, Tag } from "lucide-react";
 import { useI18n } from "@/i18n/provider";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import type { BlogPost } from "@/lib/content";
+import { FormattedUserActionTime } from "@/components/shared/FormattedUserActionTime";
 
 interface BlogListProps {
-  posts: BlogPost[];
+  posts: {
+    slug: string;
+    title: string;
+    excerpt: string;
+    /** 原始 UTC ISO（发布时间），由客户端组件按用户时区渲染 */
+    date: string;
+    tags: string[];
+    author: string;
+  }[];
   tags: string[];
 }
 
@@ -77,7 +85,8 @@ export function BlogList({ posts, tags }: BlogListProps) {
                     </h3>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <Calendar className="h-3.5 w-3.5" />
-                      <span>{post.date}</span>
+                      {/* 原始 UTC ISO → 客户端按用户时区渲染 */}
+                      <FormattedUserActionTime utcIso={post.date} />
                       <span>·</span>
                       <span>{post.author}</span>
                     </div>

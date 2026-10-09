@@ -10,6 +10,7 @@
 """
 import hashlib
 import re
+import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -24,6 +25,7 @@ from app.core.csrf import CSRF_COOKIE, SESSION_COOKIE, cookie_secure, new_csrf_t
 from app.core.ip_location import resolve_location
 from app.core.middleware import get_client_ip
 from app.core.password_policy import check_password_strength
+from app.core.permissions import PERMISSION_MODULES, require_permission
 from app.core.rate_limit import rate_limit
 from app.core.security import (
     REMEMBER_DEVICE_DAYS,
@@ -259,6 +261,7 @@ async def login(
         csrf_token=csrf_token,
         username=user.username,
         must_change_password=user.must_change_password,
+        realname_verified=user.realname_verified,
     )
 
 
@@ -294,7 +297,7 @@ async def heartbeat(user: dict = Depends(require_role(Role.MEMBER, allow_pending
 # ---------- 登录会话列表（当前用户自己的设备） ----------
 @router.get("/sessions", response_model=list[LoginSessionOut])
 async def list_sessions(
-    user: dict = Depends(require_role(Role.MEMBER)),
+    user: dict = Depends(require_role(Role.MEMBER, allow_unverified_realname=True)),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
@@ -318,7 +321,7 @@ async def list_sessions(
 async def revoke_session(
     session_row_id: int,
     request: Request,
-    user: dict = Depends(require_role(Role.MEMBER)),
+    user: dict = Depends(require_role(Role.MEMBER, allow_unverified_realname=True)),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
@@ -345,7 +348,7 @@ async def revoke_session(
 # ---------- 当前用户 ----------
 @router.get("/me", response_model=UserOut)
 async def me(
-    user: dict = Depends(require_role(Role.MEMBER, allow_pending_password_change=True)),
+    user: dict = Depends(require_role(Role.MEMBER, allow_pending_password_change=True, allow_unverified_realname=True)),
     db: AsyncSession = Depends(get_db),
 ):
     u = await db.get(User, int(user["user_id"]))
@@ -372,7 +375,7 @@ def _sniff_image(data: bytes) -> str | None:
 
 @router.get("/profile", response_model=UserOut)
 async def get_profile(
-    user: dict = Depends(require_role(Role.MEMBER, allow_pending_password_change=True)),
+    user: dict = Depends(require_role(Role.MEMBER, allow_pending_password_change=True, allow_unverified_realname=True)),
     db: AsyncSession = Depends(get_db),
 ):
     """获取当前用户完整资料。"""
@@ -386,7 +389,7 @@ async def get_profile(
 async def update_profile(
     req: ProfileUpdate,
     request: Request,
-    user: dict = Depends(require_role(Role.MEMBER)),
+    user: dict = Depends(require_role(Role.MEMBER, allow_unverified_realname=True)),
     db: AsyncSession = Depends(get_db),
 ):
     """更新个人资料：显示名称、真实姓名、手机号、学号。"""
@@ -434,7 +437,7 @@ async def update_profile(
 async def upload_avatar(
     request: Request,
     file: UploadFile = File(...),
-    user: dict = Depends(require_role(Role.MEMBER)),
+    user: dict = Depends(require_role(Role.MEMBER, allow_unverified_realname=True)),
     db: AsyncSession = Depends(get_db),
 ):
     """上传头像（jpg/png/webp，最大 5MB）；按文件内容识别类型，拒绝伪装文件。"""
@@ -471,7 +474,7 @@ async def upload_avatar(
 async def change_password(
     req: ChangePasswordRequest,
     request: Request,
-    user: dict = Depends(require_role(Role.MEMBER, allow_pending_password_change=True)),
+    user: dict = Depends(require_role(Role.MEMBER, allow_pending_password_change=True, allow_unverified_realname=True)),
     db: AsyncSession = Depends(get_db),
 ):
     u = await db.get(User, int(user["user_id"]))
@@ -494,13 +497,30 @@ async def change_password(
     return {"ok": True}
 
 
-# ---------- 用户管理（仅 super_admin） ----------
+# ---------- 用户管理（查看：users:view；管理：仅 super_admin） ----------
 @router.get("/users", response_model=list[UserOut])
 async def list_users(
-    user: dict = Depends(require_role(Role.SUPER_ADMIN)),
+    q: str | None = None,
+    role: UserRole | None = None,
+    is_active: bool | None = None,
+    user: dict = Depends(require_permission("users", "view")),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(select(User).order_by(User.id))
+    """账号列表：q 模糊匹配显示名称/真实姓名/学号/邮箱，支持角色与启用状态筛选。"""
+    stmt = select(User).order_by(User.id)
+    if q:
+        kw = f"%{q}%"
+        stmt = stmt.where(or_(
+            User.username.like(kw),
+            User.real_name.like(kw),
+            User.student_id.like(kw),
+            User.email.like(kw),
+        ))
+    if role:
+        stmt = stmt.where(User.role == role)
+    if is_active is not None:
+        stmt = stmt.where(User.is_active == is_active)
+    result = await db.execute(stmt)
     return result.scalars().all()
 
 
@@ -527,6 +547,8 @@ async def create_user(
         student_id=req.student_id,
         real_name=req.real_name,
         phone=req.phone,
+        # 超管创建的账号已登记学号/真名/手机号，视为已实名
+        realname_verified=True,
     )
     db.add(new_user)
     await db.flush()
@@ -557,20 +579,33 @@ async def update_user(
     user_id: int,
     req: UserUpdate,
     request: Request,
-    user: dict = Depends(require_role(Role.MEMBER)),
+    user: dict = Depends(require_role(Role.MEMBER, allow_unverified_realname=True)),
     db: AsyncSession = Depends(get_db),
 ):
-    """更新账号信息：自己可改基础资料，super_admin 额外可改 role/is_active。"""
+    """更新账号信息：自己可改基础资料，super_admin 额外可改 role/is_active/permission_overrides。"""
     is_self = int(user["user_id"]) == user_id
     is_super = user["role"] == Role.SUPER_ADMIN.value
     if not (is_self or is_super):
         raise HTTPException(status_code=403, detail="只能修改自己的信息")
-    if not is_super and (req.role is not None or req.is_active is not None):
-        raise HTTPException(status_code=403, detail="无权修改角色或账号状态")
+    if not is_super and (req.role is not None or req.is_active is not None
+                         or req.permission_overrides is not None):
+        raise HTTPException(status_code=403, detail="无权修改角色、账号状态或权限")
 
     u = await db.get(User, user_id)
     if not u:
         raise HTTPException(status_code=404, detail="用户不存在")
+
+    # 权限覆盖仅 super_admin 可写；不能改自己的覆盖（防止提权），模块键必须合法
+    if req.permission_overrides is not None:
+        if is_self:
+            raise HTTPException(status_code=400, detail="不能修改自己的权限覆盖")
+        unknown = set(req.permission_overrides.keys()) - set(PERMISSION_MODULES)
+        if unknown:
+            raise HTTPException(status_code=400, detail=f"未知权限模块: {', '.join(sorted(unknown))}")
+        for mod, actions in req.permission_overrides.items():
+            if not isinstance(actions, list) or any(a not in ("view", "manage") for a in actions):
+                raise HTTPException(status_code=400, detail="权限动作仅支持 view / manage")
+        u.permission_overrides = req.permission_overrides or None
 
     if req.username is not None and req.username != u.username:
         dup = await db.execute(select(User).where(User.username == req.username))
@@ -606,6 +641,39 @@ async def update_user(
     return u
 
 
+def _generate_temp_password(username: str, email: str) -> str:
+    """生成满足强口令策略的一次性临时密码。"""
+    while True:
+        candidate = secrets.token_urlsafe(12) + secrets.choice("!@#$%^&*") + "Aa9"
+        if not check_password_strength(candidate, username, email):
+            return candidate
+
+
+@router.post("/users/{user_id}/reset-password")
+async def admin_reset_user_password(
+    user_id: int,
+    request: Request,
+    user: dict = Depends(require_role(Role.SUPER_ADMIN)),
+    db: AsyncSession = Depends(get_db),
+):
+    """超级管理员重置任意账号密码：生成临时密码一次性返回，账号强制下次登录改密。"""
+    u = await db.get(User, user_id)
+    if not u:
+        raise HTTPException(status_code=404, detail="用户不存在")
+    temp_password = _generate_temp_password(u.username, u.email)
+    u.password_hash = hash_password(temp_password)
+    u.must_change_password = True
+    u.password_changed_at = _now()
+    u.failed_login_count = 0
+    u.locked_until = None
+    # 重置后全部会话下线，须用临时密码重新登录
+    await _revoke_user_sessions(db, user_id)
+    _log(db, int(user["user_id"]), "user.reset_password", f"user:{user_id}",
+         get_client_ip(request))
+    await db.commit()
+    return {"temp_password": temp_password}
+
+
 # ---------- 忘记密码申请（公开） ----------
 @router.post(
     "/forgot-password",
@@ -634,7 +702,7 @@ async def submit_forgot_password(
 @router.get("/password-resets", response_model=list[PasswordResetOut])
 async def list_password_resets(
     status_filter: str | None = None,
-    user: dict = Depends(require_role(Role.ADMIN)),
+    user: dict = Depends(require_permission("review.resets", "view")),
     db: AsyncSession = Depends(get_db),
 ):
     stmt = select(PasswordResetRequest)
@@ -651,7 +719,7 @@ async def handle_password_reset(
     reset_id: int,
     req: PasswordResetHandleRequest,
     request: Request,
-    user: dict = Depends(require_role(Role.ADMIN)),
+    user: dict = Depends(require_permission("review.resets", "manage")),
     db: AsyncSession = Depends(get_db),
 ):
     reset_req = await db.get(PasswordResetRequest, reset_id)
@@ -677,7 +745,7 @@ class PasswordResetBatchRequest(BaseModel):
 async def batch_handle_password_resets(
     req: PasswordResetBatchRequest,
     request: Request,
-    user: dict = Depends(require_role(Role.ADMIN)),
+    user: dict = Depends(require_permission("review.resets", "manage")),
     db: AsyncSession = Depends(get_db),
 ):
     if not req.ids:
