@@ -8,7 +8,7 @@ from app.schemas.common import MultilineText, PlainText, SafeUrl, UTCNaive, UTCD
 
 
 class AnnouncementCreate(BaseModel):
-    category: Literal["homepage", "club"] = "homepage"
+    category: Literal["homepage", "home"] = "homepage"
     title: PlainText = Field(min_length=1, max_length=200)
     content: MultilineText = Field(min_length=1, max_length=10_000)
     link: SafeUrl | None = Field(default=None, max_length=512)
@@ -19,7 +19,7 @@ class AnnouncementCreate(BaseModel):
 
 
 class AnnouncementUpdate(BaseModel):
-    category: Literal["homepage", "club"] | None = None
+    category: Literal["homepage", "home"] | None = None
     title: PlainText | None = Field(default=None, min_length=1, max_length=200)
     content: MultilineText | None = Field(default=None, min_length=1, max_length=10_000)
     link: SafeUrl | None = Field(default=None, max_length=512)

@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api import activities, admin_stats, announcements, audit, auth, blog, bug_report, comments, content, media, members, oauth, query, realname, recruitment, register, security, sso, stats, system, translations
+from app.api import activities, admin_stats, announcements, audit, auth, blog, bug_report, comments, content, media, members, notifications, oauth, query, realname, recruitment, register, security, sso, stats, system, translations
 from app.api.auth import security_answer_digest
 from app.core.config import get_settings
 from app.core.csrf import CSRF_HEADER, csrf_middleware
@@ -88,6 +88,12 @@ async def _migrate_columns(conn):
     if conn.dialect.name == "postgresql":
         # PostgreSQL 原生 ENUM 需显式追加新角色值
         await conn.execute(text("ALTER TYPE userrole ADD VALUE IF NOT EXISTS 'MEMBER'"))
+        # 公告 category 新枚举值：主页公告（原社团公告 club 改名）
+        await conn.execute(text("ALTER TYPE announcementcategory ADD VALUE IF NOT EXISTS 'HOME'"))
+    # 公告 category 历史数据兼容：社团公告 club → 主页公告 home（SAEnum 存枚举名）
+    await conn.execute(text(
+        "UPDATE announcements SET category = 'HOME' WHERE category = 'CLUB'"
+    ))
     if conn.dialect.name != "sqlite":
         return
     for table, columns in expected.items():
@@ -256,6 +262,7 @@ app.include_router(activities.router)
 app.include_router(activities.admin_router)
 app.include_router(announcements.public_router)
 app.include_router(announcements.admin_router)
+app.include_router(notifications.router)
 app.include_router(content.public_router)
 app.include_router(content.admin_router)
 app.include_router(members.public_router)

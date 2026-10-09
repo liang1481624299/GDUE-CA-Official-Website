@@ -7,12 +7,12 @@ from datetime import datetime, timezone
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.middleware import get_client_ip
 from app.core.permissions import require_permission
-from app.db.models import Announcement, AnnouncementCategory, AuditLog
+from app.db.models import Announcement, AnnouncementCategory, AuditLog, UserNotifyRead
 from app.db.session import get_db
 from app.schemas.announcement import (
     AnnouncementCreate,
@@ -44,7 +44,7 @@ def _is_in_effect(a: Announcement, now: datetime) -> bool:
 # ---------- 公开：返回当前生效中的公告 ----------
 @public_router.get("", response_model=list[AnnouncementPublicOut])
 async def list_public_announcements(
-    category: Literal["homepage", "club"] | None = Query(default=None),
+    category: Literal["homepage", "home"] | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
 ):
     """前端公开接口：自动过滤【时间生效中 + 已启用】，按 priority 降序。"""
@@ -70,7 +70,7 @@ async def list_public_announcements(
 # ---------- 管理：分页列表 ----------
 @admin_router.get("", response_model=dict)
 async def admin_list_announcements(
-    category: Literal["homepage", "club"] | None = Query(default=None),
+    category: Literal["homepage", "home"] | None = Query(default=None),
     enabled: bool | None = Query(default=None),
     q: str | None = Query(default=None, max_length=64),
     page: int = Query(default=1, ge=1),
@@ -167,6 +167,8 @@ async def admin_delete_announcement(
     a = await db.get(Announcement, aid)
     if not a:
         raise HTTPException(status_code=404, detail="公告不存在")
+    # 同步清理该通知的所有已读记录（SQLite 未开 FK pragma，需显式删除）
+    await db.execute(delete(UserNotifyRead).where(UserNotifyRead.announcement_id == aid))
     await db.delete(a)
     _log(db, int(user["user_id"]), "announcement.delete", f"announcement:{aid}",
          get_client_ip(request))

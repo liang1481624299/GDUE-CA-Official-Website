@@ -100,7 +100,7 @@ const navGroups: NavGroup[] = [
     labelKey: "admin.navGroup.content",
     items: [
       { key: "admin.dashboard.announcements", href: "/admin/announcements", icon: Megaphone, modules: ["announcements"] },
-      { key: "admin.dashboard.clubAnnouncements", href: "/admin/announcements/club", icon: Megaphone, modules: ["announcements"] },
+      { key: "admin.dashboard.homeAnnouncements", href: "/admin/announcements/home", icon: Megaphone, modules: ["announcements"] },
       { key: "admin.dashboard.activities", href: "/admin/activities", icon: CalendarDays, modules: ["activities"] },
       { key: "admin.dashboard.content", href: "/admin/content/club-intro", icon: FileText, modules: ["content"] },
       { key: "admin.dashboard.members", href: "/admin/members", icon: UsersRound, modules: ["members"] },

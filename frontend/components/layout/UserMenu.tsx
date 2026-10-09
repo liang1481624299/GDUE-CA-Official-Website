@@ -27,11 +27,13 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useI18n } from "@/i18n/provider";
 import { fetchProfile } from "@/lib/api/auth";
+import { listMyNotifications } from "@/lib/api/notifications";
 import { API_BASE_URL, ApiError } from "@/lib/api/client";
 import { clearLocalSession, isAdminRole, isLogged, logout } from "@/lib/auth";
 import type { AdminUser } from "@/types/api";
-import { User, LayoutDashboard, LogOut, Loader2, LogIn } from "lucide-react";
+import { User, LayoutDashboard, LogOut, Loader2, LogIn, Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { NotificationDrawer } from "@/components/notifications/NotificationDrawer";
 
 
 /** 把用户名字符串取首字母（多字时取前两个） */
@@ -69,6 +71,10 @@ export function UserMenu() {
   const [open, setOpen] = useState(false);
   const closeTimer = useRef<number | null>(null);
 
+  // 通知列表：未读角标 + 抽屉开关
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
   useEffect(() => {
     const logged = isLogged();
     setLoggedIn(logged);
@@ -84,8 +90,13 @@ export function UserMenu() {
           }
         })
         .finally(() => setLoading(false));
+      // 拉取未读通知数（仅登录用户；失败静默，角标保持隐藏）
+      listMyNotifications()
+        .then((data) => setUnreadCount(data.unread_count))
+        .catch(() => undefined);
     } else {
       setProfile(null);
+      setUnreadCount(0);
     }
   }, []);
 
@@ -197,6 +208,23 @@ export function UserMenu() {
                 <User className="h-4 w-4" />
                 {t("nav.personalSettings")}
               </Link>
+              {/* 通知列表入口：铃铛图标 + 未读红色数字角标（无未读时隐藏） */}
+              <button
+                type="button"
+                onClick={() => { handleItemClick(); setNotifOpen(true); }}
+                role="menuitem"
+                className="relative flex w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground [&_svg]:size-4 [&_svg]:shrink-0"
+              >
+                <span className="relative inline-flex shrink-0">
+                  <Bell className="h-4 w-4" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1.5 -right-2 min-w-[1rem] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-semibold leading-4 text-center">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
+                </span>
+                {t("nav.notifications")}
+              </button>
               {showBackend && (
                 <Link
                   href="/admin"
@@ -235,6 +263,13 @@ export function UserMenu() {
             </>
           )}
       </div>
+
+      {/* 通知列表抽屉（Radix Portal 渲染到 body，不受下拉容器影响） */}
+      <NotificationDrawer
+        open={notifOpen}
+        onOpenChange={setNotifOpen}
+        onUnreadChange={setUnreadCount}
+      />
     </div>
   );
 }

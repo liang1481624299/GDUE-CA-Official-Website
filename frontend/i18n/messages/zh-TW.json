@@ -21,6 +21,7 @@
     "admin": "管理員",
     "accountMenu": "使用者選單",
     "personalSettings": "個人設定",
+    "notifications": "通知列表",
     "backend": "後台",
     "logout": "登出",
     "guest": "訪客",
@@ -65,7 +66,7 @@
   },
   "home": {
     "hero": {
-      "badge": "廣東第二師範學院 · 花都校區",
+      "badge": "EST. 2008 · 廣東第二師範學院 · 花都校區",
       "title": "計算機協會",
       "subtitle": "服務廣大同學，推廣校園計算機文化",
       "description": "廣東二師計協成立於2008年5月31日，是花都校區學術科技類社團。我們以每週常規授課、義務維修、網絡安全競賽和電子競技為特色，提高會員計算機應用水平。",
@@ -245,6 +246,15 @@
       "userAgent": "瀏覽器標識 (UA)",
       "hint": "預設 30 分鐘無操作自動逾時；頁面保持可見時心跳自動延長工作階段。最多顯示最近 20 筆記錄。"
     }
+  },
+  "notifications": {
+    "title": "通知列表",
+    "empty": "暫無通知",
+    "loadFailed": "通知載入失敗",
+    "markAllRead": "全部標為已讀",
+    "unread": "未讀",
+    "read": "已讀",
+    "unreadCount": "{count} 條未讀"
   },
   "account": {
     "title": "修改帳號資訊",
@@ -658,7 +668,7 @@
       "welcome": "歡迎回來",
       "logout": "登出",
       "overview": "概覽",
-      "announcements": "公告管理",
+      "announcements": "資訊通知",
       "content": "內容管理",
       "blog": "部落格管理",
       "comments": "評論管理",
@@ -694,7 +704,7 @@
       "oauth": "第三方登入",
       "sso": "SSO 應用",
       "realname": "實名審核",
-      "clubAnnouncements": "社團公告",
+      "homeAnnouncements": "主頁公告",
       "blogNew": "發佈文章",
       "blogTags": "標籤管理",
       "media": "檔案資源",
@@ -1058,10 +1068,10 @@
       "saved": "設定已儲存"
     },
     "announcements": {
-      "title": "首頁公告",
-      "clubTitle": "社團公告",
-      "desc": "首頁快捷彈窗公告；前端自動過濾過期與未啟用項",
-      "clubDesc": "社團公告；與首頁公告共用同一套欄位，僅 category 區分",
+      "title": "資訊通知管理",
+      "homeTitle": "主頁公告",
+      "desc": "全站資訊通知管理，可配置彈窗推送或者投遞至用戶通知列表",
+      "homeDesc": "主頁展示公告管理；公告將展示在官網首頁「最新公告」欄目",
       "colTitle": "標題",
       "colContent": "內容",
       "colLink": "跳轉連結",

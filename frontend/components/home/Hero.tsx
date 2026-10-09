@@ -37,7 +37,7 @@ export function Hero() {
             className="inline-flex h-7 items-center gap-2 rounded-full border border-border bg-card px-3 font-mono text-[11px] sm:text-xs text-muted-foreground"
           >
             <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-signal" />
-            EST. 2008 · {t("home.hero.badge")}
+            {t("home.hero.badge")}
           </motion.div>
 
           <motion.h1

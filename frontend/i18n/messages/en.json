@@ -21,6 +21,7 @@
     "admin": "Admin",
     "accountMenu": "Account menu",
     "personalSettings": "Profile",
+    "notifications": "Notifications",
     "backend": "Backend",
     "logout": "Log out",
     "guest": "Guest",
@@ -65,7 +66,7 @@
   },
   "home": {
     "hero": {
-      "badge": "Guangdong University of Education · Huadu Campus",
+      "badge": "EST. 2008.GDUE.Huadu Campus",
       "title": "Computer Association",
       "subtitle": "Serving students, promoting campus computer culture",
       "description": "Founded on May 31, 2008, GDUECA Computer Association is an academic and technology club on the Huadu Campus. We are known for weekly hands-on sessions, free repair clinics, anti-fraud cybersecurity competitions, and esports events.",
@@ -245,6 +246,15 @@
       "userAgent": "Browser user agent (UA)",
       "hint": "Sessions expire after 30 minutes of inactivity by default; a visible-page heartbeat automatically extends the session. Up to 20 most recent records are shown."
     }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No notifications",
+    "loadFailed": "Failed to load notifications",
+    "markAllRead": "Mark all as read",
+    "unread": "Unread",
+    "read": "Read",
+    "unreadCount": "{count} unread"
   },
   "account": {
     "title": "Account Settings",
@@ -658,7 +668,7 @@
       "welcome": "Welcome back",
       "logout": "Log Out",
       "overview": "Overview",
-      "announcements": "Announcements",
+      "announcements": "Notifications",
       "content": "Content",
       "blog": "Blog",
       "comments": "Comments",
@@ -694,7 +704,7 @@
       "oauth": "OAuth Channels",
       "sso": "SSO Apps",
       "realname": "Realname Review",
-      "clubAnnouncements": "Club Announcements",
+      "homeAnnouncements": "Home Announcements",
       "blogNew": "New Post",
       "blogTags": "Tags",
       "media": "Media Files",
@@ -1058,10 +1068,10 @@
       "saved": "Configuration saved"
     },
     "announcements": {
-      "title": "Homepage Announcements",
-      "clubTitle": "Club Announcements",
-      "desc": "Homepage popup announcements; frontend automatically filters out expired and disabled items",
-      "clubDesc": "Club announcements; shares the same fields as homepage announcements, distinguished only by category",
+      "title": "Notification Management",
+      "homeTitle": "Home Announcements",
+      "desc": "Site-wide notification management; configurable as popup push or delivery to the user notification list",
+      "homeDesc": "Homepage display announcements; published items appear in the \"Latest Announcements\" section of the site homepage",
       "colTitle": "Title",
       "colContent": "Content",
       "colLink": "Redirect Link",

@@ -21,6 +21,7 @@
     "admin": "管理员",
     "accountMenu": "用户菜单",
     "personalSettings": "个人设置",
+    "notifications": "通知列表",
     "backend": "后台",
     "logout": "退出登录",
     "guest": "游客",
@@ -65,7 +66,7 @@
   },
   "home": {
     "hero": {
-      "badge": "广东第二师范学院 · 花都校区",
+      "badge": "EST. 2008 · 广东第二师范学院 · 花都校区",
       "title": "计算机协会",
       "subtitle": "服务广大同学，推广校园计算机文化",
       "description": "广东二师计协成立于2008年5月31日，是花都校区学术科技类社团。我们以每周常规授课、义务维修、网络安全竞赛和电子竞技为特色，提高会员计算机应用水平。",
@@ -245,6 +246,15 @@
       "userAgent": "浏览器标识 (UA)",
       "hint": "默认 30 分钟无操作自动超时；页面保持可见时心跳自动延长会话。最多显示最近 20 条记录。"
     }
+  },
+  "notifications": {
+    "title": "通知列表",
+    "empty": "暂无通知",
+    "loadFailed": "通知加载失败",
+    "markAllRead": "全部标为已读",
+    "unread": "未读",
+    "read": "已读",
+    "unreadCount": "{count} 条未读"
   },
   "account": {
     "title": "修改账户信息",
@@ -658,7 +668,7 @@
       "welcome": "欢迎回来",
       "logout": "退出登录",
       "overview": "概览",
-      "announcements": "公告管理",
+      "announcements": "信息通知",
       "content": "内容管理",
       "blog": "博客管理",
       "comments": "评论管理",
@@ -694,7 +704,7 @@
       "oauth": "第三方登录",
       "sso": "SSO 应用",
       "realname": "实名审核",
-      "clubAnnouncements": "社团公告",
+      "homeAnnouncements": "主页公告",
       "blogNew": "发布文章",
       "blogTags": "标签管理",
       "media": "文件资源",
@@ -1058,10 +1068,10 @@
       "saved": "配置已保存"
     },
     "announcements": {
-      "title": "首页公告",
-      "clubTitle": "社团公告",
-      "desc": "首页快捷弹窗公告；前端自动过滤过期与未启用项",
-      "clubDesc": "社团公告；与首页公告共用同一套字段，仅 category 区分",
+      "title": "信息通知管理",
+      "homeTitle": "主页公告",
+      "desc": "全站信息通知管理，可配置弹窗推送或者投递至用户通知列表",
+      "homeDesc": "主页展示公告管理；公告将展示在官网首页「最新公告」栏目",
       "colTitle": "标题",
       "colContent": "内容",
       "colLink": "跳转链接",

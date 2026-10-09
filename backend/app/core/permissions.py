@@ -34,7 +34,7 @@ PERMISSION_MODULES = (
     "settings",
     "users",
     # ---------- CMS 扩展 ----------
-    "announcements",   # 首页公告 + 社团公告
+    "announcements",   # 信息通知 + 主页公告
     "content",         # 社团介绍/招新信息等富文本内容块
     "members",         # 成员管理（现任/往届/归档）
     "recruitment",     # 招新信息 + 报名名单

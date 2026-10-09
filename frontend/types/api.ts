@@ -386,7 +386,7 @@ export interface Paginated<T> {
 }
 
 /* ---------- 公告（Phase 3） ---------- */
-export type AnnouncementCategory = "homepage" | "club";
+export type AnnouncementCategory = "homepage" | "home";
 
 export interface Announcement {
   id: number;
@@ -414,6 +414,26 @@ export interface AnnouncementCreate {
 }
 
 export type AnnouncementUpdate = Partial<AnnouncementCreate>;
+
+/* ---------- 用户信息通知（通知列表 / 已读状态） ---------- */
+export interface NotificationItem {
+  id: number;
+  title: string;
+  content: string;
+  link: string | null;
+  /** 发布时间：后端原始 UTC-Z 字符串，由客户端组件本地化渲染 */
+  published_at: string;
+  is_read: boolean;
+}
+
+export interface NotificationListResponse {
+  items: NotificationItem[];
+  unread_count: number;
+}
+
+export interface MarkReadResponse {
+  unread_count: number;
+}
 
 /* ---------- 内容块（Phase 3 社团介绍等） ---------- */
 export interface ContentBlock {

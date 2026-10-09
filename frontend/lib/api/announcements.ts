@@ -1,7 +1,7 @@
 /**
  * Announcements API - 对应后端 app/api/announcements.py
  *
- * 公告 CMS：首页快捷弹窗公告 + 社团公告。
+ * 公告 CMS：信息通知（homepage）+ 主页公告（home，官网首页「最新公告」栏目）。
  * 公开接口自动过滤【时间生效中 + 已启用】。
  */
 import { apiFetch } from "./client";

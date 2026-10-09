@@ -11,6 +11,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -344,14 +345,14 @@ class SecurityQuestion(Base):
 
 # ==================== Phase 3 内容 CMS ====================
 
-# ---------- 首页/社团公告 ----------
+# ---------- 信息通知/主页公告 ----------
 class AnnouncementCategory(str, Enum):
-    HOMEPAGE = "homepage"   # 首页快捷弹窗公告
-    CLUB = "club"           # 社团公告
+    HOMEPAGE = "homepage"   # 信息通知（弹窗推送 / 投递至用户通知列表）
+    HOME = "home"           # 主页公告（官网首页「最新公告」栏目展示）
 
 
 class Announcement(Base):
-    """首页快捷弹窗 + 社团公告 CMS。
+    """信息通知 + 主页公告 CMS。
 
     前端公开接口自动过滤：时间生效中（start_at ≤ now ≤ end_at，空值不限）+ 已启用，
     按 priority 降序展示；过期自动隐藏，无需手动删除。
@@ -375,6 +376,24 @@ class Announcement(Base):
     priority: Mapped[int] = mapped_column(Integer, default=0)
     created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+
+
+class UserNotifyRead(Base):
+    """用户通知已读记录（user_notify_read）：记录哪个用户已读哪条通知。
+
+    (user_id, announcement_id) 唯一；通知列表未读角标 = 生效中且已启用的
+    通知数 - 已读记录数。通知删除后由管理接口显式清理对应已读行。
+    """
+    __tablename__ = "user_notify_reads"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    announcement_id: Mapped[int] = mapped_column(ForeignKey("announcements.id"), index=True)
+    read_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "announcement_id", name="uq_user_notify_read"),
+    )
 
 
 # ---------- 富文本内容块（社团介绍等） ----------

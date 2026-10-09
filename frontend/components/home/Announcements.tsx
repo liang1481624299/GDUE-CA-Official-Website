@@ -3,7 +3,7 @@
 /**
  * Announcements - 首页公告栏
  * 桌面：标签 + 三栏公告（细线分隔，单行截断）；手机：纵向列表
- * 数据源：CMS 公告（category=homepage）前 3 条；加载中/失败/为空时回退到 i18n 内置公告
+ * 数据源：CMS 主页公告（category=home）前 3 条；加载中/失败/为空时回退到 i18n 内置公告
  */
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -42,7 +42,7 @@ export function Announcements() {
 
   useEffect(() => {
     let cancelled = false;
-    listPublicAnnouncements("homepage")
+    listPublicAnnouncements("home")
       .then((list) => {
         if (!cancelled) setCmsItems(list.slice(0, 3));
       })
