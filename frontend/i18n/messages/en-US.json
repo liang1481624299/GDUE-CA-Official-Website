@@ -25,7 +25,8 @@
     "backend": "Backend",
     "logout": "Log out",
     "guest": "Guest",
-    "login": "Log in"
+    "login": "Log in",
+    "memo": "Memos"
   },
   "common": {
     "learnMore": "Learn More",
@@ -245,6 +246,9 @@
       "rememberDevice": "Remember this device",
       "userAgent": "Browser user agent (UA)",
       "hint": "Sessions expire after 30 minutes of inactivity by default; a visible-page heartbeat automatically extends the session. Up to 20 most recent records are shown."
+    },
+    "tabs": {
+      "memo": "Memos"
     }
   },
   "notifications": {
@@ -711,7 +715,8 @@
       "securityNetwork": "Listener Config",
       "securityIpWhitelist": "IP Whitelist",
       "securityIpBlacklist": "IP Blacklist",
-      "auditLogs": "Audit Logs"
+      "auditLogs": "Audit Logs",
+      "memos": "Memos"
     },
     "navGroup": {
       "content": "Site Content",
@@ -1434,6 +1439,13 @@
         "byStatus": "By status",
         "empty": "No data"
       }
+    },
+    "modules": {
+      "memo": {
+        "title": "Memos",
+        "desc": "Markdown fragment notes: timeline / calendar / lazy tag creation / version snapshots / public share / admin takedown",
+        "btn": "Manage"
+      }
     }
   },
   "ban": {
@@ -1560,5 +1572,135 @@
       "evidenceUploading": "Uploading...",
       "evidenceHint": "Student ID / campus card photo, ≤5MB"
     }
+  },
+  "memo": {
+    "pageTitle": "Memos",
+    "subtitle": "Lightweight Markdown notes — separate from long-form blog posts",
+    "timeline": {
+      "title": "Timeline",
+      "empty": "No memos yet. Write your first one ✏️",
+      "hasImageOnly": "With images only",
+      "visibilityAll": "All visible",
+      "visibilityPublic": "Public only",
+      "visibilityMember": "Members only",
+      "loadingMore": "Loading more...",
+      "endReached": "End reached"
+    },
+    "calendar": {
+      "title": "Calendar",
+      "today": "Today",
+      "prevMonth": "Previous month",
+      "nextMonth": "Next month",
+      "noMemosOnDay": "No memos on this day"
+    },
+    "editor": {
+      "placeholder": "Jot down your thoughts...\n\nMarkdown supported, #tags auto-extracted, paste images to upload",
+      "tagsHint": "Use #TagName inline, or add tags below",
+      "visibilityLabel": "Visibility",
+      "tagsLabel": "Tags",
+      "addTag": "Add tag",
+      "editNote": "Edit note (optional)",
+      "saveCreate": "Publish",
+      "saveUpdate": "Save",
+      "cancel": "Cancel",
+      "uploading": "Uploading...",
+      "pasteHint": "Paste images to upload directly"
+    },
+    "visibility": {
+      "public": "Public",
+      "member_only": "Members",
+      "private": "Private",
+      "publicDesc": "Visible to everyone",
+      "memberDesc": "Visible to logged-in members",
+      "privateDesc": "Only you can see this"
+    },
+    "card": {
+      "likes": "Likes",
+      "favorites": "Favorites",
+      "comments": "Comments",
+      "share": "Share",
+      "more": "More",
+      "edited": "Edited",
+      "archived": "Archived",
+      "private": "Private",
+      "memberOnly": "Members",
+      "by": "by"
+    },
+    "actions": {
+      "like": "Like",
+      "liked": "Liked",
+      "unlike": "Unlike",
+      "favorite": "Favorite",
+      "favorited": "Favorited",
+      "unfavorite": "Unfavorite",
+      "shareLink": "Share link",
+      "shareCreate": "Generate share link",
+      "shareCopy": "Copy link",
+      "shareCopied": "Copied to clipboard",
+      "shareRevoke": "Revoke share link",
+      "archive": "Archive",
+      "unarchive": "Unarchive",
+      "edit": "Edit",
+      "delete": "Delete",
+      "deleteConfirm": "Delete this memo? Cannot be undone (version history is kept).",
+      "rollback": "Rollback"
+    },
+    "versions": {
+      "title": "History",
+      "listTitle": "Versions",
+      "versionN": "v{n}",
+      "editor": "Editor",
+      "editNote": "Edit note",
+      "restore": "Rollback to this version",
+      "confirmRollback": "Rollback to this version? It will be saved as a new version.",
+      "restoreReason": "Rollback reason (required)",
+      "empty": "No version history"
+    },
+    "share": {
+      "title": "Share memo",
+      "publicOnly": "Only public memos can generate share links",
+      "copyHint": "Anonymous visitors can access this memo via the link",
+      "regenerate": "Regenerate",
+      "revoke": "Revoke"
+    },
+    "errors": {
+      "contentRequired": "Content is required",
+      "contentTooLong": "Content must not exceed 20000 chars",
+      "rateLimited": "Publishing too frequently, please try later",
+      "createFailed": "Create failed, please retry"
+    },
+    "tabs": {
+      "mine": "My Memos",
+      "liked": "Liked",
+      "favorites": "Favorited",
+      "archived": "Archived"
+    }
+  },
+  "error": {
+    "memo": {
+      "createFailed": "Failed to create memo",
+      "updateFailed": "Failed to update memo",
+      "deleteFailed": "Failed to delete memo",
+      "rateLimited": "Publishing too frequently, please try later",
+      "notFound": "Memo not found",
+      "forbidden": "Not authorized to operate this memo",
+      "privateForbidden": "This memo is private; cannot like/favorite",
+      "shareOnlyPublic": "Only public memos can generate share links",
+      "versionNotFound": "Version not found",
+      "tagNotFound": "Tag not found",
+      "invalidDate": "Date must be YYYY-MM-DD",
+      "rssMaintenance": "RSS is not yet implemented",
+      "webdavMaintenance": "WebDAV is not yet implemented",
+      "importMaintenance": "Memos backup import is not yet implemented"
+    }
+  },
+  "memoPage": {
+    "title": "Memos",
+    "intro": "Lightweight Markdown notes — #tags auto-archived, timeline + calendar dual view.",
+    "compose": "Write something..."
+  },
+  "profileMemoTab": {
+    "empty": "No memos yet",
+    "viewAll": "View all"
   }
 }

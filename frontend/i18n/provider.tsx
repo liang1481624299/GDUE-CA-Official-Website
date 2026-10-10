@@ -14,12 +14,15 @@ import {
 } from "react";
 import type { Locale } from "@/lib/i18n";
 import type { Messages } from "@/i18n/dictionary";
+import type { I18nMsg } from "@/types/response";
 import { useEffectiveTimezone } from "@/lib/hooks/useEffectiveTimezone";
 
 interface I18nContextValue {
   locale: Locale;
   messages: Messages;
   t: (key: string, vars?: Record<string, string | number>) => string;
+  /** 把后端 I18nMsg（字符串或 {key, params}）渲染成当前语言下的字符串 */
+  renderMsg: (msg: I18nMsg) => string;
 }
 
 const I18nContext = createContext<I18nContextValue | null>(null);
@@ -47,6 +50,25 @@ function lookup(
   return result;
 }
 
+/**
+ * 纯函数版 renderI18nMsg：不依赖 React Context（可在非组件代码里使用）。
+ *
+ * i18n 数据库化之前，字符串 fallback 与 i18n key 对象都会按 messages 字典查找；
+ * 查不到时 fallback 到 i18n key 本身（便于排查未翻译项）。
+ */
+export function renderI18nMsg(
+  messages: Messages,
+  msg: I18nMsg | null | undefined,
+  fallback = ""
+): string {
+  if (!msg) return fallback;
+  if (typeof msg === "string") return msg;
+  const params = (msg.params ?? {}) as Record<string, string | number>;
+  const translated = lookup(messages, msg.key, params);
+  // lookup 在 key 缺失时返回 key 字符串本身——这里为了不重复 key，再 fallback
+  return translated === msg.key ? msg.key : translated;
+}
+
 export function I18nProvider({
   locale,
   messages,
@@ -61,6 +83,7 @@ export function I18nProvider({
       locale,
       messages,
       t: (key, vars) => lookup(messages, key, vars),
+      renderMsg: (msg) => renderI18nMsg(messages, msg),
     }),
     [locale, messages]
   );

@@ -7,6 +7,7 @@
 
 前端先 GET /api/auth/csrf 获取令牌（同时下发 Cookie），之后写请求带上请求头。
 """
+import logging
 import secrets
 from typing import Awaitable, Callable
 from urllib.parse import urlsplit
@@ -14,8 +15,12 @@ from urllib.parse import urlsplit
 from fastapi import Request, Response
 from fastapi.responses import JSONResponse
 
+from app.core.bizcode import BizCode
 from app.core.config import get_settings
 from app.core.middleware import get_request_host, is_https
+from app.core.responses import fail
+
+logger = logging.getLogger("gdueca.security")
 
 CSRF_COOKIE = "gdueca_csrf"
 CSRF_HEADER = "x-csrf-token"
@@ -67,7 +72,10 @@ def _origin_allowed(request: Request) -> bool:
 
 
 def _reject(detail: str) -> JSONResponse:
-    return JSONResponse(status_code=403, content={"detail": detail, "code": "csrf_failed"})
+    """CSRF 校验失败返回新壳 code=1008；前端按规范读取 msg.i18n_key 渲染。"""
+    # detail 仅写日志（便于排查），不直接外泄给前端
+    logger.info("CSRF 校验失败：%s", detail)
+    return fail(BizCode.CSRF_FAILED, params={"reason": detail})
 
 
 async def csrf_middleware(

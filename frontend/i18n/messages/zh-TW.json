@@ -25,7 +25,8 @@
     "backend": "後台",
     "logout": "登出",
     "guest": "訪客",
-    "login": "登入"
+    "login": "登入",
+    "memo": "隨手筆記"
   },
   "common": {
     "learnMore": "了解更多",
@@ -245,6 +246,9 @@
       "rememberDevice": "記住此裝置",
       "userAgent": "瀏覽器標識 (UA)",
       "hint": "預設 30 分鐘無操作自動逾時；頁面保持可見時心跳自動延長工作階段。最多顯示最近 20 筆記錄。"
+    },
+    "tabs": {
+      "memo": "Memo"
     }
   },
   "notifications": {
@@ -711,7 +715,8 @@
       "securityNetwork": "監聽設定",
       "securityIpWhitelist": "IP 白名單",
       "securityIpBlacklist": "IP 黑名單",
-      "auditLogs": "操作日誌"
+      "auditLogs": "操作日誌",
+      "memos": "Memo 管理"
     },
     "navGroup": {
       "content": "站點內容管理",
@@ -1434,6 +1439,13 @@
         "byStatus": "按審核狀態",
         "empty": "暫無數據"
       }
+    },
+    "modules": {
+      "memo": {
+        "title": "Memo 碎片筆記",
+        "desc": "Markdown 碎片筆記：時間線 / 日曆 / 標籤懶建立 / 版本快照 / 公開分享 / 後台下架",
+        "btn": "進入管理"
+      }
     }
   },
   "ban": {
@@ -1560,5 +1572,135 @@
       "evidenceUploading": "上傳中...",
       "evidenceHint": "學生證 / 校園卡照片，≤5MB"
     }
+  },
+  "memo": {
+    "pageTitle": "隨手筆記",
+    "subtitle": "靈感、片段、隨想；與正式長部落格分開記錄",
+    "timeline": {
+      "title": "時間線",
+      "empty": "還沒有任何 Memo，寫下第一條吧 ✏️",
+      "hasImageOnly": "只看帶圖",
+      "visibilityAll": "全部可見",
+      "visibilityPublic": "僅公開",
+      "visibilityMember": "成員可見",
+      "loadingMore": "載入更多...",
+      "endReached": "已經到底啦"
+    },
+    "calendar": {
+      "title": "日曆",
+      "today": "今天",
+      "prevMonth": "上個月",
+      "nextMonth": "下個月",
+      "noMemosOnDay": "這一天還沒有 Memo"
+    },
+    "editor": {
+      "placeholder": "隨手寫下你的想法...\n\n支援 Markdown、#標籤、貼上圖片自動上傳",
+      "tagsHint": "用 #TagName 在正文中建立標籤，或在下方新增",
+      "visibilityLabel": "可見性",
+      "tagsLabel": "標籤",
+      "addTag": "新增標籤",
+      "editNote": "編輯原因（可選）",
+      "saveCreate": "發佈",
+      "saveUpdate": "儲存",
+      "cancel": "取消",
+      "uploading": "上傳中...",
+      "pasteHint": "可貼上圖片直接上傳"
+    },
+    "visibility": {
+      "public": "公開",
+      "member_only": "僅成員",
+      "private": "僅自己",
+      "publicDesc": "所有人可見",
+      "memberDesc": "登入成員可見",
+      "privateDesc": "只有自己能看"
+    },
+    "card": {
+      "likes": "讚",
+      "favorites": "收藏",
+      "comments": "評論",
+      "share": "分享",
+      "more": "更多",
+      "edited": "已編輯",
+      "archived": "已封存",
+      "private": "私密",
+      "memberOnly": "成員可見",
+      "by": "by"
+    },
+    "actions": {
+      "like": "讚",
+      "liked": "已讚",
+      "unlike": "取消讚",
+      "favorite": "收藏",
+      "favorited": "已收藏",
+      "unfavorite": "取消收藏",
+      "shareLink": "分享連結",
+      "shareCreate": "產生分享連結",
+      "shareCopy": "複製連結",
+      "shareCopied": "已複製到剪貼簿",
+      "shareRevoke": "撤銷分享連結",
+      "archive": "封存",
+      "unarchive": "取消封存",
+      "edit": "編輯",
+      "delete": "刪除",
+      "deleteConfirm": "確認刪除此 Memo？刪除後無法復原（但版本歷史仍保留）。",
+      "rollback": "回溯"
+    },
+    "versions": {
+      "title": "歷史版本",
+      "listTitle": "版本列表",
+      "versionN": "v{n}",
+      "editor": "編輯者",
+      "editNote": "編輯原因",
+      "restore": "回溯到此版本",
+      "confirmRollback": "確認回溯到此版本？回溯會作為一條新版本儲存。",
+      "restoreReason": "回溯原因（必填）",
+      "empty": "還沒有歷史版本"
+    },
+    "share": {
+      "title": "分享 Memo",
+      "publicOnly": "僅公開 Memo 可產生分享連結",
+      "copyHint": "匿名使用者可透過此連結直接存取此 Memo",
+      "regenerate": "重新產生",
+      "revoke": "撤銷"
+    },
+    "errors": {
+      "contentRequired": "內容不能為空",
+      "contentTooLong": "內容不能超過 20000 字元",
+      "rateLimited": "發佈過於頻繁，請稍後再試",
+      "createFailed": "建立失敗，請重試"
+    },
+    "tabs": {
+      "mine": "我的 Memo",
+      "liked": "按過讚",
+      "favorites": "收藏的",
+      "archived": "已封存"
+    }
+  },
+  "error": {
+    "memo": {
+      "createFailed": "Memo 建立失敗",
+      "updateFailed": "Memo 編輯失敗",
+      "deleteFailed": "Memo 刪除失敗",
+      "rateLimited": "發佈過於頻繁，請稍後再試",
+      "notFound": "Memo 不存在",
+      "forbidden": "無權操作此 Memo",
+      "privateForbidden": "此 Memo 為私密，不可按讚/收藏",
+      "shareOnlyPublic": "僅公開 Memo 可產生分享連結",
+      "versionNotFound": "版本不存在",
+      "tagNotFound": "標籤不存在",
+      "invalidDate": "日期格式必須為 YYYY-MM-DD",
+      "rssMaintenance": "RSS 暫未實裝，後續迭代上線",
+      "webdavMaintenance": "WebDAV 暫未實裝，後續迭代上線",
+      "importMaintenance": "Memos 備份匯入暫未實裝，後續迭代上線"
+    }
+  },
+  "memoPage": {
+    "title": "隨手筆記",
+    "intro": "碎片化思考的歸宿。Markdown 隨手記，#標籤自動歸檔，時間線 + 日曆雙視圖。",
+    "compose": "寫點東西..."
+  },
+  "profileMemoTab": {
+    "empty": "還沒有發佈過 Memo",
+    "viewAll": "查看全部"
   }
 }

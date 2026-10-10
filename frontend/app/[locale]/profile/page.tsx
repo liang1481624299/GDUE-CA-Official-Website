@@ -11,7 +11,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useI18n } from "@/i18n/provider";
-import { Loader2 } from "lucide-react";
+import { Loader2, NotebookPen } from "lucide-react";
 import { ProfileEditForm } from "@/components/profile/ProfileEditForm";
 import { isLogged } from "@/lib/auth";
 
@@ -57,6 +57,25 @@ export default function ProfilePage() {
           <p className="text-sm text-muted-foreground mt-1">{t("admin.profile.subtitle")}</p>
         </div>
         <ProfileEditForm />
+
+        {/* 个人中心：我的 Memo 入口（与 Blog/Document/收藏并列） */}
+        <div className="mt-8 rounded-lg border border-border bg-card p-4 flex items-center gap-3">
+          <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 text-primary">
+            <NotebookPen className="h-4 w-4" />
+          </span>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-medium">{t("profile.tabs.memo")}</div>
+            <div className="text-xs text-muted-foreground">
+              查看我发布的 Memo、归档、点赞与收藏
+            </div>
+          </div>
+          <Link
+            href={`/${locale}/memo/me`}
+            className="inline-flex h-8 items-center justify-center rounded-md border border-border px-3 text-xs hover:bg-muted"
+          >
+            {t("profileMemoTab.viewAll")} →
+          </Link>
+        </div>
       </div>
     </div>
   );

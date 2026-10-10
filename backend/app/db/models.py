@@ -703,3 +703,213 @@ class RealnameRequest(Base):
     reviewed_by: Mapped[int | None] = mapped_column(
         ForeignKey("users.id"), nullable=True
     )
+
+
+# ==================== Phase 8 Memo 碎片笔记 ====================
+# 业务边界：与 Blog（正式长文）、Document（多人协作文档）、Activity 并列独立。
+# 三张数据表（memo / blog_post / document）不可互相替代。
+#
+# 全局标签池 `tags` 与 Memo / Document / Activity 共享；本期内 Document/Activity 暂未实装，
+# 表结构与原生引用一致，所有新模块的标签写入同一池；旧 BlogTag 兼容历史数据，后续迁移专题处理。
+
+# ---------- 全局共享标签池 ----------
+class TagScope(str, Enum):
+    """标签作用域：标识哪些模块在使用该标签。
+    多模块共用同一标签时按 set 求并集；前端按需聚合展示。
+    """
+    MEMO = "memo"
+    DOCUMENT = "document"
+    ACTIVITY = "activity"
+
+
+class Tag(Base):
+    """全站共享标签池（与 Blog/Document/Activity/Memo 共享）；不区分模块，全局唯一。
+    历史 BlogTag 保留以兼容 blog_posts / blog_post_tags；后续迁移专题处理。
+    """
+    __tablename__ = "tags"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    # 标签显示名：用户输入原文（保留大小写 / 空格 / 中文 / Emoji）
+    name: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    # URL slug：小写化 + 去特殊字符；通过 #TagName 自动懒创建时由后端从 name 派生
+    slug: Mapped[str] = mapped_column(String(128), unique=True, index=True)
+    # 使用该标签的模块集合（JSON 列表，便于跨模块筛选时聚合查询）
+    scopes: Mapped[list[str]] = mapped_column(JSON, default=list)
+    # 全站公共基线字段
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
+
+
+# ---------- Memo 主体 ----------
+class MemoVisibility(str, Enum):
+    """可见性枚举：
+    - public：所有人可见（含匿名访客），可被公开分享
+    - member_only：仅已登录用户可见
+    - private：仅作者本人可见（含后台管理员也不可见，隐私优先级最高）
+    """
+    PUBLIC = "public"
+    MEMBER_ONLY = "member_only"
+    PRIVATE = "private"
+
+
+class Memo(Base):
+    """碎片笔记主表（Markdown 存储；轻量随手想法，与 Blog/Document 不可互相替代）。
+
+    公共基线字段：id / created_at / updated_at / deleted_at / tenant_id
+    - deleted_at 软删除基线；archived 独立归档布尔（归档内容不在主时间线展示）
+    - 归档 ≠ 删除；归档页专门浏览，删除走 deleted_at
+    """
+    __tablename__ = "memos"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    # Markdown 原文（前端 MarkdownRenderer 渲染；后端存储原文便于检索 / 版本对比）
+    content_md: Mapped[str] = mapped_column(Text)
+    # 预渲染消毒 HTML（端点按需生成写入，列表查询时按需补）
+    content_html: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # 可见性：public / member_only / private
+    visibility: Mapped[MemoVisibility] = mapped_column(
+        SAEnum(MemoVisibility), default=MemoVisibility.PUBLIC, index=True
+    )
+    # 归档；true 时不在主时间线展示，归档页专门浏览
+    archived: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    # 公开分享 slug（可选；null = 未生成）；命中 slug 即可匿名访问（仅限 public）
+    share_slug: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, unique=True, index=True
+    )
+    # 点赞数 / 收藏数冗余字段（数据源在关联表；此处用于排序与列表展示）
+    like_count: Mapped[int] = mapped_column(Integer, default=0)
+    favorite_count: Mapped[int] = mapped_column(Integer, default=0)
+    # 评论数（本期评论为预留接口骨架，计数仍写入）
+    comment_count: Mapped[int] = mapped_column(Integer, default=0)
+    # 作者（外键：作者账号被删除时禁止物理删除 memo，置 author_id 为 NULL）
+    author_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    # 后台下架标记（admin_removed）；与 deleted_at 区分，下架可恢复，删除不可
+    admin_removed: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    # 后台下架原因（写 audit 同步）
+    admin_removed_reason: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    admin_removed_by: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id"), nullable=True
+    )
+    admin_removed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+    # 公共基线字段（一致遵循）
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
+    tenant_id: Mapped[int] = mapped_column(Integer, default=1, index=True)
+
+    author: Mapped["User"] = relationship(foreign_keys=[author_id], lazy="joined")
+    tags: Mapped[list["Tag"]] = relationship(
+        secondary="memo_tag_links", lazy="selectin"
+    )
+    versions: Mapped[list["MemoVersion"]] = relationship(
+        cascade="all, delete-orphan", lazy="selectin",
+        order_by="MemoVersion.version_no.desc()"
+    )
+    attachments: Mapped[list["MemoAttachment"]] = relationship(
+        cascade="all, delete-orphan", lazy="selectin"
+    )
+
+
+class MemoVersion(Base):
+    """Memo 版本快照：每次编辑保存一条历史；支持浏览历史版本、回滚（回滚=产生新版本）。
+
+    独立表 `memo_version`；保留原文便于 diff / 回滚；HTML 仅作为查询时的快速参考。
+    """
+    __tablename__ = "memo_versions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    memo_id: Mapped[int] = mapped_column(
+        ForeignKey("memos.id", ondelete="CASCADE"), index=True
+    )
+    # 递增版本号（同一 memo 内单调递增）；新版覆盖编辑时+1
+    version_no: Mapped[int] = mapped_column(Integer, index=True)
+    # 编辑时的内容快照
+    content_md: Mapped[str] = mapped_column(Text)
+    # 编辑原因（可选；前端回滚时强制要求原因）
+    edit_note: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    # 编辑者（NULL = 系统回滚 / 自动版本）
+    editor_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    # 编辑时的可见性快照（便于回滚时连同可见性一起回滚）
+    visibility: Mapped[MemoVisibility] = mapped_column(SAEnum(MemoVisibility))
+
+    # 公共基线字段
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    tenant_id: Mapped[int] = mapped_column(Integer, default=1, index=True)
+
+    editor: Mapped["User"] = relationship(foreign_keys=[editor_id])
+
+    __table_args__ = (
+        UniqueConstraint("memo_id", "version_no", name="uq_memo_version_no"),
+    )
+
+
+class MemoTag(Base):
+    """Memo-Tag 多对多关联表；独立表便于扩展（与 Blog 的 blog_post_tags 风格一致）。"""
+    __tablename__ = "memo_tag_links"
+
+    memo_id: Mapped[int] = mapped_column(
+        ForeignKey("memos.id", ondelete="CASCADE"), primary_key=True
+    )
+    tag_id: Mapped[int] = mapped_column(
+        ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
+class MemoLike(Base):
+    """点赞：联合主键 (memo_id, user_id)；同人对同条只能点赞一次。"""
+    __tablename__ = "memo_likes"
+
+    memo_id: Mapped[int] = mapped_column(
+        ForeignKey("memos.id", ondelete="CASCADE"), primary_key=True
+    )
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+
+
+class MemoFavorite(Base):
+    """收藏：联合主键 (memo_id, user_id)。"""
+    __tablename__ = "memo_favorites"
+
+    memo_id: Mapped[int] = mapped_column(
+        ForeignKey("memos.id", ondelete="CASCADE"), primary_key=True
+    )
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+
+
+class MemoAttachment(Base):
+    """Memo 附件：支持多张图片 + 文件附件；走对象存储适配器（uploads/）。
+
+    引用统一资源管理；删除 Memo 时随父级联清理。
+    """
+    __tablename__ = "memo_attachments"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    memo_id: Mapped[int] = mapped_column(
+        ForeignKey("memos.id", ondelete="CASCADE"), index=True
+    )
+    # 文件 URL（/uploads/...）；可指向 memos 子目录
+    url: Mapped[str] = mapped_column(String(512))
+    # 原始文件名（用户上传时的 name，方便在日志里溯源）
+    original_name: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    mime: Mapped[str] = mapped_column(String(64))
+    size: Mapped[int] = mapped_column(Integer)
+    # 附件类型：image / file（图片走 Markdown 自动插入；文件生成可下载链接）
+    kind: Mapped[str] = mapped_column(String(16), default="file")
+
+    # 公共基线字段
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    tenant_id: Mapped[int] = mapped_column(Integer, default=1, index=True)

@@ -29,6 +29,7 @@ import {
   FileText,
   Newspaper,
   UsersRound,
+  NotebookPen,
   UserPlus,
   MessageSquare,
   KeyRound,
@@ -120,6 +121,8 @@ const navGroups: NavGroup[] = [
       { key: "admin.dashboard.blogNew", href: "/admin/blog/new", icon: PenLine, modules: ["blog"] },
       { key: "admin.dashboard.blogTags", href: "/admin/blog/tags", icon: Tags, modules: ["blog_tags"] },
       { key: "admin.dashboard.comments", href: "/admin/blog/comments", icon: MessageSquare, modules: ["comments"] },
+      // Phase 8: Memo 碎片笔记（统一在「内容」组下）
+      { key: "admin.dashboard.memos", href: "/admin/memo", icon: NotebookPen, modules: ["memo"] },
     ],
   },
   {

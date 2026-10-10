@@ -1,20 +1,24 @@
-"""traceId 中间件：为每个请求分配 traceId、输出访问日志、兜底未捕获异常。
+"""traceId 中间件：为每个请求分配 traceId、输出访问日志。
 
 - traceId 来源：可信反向代理传入的 X-Request-ID / X-Trace-Id（格式校验通过才采信），否则新生成
-- 响应头 X-Trace-Id 回传；未捕获异常返回 500 JSON 并附带 trace_id，便于用户报障时提供编号
+- 响应头 X-Trace-Id / X-Request-Id 回传（同值；新规范字段）
 - 访问日志只记录方法与路径，不记录查询参数（可能含手机号 / 学号等个人信息，GB/T 35274 最小化）
+
+**未捕获异常**：不再在此处拦截；统一交给 FastAPI exception_handler 处理
+（app/core/exceptions.py::_unhandled_handler），输出新壳 `{code:5000, msg, data, request_id}`，
+原堆栈仅写日志（带 trace_id）。
 """
 import logging
 import time
 from typing import Awaitable, Callable
 
 from fastapi import Request, Response
-from fastapi.responses import JSONResponse
 
 from app.core.log import new_trace_id, sanitize_trace_id, trace_id_var
 from app.core.middleware import _ip_to_str, _is_trusted_proxy, get_client_ip
 
 TRACE_HEADER = "X-Trace-Id"
+REQUEST_ID_HEADER = "X-Request-Id"  # 与 X-Trace-Id 同值；规范要求的"request_id"命名
 _INCOMING_HEADERS = ("x-request-id", "x-trace-id")
 
 access_logger = logging.getLogger("gdueca.access")
@@ -38,20 +42,19 @@ async def trace_middleware(
     call_next: Callable[[Request], Awaitable[Response]],
 ) -> Response:
     trace_id = _incoming_trace_id(request) or new_trace_id()
+    # 同步挂在 request.state 上；Starlette 的 ServerErrorMiddleware 在另一个 task
+    # 里跑 user exception_handler，contextvars 不会跨 task 继承，必须靠 request.state 透传。
+    request.state.trace_id = trace_id
     token = trace_id_var.set(trace_id)
     start = time.perf_counter()
     status = 500
     try:
-        try:
-            response = await call_next(request)
-        except Exception:
-            error_logger.exception("未捕获异常：%s %s", request.method, request.url.path)
-            response = JSONResponse(
-                status_code=500,
-                content={"detail": "服务器内部错误，请稍后重试", "trace_id": trace_id},
-            )
+        # 未捕获异常交给 FastAPI exception_handler 处理；此处不再拦截
+        response = await call_next(request)
         status = response.status_code
         response.headers[TRACE_HEADER] = trace_id
+        # 规范要求 request_id 同步出现在响应头；与 X-Trace-Id 同值，便于前端按规范读取
+        response.headers[REQUEST_ID_HEADER] = trace_id
         return response
     finally:
         duration_ms = round((time.perf_counter() - start) * 1000, 1)

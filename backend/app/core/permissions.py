@@ -48,6 +48,8 @@ PERMISSION_MODULES = (
     "realname",        # 账号实名状态管理（manage 仅 super_admin）
     "stats",           # 数据统计
     "audit_logs",      # 操作日志
+    # ---------- Phase 8 Memo 碎片笔记 ----------
+    "memo",            # Memo 后台管理（浏览全部 / 下架 / 恢复）；普通成员 view 仅自己可见范围
 )
 
 # 角色默认矩阵：module -> role -> 允许的动作集合（member 无后台权限，不列出）
@@ -159,6 +161,12 @@ ROLE_DEFAULTS: dict[str, dict[Role, set[str]]] = {
         Role.SUPER_ADMIN: {"view", "manage"},
         Role.ADMIN: {"view"},
         Role.EDITOR: {"view"},
+    },
+    # ---------- Memo：admin/editor 可 manage（下架/恢复/全量浏览） ----------
+    "memo": {
+        Role.SUPER_ADMIN: {"view", "manage"},
+        Role.ADMIN: {"view", "manage"},
+        Role.EDITOR: {"view", "manage"},
     },
 }
 

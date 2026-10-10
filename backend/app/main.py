@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api import activities, admin_stats, announcements, audit, auth, blog, bug_report, comments, content, media, members, notifications, oauth, query, realname, recruitment, register, security, sso, stats, system, translations
+from app.api import activities, admin_stats, announcements, audit, auth, blog, bug_report, comments, content, memos, media, members, notifications, oauth, query, realname, recruitment, register, security, sso, stats, system, tags, translations, health, i18n_public
 from app.api.auth import security_answer_digest
 from app.core.config import get_settings
 from app.core.csrf import CSRF_HEADER, csrf_middleware
@@ -22,7 +22,7 @@ from app.core.middleware import (
 )
 from app.core.password_policy import check_password_strength
 from app.core.security import Role, hash_password, is_bcrypt_hash, verify_password
-from app.core.trace import TRACE_HEADER, trace_middleware
+from app.core.trace import REQUEST_ID_HEADER, TRACE_HEADER, trace_middleware
 from app.db.models import Base, IpRule, IpRuleType, SecurityQuestion, SystemSetting, User
 from app.db.session import async_session, engine
 
@@ -253,19 +253,19 @@ if settings.cors_origins_list:
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
         allow_headers=["Content-Type", CSRF_HEADER],
-        expose_headers=[TRACE_HEADER],
+        # 同时暴露 trace 与 request id；前端按规范读取 X-Request-Id
+        expose_headers=[TRACE_HEADER, REQUEST_ID_HEADER],
     )
 # 6. traceId（最外层）：覆盖所有请求，包括被 CORS / 黑名单 / CSRF 拦截的请求
 app.middleware("http")(trace_middleware)
 
 
-# ---------- 健康检查 ----------
-@app.get("/health", tags=["health"])
-async def health():
-    return {"status": "ok"}
-
+# ---------- 健康检查（新壳示范接口） ----------
+# 旧的内联 /health 已迁移到 app.api.health 模块（响应壳统一化改造的第一批示范接口）
 
 # ---------- 注册路由 ----------
+app.include_router(health.router)
+app.include_router(i18n_public.router)
 app.include_router(auth.router)
 app.include_router(activities.router)
 app.include_router(activities.admin_router)
@@ -298,9 +298,18 @@ app.include_router(stats.router)
 app.include_router(media.router)
 app.include_router(audit.router)
 app.include_router(security.router)
+# ---------- Phase 8: Memo 碎片笔记 + 全局共享标签 ----------
+# 注意：author_router 与 public_router 共享 /api/memos 前缀；
+# FastAPI 按注册顺序匹配，必须先注册具体路径（公开 /shared/{share_slug} 等），再注册参数路由（{memo_id}）。
+app.include_router(tags.router)
+app.include_router(memos.public_router)
+app.include_router(memos.author_router)
+app.include_router(memos.user_router)
+app.include_router(memos.admin_router)
 
-# ---------- 静态文件服务（头像上传 + 成员头像 + 博客图片） ----------
+# ---------- 静态文件服务（头像上传 + 成员头像 + 博客图片 + Memo 附件） ----------
 os.makedirs("uploads/avatars", exist_ok=True)
 os.makedirs("uploads/members", exist_ok=True)
 os.makedirs("uploads/blog", exist_ok=True)
+os.makedirs("uploads/memos", exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")

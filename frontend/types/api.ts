@@ -839,3 +839,178 @@ export interface VisitLog {
   source: string | null;
   created_at: string;
 }
+
+/* ========== Phase 8: Memo 碎片笔记 ==========
+ * 业务边界：与 Blog（正式长文）、Document（协作文档）、Activity 并列独立；
+ * 三张数据表（memo / blog_post / document）不可互相替代。
+ * 全局标签池与 Blog（兼容历史 BlogTag）/ Document / Activity 共享。
+ */
+
+/** 可见性枚举：public 全体可见；member_only 已登录可见；private 仅作者可见 */
+export type MemoVisibility = "public" | "member_only" | "private";
+
+/** 全站共享标签池 */
+export interface MemoTagOut {
+  id: number;
+  name: string;
+  slug: string;
+  /** 使用该标签的模块列表（memo/document/activity 等） */
+  scopes: string[];
+  created_at: string;
+}
+
+/** 标签 + 关联 memo 数 */
+export interface MemoTagWithCount extends MemoTagOut {
+  memo_count: number;
+}
+
+/** Memo 作者摘要 */
+export interface MemoAuthorBrief {
+  id: number;
+  username: string;
+  avatar_url: string | null;
+}
+
+/** Memo 附件 */
+export interface MemoAttachmentOut {
+  id: number;
+  url: string;
+  original_name: string | null;
+  mime: string;
+  size: number;
+  /** image = 内联渲染图片；file = 仅下载链接 */
+  kind: "image" | "file";
+  created_at: string;
+}
+
+/** Memo 详情 */
+export interface MemoOut {
+  id: number;
+  content_md: string;
+  content_html: string;
+  archived: boolean;
+  visibility: MemoVisibility;
+  /** 公开分享 slug：null = 未生成 */
+  share_slug: string | null;
+  like_count: number;
+  favorite_count: number;
+  comment_count: number;
+  author: MemoAuthorBrief | null;
+  tags: MemoTagOut[];
+  attachments: MemoAttachmentOut[];
+  liked_by_me: boolean;
+  favorited_by_me: boolean;
+  admin_removed: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Memo 时间线列表项 */
+export interface MemoBriefOut {
+  id: number;
+  excerpt: string;
+  visibility: MemoVisibility;
+  archived: boolean;
+  like_count: number;
+  favorite_count: number;
+  comment_count: number;
+  has_image: boolean;
+  first_image_url: string | null;
+  author: MemoAuthorBrief | null;
+  tags: MemoTagOut[];
+  liked_by_me: boolean;
+  favorited_by_me: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Memo 版本快照列表项 */
+export interface MemoVersionBriefOut {
+  id: number;
+  memo_id: number;
+  version_no: number;
+  edit_note: string | null;
+  editor: MemoAuthorBrief | null;
+  visibility: MemoVisibility;
+  created_at: string;
+}
+
+/** Memo 版本完整（带原文） */
+export interface MemoVersionOut extends MemoVersionBriefOut {
+  content_md: string;
+}
+
+/** 创建 Memo 入参 */
+export interface MemoCreate {
+  content_md: string;
+  visibility?: MemoVisibility;
+  /** 标签名列表（懒创建）；同名复用；scopes 自动追加 MEMO */
+  tag_names?: string[];
+  /** 已上传的附件 URL 列表（/uploads/memos/...） */
+  attachment_urls?: string[];
+}
+
+/** 创建 Memo 响应：id + 首版本号 + 本次新增的标签名（前端可提示） */
+export interface MemoCreateOut {
+  id: number;
+  version_no: number;
+  new_tags: string[];
+}
+
+/** 编辑 Memo 入参 */
+export interface MemoUpdate {
+  content_md?: string;
+  visibility?: MemoVisibility;
+  tag_names?: string[];
+  attachment_urls?: string[];
+  /** 编辑原因：写进 memo_versions.edit_note */
+  edit_note?: string;
+}
+
+/** 回滚 Memo 入参 */
+export interface MemoRollback {
+  target_version_no: number;
+  /** 必填：写明回滚原因（写入 edit_note） */
+  edit_note: string;
+}
+
+/** 点赞 / 收藏统一响应：状态 + 最新计数 */
+export interface MemoInteractionOut {
+  liked: boolean;
+  favorited: boolean;
+  like_count: number;
+  favorite_count: number;
+}
+
+/** 公开分享链接响应 */
+export interface MemoShareOut {
+  share_slug: string;
+  share_url: string;
+  visibility: MemoVisibility;
+}
+
+/** 全文检索 hit */
+export interface MemoSearchHit {
+  memo: MemoBriefOut;
+  snippet: string;
+  matched_keywords: string[];
+}
+
+/** 全文检索响应 */
+export interface MemoSearchResponse {
+  total: number;
+  items: MemoSearchHit[];
+}
+
+/** 通用分页响应 */
+export interface PaginatedResponse<T> {
+  total: number;
+  items: T[];
+  page: number;
+  page_size: number;
+}
+
+/** 标签下的 Memo 列表响应（额外带 slug） */
+export interface TagMemosResponse extends PaginatedResponse<MemoBriefOut> {
+  // 复用 query path，避免重复
+}

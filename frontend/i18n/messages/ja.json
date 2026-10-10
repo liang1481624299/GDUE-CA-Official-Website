@@ -25,7 +25,8 @@
     "backend": "管理画面",
     "logout": "ログアウト",
     "guest": "ゲスト",
-    "login": "ログイン"
+    "login": "ログイン",
+    "memo": "メモ"
   },
   "common": {
     "learnMore": "詳しく見る",
@@ -245,6 +246,9 @@
       "rememberDevice": "この端末を記憶",
       "userAgent": "ブラウザ識別子 (UA)",
       "hint": "既定では 30 分間無操作で自動タイムアウトします。ページが表示中のときはハートビートでセッションが自動延長されます。最新 20 件まで表示します。"
+    },
+    "tabs": {
+      "memo": "メモ"
     }
   },
   "notifications": {
@@ -711,7 +715,8 @@
       "securityNetwork": "リッスン設定",
       "securityIpWhitelist": "IP ホワイトリスト",
       "securityIpBlacklist": "IP ブラックリスト",
-      "auditLogs": "操作ログ"
+      "auditLogs": "操作ログ",
+      "memos": "メモ管理"
     },
     "navGroup": {
       "content": "サイトコンテンツ管理",
@@ -1434,6 +1439,13 @@
         "byStatus": "ステータス別",
         "empty": "データはありません"
       }
+    },
+    "modules": {
+      "memo": {
+        "title": "メモ",
+        "desc": "Markdown断片ノート：タイムライン / カレンダー / タグ遅延生成 / バージョン / 共有リンク / 管理者停止",
+        "btn": "管理へ"
+      }
     }
   },
   "ban": {
@@ -1560,5 +1572,135 @@
       "evidenceUploading": "アップロード中...",
       "evidenceHint": "学生証 / キャンパスカードの写真、≤5MB"
     }
+  },
+  "memo": {
+    "pageTitle": "メモ",
+    "subtitle": "断片的な思考を素早く記録。正式なブログとは分離",
+    "timeline": {
+      "title": "タイムライン",
+      "empty": "まだメモはありません ✏️",
+      "hasImageOnly": "画像付きのみ",
+      "visibilityAll": "すべて",
+      "visibilityPublic": "公開のみ",
+      "visibilityMember": "会員のみ",
+      "loadingMore": "読み込み中...",
+      "endReached": "これ以上ありません"
+    },
+    "calendar": {
+      "title": "カレンダー",
+      "today": "今日",
+      "prevMonth": "前の月",
+      "nextMonth": "次の月",
+      "noMemosOnDay": "この日のメモはまだありません"
+    },
+    "editor": {
+      "placeholder": "思いついたことを...\n\nMarkdown対応、#タグ自動抽出、画像貼付で自動アップロード",
+      "tagsHint": "本文中に #TagName で作成、または下から追加",
+      "visibilityLabel": "公開範囲",
+      "tagsLabel": "タグ",
+      "addTag": "タグを追加",
+      "editNote": "編集メモ（任意）",
+      "saveCreate": "投稿",
+      "saveUpdate": "保存",
+      "cancel": "キャンセル",
+      "uploading": "アップロード中...",
+      "pasteHint": "画像を貼るとアップロードされます"
+    },
+    "visibility": {
+      "public": "公開",
+      "member_only": "会員のみ",
+      "private": "自分のみ",
+      "publicDesc": "全員に表示",
+      "memberDesc": "ログイン会員のみ表示",
+      "privateDesc": "自分のみ閲覧可能"
+    },
+    "card": {
+      "likes": "いいね",
+      "favorites": "お気に入り",
+      "comments": "コメント",
+      "share": "共有",
+      "more": "その他",
+      "edited": "編集済み",
+      "archived": "アーカイブ済み",
+      "private": "非公開",
+      "memberOnly": "会員限定",
+      "by": "by"
+    },
+    "actions": {
+      "like": "いいね",
+      "liked": "いいね済み",
+      "unlike": "いいね解除",
+      "favorite": "お気に入り",
+      "favorited": "お気に入り済み",
+      "unfavorite": "お気に入り解除",
+      "shareLink": "共有リンク",
+      "shareCreate": "共有リンクを生成",
+      "shareCopy": "リンクをコピー",
+      "shareCopied": "クリップボードにコピーしました",
+      "shareRevoke": "共有リンクを無効化",
+      "archive": "アーカイブ",
+      "unarchive": "アーカイブ解除",
+      "edit": "編集",
+      "delete": "削除",
+      "deleteConfirm": "このメモを削除しますか？復元できません（バージョン履歴は残ります）。",
+      "rollback": "ロールバック"
+    },
+    "versions": {
+      "title": "バージョン履歴",
+      "listTitle": "バージョン一覧",
+      "versionN": "v{n}",
+      "editor": "編集者",
+      "editNote": "編集メモ",
+      "restore": "このバージョンへロールバック",
+      "confirmRollback": "このバージョンへロールバックしますか？新しいバージョンとして保存されます。",
+      "restoreReason": "ロールバック理由（必須）",
+      "empty": "バージョン履歴はまだありません"
+    },
+    "share": {
+      "title": "メモを共有",
+      "publicOnly": "公開メモのみ共有リンクを生成できます",
+      "copyHint": "匿名訪問者もこのリンクでメモを閲覧できます",
+      "regenerate": "再生成",
+      "revoke": "無効化"
+    },
+    "errors": {
+      "contentRequired": "本文は必須です",
+      "contentTooLong": "本文は20000文字以内にしてください",
+      "rateLimited": "投稿が頻繁すぎます。少し待ってから再度お試しください",
+      "createFailed": "作成に失敗しました"
+    },
+    "tabs": {
+      "mine": "自分のメモ",
+      "liked": "いいね",
+      "favorites": "お気に入り",
+      "archived": "アーカイブ済み"
+    }
+  },
+  "error": {
+    "memo": {
+      "createFailed": "メモの作成に失敗しました",
+      "updateFailed": "メモの編集に失敗しました",
+      "deleteFailed": "メモの削除に失敗しました",
+      "rateLimited": "投稿が頻繁すぎます",
+      "notFound": "メモが見つかりません",
+      "forbidden": "このメモを操作する権限がありません",
+      "privateForbidden": "非公開メモにはいいね/お気に入りできません",
+      "shareOnlyPublic": "公開メモのみ共有リンクを生成できます",
+      "versionNotFound": "バージョンが見つかりません",
+      "tagNotFound": "タグが見つかりません",
+      "invalidDate": "日付形式はYYYY-MM-DDにしてください",
+      "rssMaintenance": "RSSは未実装です",
+      "webdavMaintenance": "WebDAVは未実装です",
+      "importMaintenance": "Memosバックアップ取り込みは未実装です"
+    }
+  },
+  "memoPage": {
+    "title": "メモ",
+    "intro": "断片的な思考の居場所。Markdownで気軽に記録、#タグ自動整理、タイムライン + カレンダーの二画面。",
+    "compose": "何か書く..."
+  },
+  "profileMemoTab": {
+    "empty": "まだメモがありません",
+    "viewAll": "すべて見る"
   }
 }

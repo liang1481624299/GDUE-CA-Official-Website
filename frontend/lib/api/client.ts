@@ -4,12 +4,15 @@
  * 统一处理：
  * - baseURL（浏览器默认同源 /api，由 Next.js rewrites 反代到后端）
  * - JSON 序列化/反序列化
- * - 错误信息提取
+ * - 错误信息提取（双轨：新壳 ApiResponse<T> 与旧壳 {detail, trace_id}）
  * - 登录态：后端下发 HttpOnly Cookie，前端脚本不接触 token（防 XSS 窃取）
  * - CSRF：写请求自动附加 X-CSRF-Token 头（双重提交令牌）
  *
  * 各 lib/api/* 业务模块基于 apiFetch 实现具体接口调用。
  */
+
+import type { ApiResponse, BizCodeType, I18nMsg } from "@/types/response";
+import { BizCode, getI18nKey, getI18nParams, isApiResponse } from "@/types/response";
 
 /**
  * 后端 API 基础地址
@@ -26,17 +29,63 @@ export const API_BASE_URL =
     ? ""
     : process.env.BACKEND_URL || "http://127.0.0.1:8000");
 
-/** 标准化后端错误响应：FastAPI 通常返回 { detail: string | [{msg}] ] } */
+/**
+ * 标准化后端错误响应。
+ *
+ * - 新壳错误（code !== 0）：优先使用 msg 字段；如果是 i18n key 对象，提取到 i18nKey/i18nParams 供前端本地化
+ * - 旧壳错误（HTTPException {detail, trace_id}）：保留兼容，按 detail 字段抽 message
+ *
+ * `traceId` 字段保留作为向后兼容别名，**推荐用 `requestId`** 与后端规范对齐。
+ */
 export class ApiError extends Error {
   status: number;
   detail: unknown;
-  /** 后端响应头 X-Trace-Id：报障时提供给管理员，可在日志中检索完整请求链路 */
-  traceId: string | null;
-  constructor(status: number, detail: unknown, message?: string, traceId: string | null = null) {
+  /** 业务码；新壳错误为 BizCode.*；旧壳错误为 BizCode.Ok(0) */
+  code: BizCodeType;
+  /** request_id（与后端响应体 request_id 字段、响应头 X-Request-Id、X-Trace-Id 同值） */
+  requestId: string | null;
+  /** 向后兼容旧调用：等价于 requestId（deprecated） */
+  get traceId(): string | null {
+    return this.requestId;
+  }
+  set traceId(v: string | null) {
+    this.requestId = v;
+  }
+  /** i18n key（来自新壳 msg.key）；非 i18n 协议时为 null */
+  i18nKey: string | null;
+  /** i18n params（来自新壳 msg.params） */
+  i18nParams: Record<string, unknown> | null;
+
+  constructor(
+    status: number,
+    detail: unknown,
+    message?: string,
+    traceId: string | null = null,
+  ) {
     super(message ?? (typeof detail === "string" ? detail : "API error"));
     this.status = status;
     this.detail = detail;
-    this.traceId = traceId;
+    this.requestId = traceId;
+    this.code = BizCode.Ok;
+    this.i18nKey = null;
+    this.i18nParams = null;
+  }
+
+  /** 新壳错误工厂：根据 ApiResponse 构造带 i18n 协议的 ApiError */
+  static fromEnvelope(
+    status: number,
+    env: ApiResponse<unknown>,
+    requestId: string | null,
+  ): ApiError {
+    const err = new ApiError(status, env, undefined, env.request_id || requestId);
+    err.code = env.code as BizCodeType;
+    err.i18nKey = getI18nKey(env.msg);
+    err.i18nParams = getI18nParams(env.msg);
+    err.message = computeMessageFromMsg(env.msg, env.data);
+    if (status >= 500 && err.requestId) {
+      err.message += `（错误编号：${err.requestId.slice(0, 12)}）`;
+    }
+    return err;
   }
 }
 
@@ -68,7 +117,7 @@ export async function getCsrfToken(forceRefresh = false): Promise<string> {
   return csrfPending;
 }
 
-/** 提取 detail 文案：兼容 string 与验证错误数组 */
+/** 提取 detail 文案：兼容 string 与验证错误数组（旧壳） */
 function extractDetail(data: unknown): string {
   if (typeof data === "string") return data;
   if (data && typeof data === "object") {
@@ -82,9 +131,22 @@ function extractDetail(data: unknown): string {
   return "请求失败，请稍后重试";
 }
 
+/** 从新壳 msg 字段计算展示文本：
+ * - 字符串：直接使用；
+ * - i18n key 对象：i18n 数据库未启用前返回 key，方便排查；
+ *   后续接入数据库后调用方可用 renderMsg() 走 i18n.Provider.t()
+ */
+function computeMessageFromMsg(msg: I18nMsg, _data: unknown): string {
+  if (typeof msg === "string") return msg;
+  // i18n 协议但数据库未启用：返回 key（开发期 stub）
+  return msg.key;
+}
+
 function isCsrfFailure(status: number, data: unknown): boolean {
+  // 新壳 code === 1008 或旧壳 code === "csrf_failed" 都识别
+  if (status !== 403) return false;
+  if (isApiResponse(data)) return data.code === BizCode.CsrfFailed;
   return (
-    status === 403 &&
     !!data &&
     typeof data === "object" &&
     (data as { code?: unknown }).code === "csrf_failed"
@@ -118,7 +180,12 @@ export async function secureFetch(path: string, init: RequestInit = {}): Promise
   return res;
 }
 
-/** 核心请求函数（withAuth 保留兼容：登录态 Cookie 总是随请求携带） */
+/** 核心请求函数（双轨解析）：
+ * - 新壳 `{code, msg, data, request_id}`：code === 0 时取 data；code !== 0 时抛 ApiError.fromEnvelope
+ * - 旧壳：维持原行为，detail 解析文本 + trace_id
+ *
+ * `withAuth` 保留兼容（登录态 Cookie 总是随请求携带）
+ */
 export async function apiFetch<T>(
   path: string,
   options: RequestInit & { withAuth?: boolean } = {}
@@ -138,23 +205,46 @@ export async function apiFetch<T>(
     throw new ApiError(0, null, "网络错误，无法连接到服务器");
   }
 
-  if (!res.ok) {
-    let data: unknown = null;
-    try {
-      data = await res.json();
-    } catch {
-      // 非 JSON 响应，忽略
+  // 尝试解析响应体（兼容新旧壳）
+  let body: unknown = null;
+  if (res.status !== 204) {
+    const text = await res.text().catch(() => "");
+    if (text) {
+      try {
+        body = JSON.parse(text);
+      } catch {
+        // 非 JSON；忽略 body
+        body = null;
+      }
     }
-    const traceId = res.headers.get("X-Trace-Id");
-    let message = extractDetail(data);
-    // 服务端错误附带错误编号，便于用户反馈、管理员按 traceId 查日志
-    if (res.status >= 500 && traceId) message += `（错误编号：${traceId.slice(0, 12)}）`;
-    throw new ApiError(res.status, data, message, traceId);
   }
 
-  // 204 或空内容
-  if (res.status === 204) return null as T;
-  const text = await res.text();
-  if (!text) return null as T;
-  return JSON.parse(text) as T;
+  // 错误响应：双轨处理
+  if (!res.ok) {
+    const requestId = res.headers.get("X-Request-Id") || res.headers.get("X-Trace-Id");
+    if (isApiResponse(body)) {
+      throw ApiError.fromEnvelope(res.status, body, requestId);
+    }
+    // 旧壳：维持原 ApiError 构造
+    const message = extractDetail(body);
+    const finalMessage =
+      res.status >= 500 && requestId
+        ? `${message}（错误编号：${requestId.slice(0, 12)}）`
+        : message;
+    throw new ApiError(res.status, body, finalMessage, requestId);
+  }
+
+  // 成功响应：新壳取 data，旧壳取整体
+  if (isApiResponse(body)) {
+    if (body.code !== BizCode.Ok) {
+      // 业务码非零但 HTTP 200（理论不应出现，兜底）
+      const requestId =
+        res.headers.get("X-Request-Id") || res.headers.get("X-Trace-Id");
+      throw ApiError.fromEnvelope(res.status, body, requestId);
+    }
+    return body.data as T;
+  }
+
+  // 旧壳 / 非壳（裸 list / 标量）直接返回
+  return (body ?? null) as T;
 }

@@ -25,7 +25,8 @@
     "backend": "后台",
     "logout": "退出登录",
     "guest": "游客",
-    "login": "登录"
+    "login": "登录",
+    "memo": "随手笔记"
   },
   "common": {
     "learnMore": "了解更多",
@@ -245,6 +246,9 @@
       "rememberDevice": "记住此设备",
       "userAgent": "浏览器标识 (UA)",
       "hint": "默认 30 分钟无操作自动超时；页面保持可见时心跳自动延长会话。最多显示最近 20 条记录。"
+    },
+    "tabs": {
+      "memo": "Memo"
     }
   },
   "notifications": {
@@ -711,7 +715,8 @@
       "securityNetwork": "监听配置",
       "securityIpWhitelist": "IP 白名单",
       "securityIpBlacklist": "IP 黑名单",
-      "auditLogs": "操作日志"
+      "auditLogs": "操作日志",
+      "memos": "Memo 管理"
     },
     "navGroup": {
       "content": "站点内容管理",
@@ -1434,6 +1439,13 @@
         "byStatus": "按审核状态",
         "empty": "暂无数据"
       }
+    },
+    "modules": {
+      "memo": {
+        "title": "Memo 碎片笔记",
+        "desc": "Markdown 碎片笔记：时间线 / 日历 / 标签懒创建 / 版本快照 / 公开分享 / 后台下架",
+        "btn": "进入管理"
+      }
     }
   },
   "ban": {
@@ -1560,5 +1572,135 @@
       "evidenceUploading": "上传中...",
       "evidenceHint": "学生证 / 校园卡照片，≤5MB"
     }
+  },
+  "memo": {
+    "pageTitle": "随手笔记",
+    "subtitle": "灵感、片段、随想；与正式长博客分开记录",
+    "timeline": {
+      "title": "时间线",
+      "empty": "还没有任何 Memo，写下第一条吧 ✏️",
+      "hasImageOnly": "只看带图",
+      "visibilityAll": "全部可见",
+      "visibilityPublic": "仅公开",
+      "visibilityMember": "成员可见",
+      "loadingMore": "加载更多...",
+      "endReached": "已经到底啦"
+    },
+    "calendar": {
+      "title": "日历",
+      "today": "今天",
+      "prevMonth": "上个月",
+      "nextMonth": "下个月",
+      "noMemosOnDay": "这一天还没有 Memo"
+    },
+    "editor": {
+      "placeholder": "随手写下你的想法...\n\n支持 Markdown、#标签、粘贴图片自动上传",
+      "tagsHint": "用 #TagName 在正文中创建标签，或在下方添加",
+      "visibilityLabel": "可见性",
+      "tagsLabel": "标签",
+      "addTag": "添加标签",
+      "editNote": "编辑原因（可选）",
+      "saveCreate": "发布",
+      "saveUpdate": "保存",
+      "cancel": "取消",
+      "uploading": "上传中...",
+      "pasteHint": "可粘贴图片直接上传"
+    },
+    "visibility": {
+      "public": "公开",
+      "member_only": "仅成员",
+      "private": "仅自己",
+      "publicDesc": "所有人可见",
+      "memberDesc": "登录成员可见",
+      "privateDesc": "只有自己能看"
+    },
+    "card": {
+      "likes": "点赞",
+      "favorites": "收藏",
+      "comments": "评论",
+      "share": "分享",
+      "more": "更多",
+      "edited": "已编辑",
+      "archived": "已归档",
+      "private": "私密",
+      "memberOnly": "成员可见",
+      "by": "by"
+    },
+    "actions": {
+      "like": "点赞",
+      "liked": "已点赞",
+      "unlike": "取消点赞",
+      "favorite": "收藏",
+      "favorited": "已收藏",
+      "unfavorite": "取消收藏",
+      "shareLink": "分享链接",
+      "shareCreate": "生成分享链接",
+      "shareCopy": "复制链接",
+      "shareCopied": "已复制到剪贴板",
+      "shareRevoke": "撤销分享链接",
+      "archive": "归档",
+      "unarchive": "取消归档",
+      "edit": "编辑",
+      "delete": "删除",
+      "deleteConfirm": "确认删除此 Memo？删除后不可恢复（但版本历史仍保留）。",
+      "rollback": "回滚"
+    },
+    "versions": {
+      "title": "历史版本",
+      "listTitle": "版本列表",
+      "versionN": "v{n}",
+      "editor": "编辑者",
+      "editNote": "编辑原因",
+      "restore": "回滚到此版本",
+      "confirmRollback": "确认回滚到此版本？回滚会作为一条新版本保存。",
+      "restoreReason": "回滚原因（必填）",
+      "empty": "还没有历史版本"
+    },
+    "share": {
+      "title": "分享 Memo",
+      "publicOnly": "仅公开 Memo 可生成分享链接",
+      "copyHint": "匿名用户可通过此链接直接访问此 Memo",
+      "regenerate": "重新生成",
+      "revoke": "撤销"
+    },
+    "errors": {
+      "contentRequired": "正文不能为空",
+      "contentTooLong": "正文不能超过 20000 字符",
+      "rateLimited": "发布过于频繁，请稍后再试",
+      "createFailed": "创建失败，请重试"
+    },
+    "tabs": {
+      "mine": "我的 Memo",
+      "liked": "点赞的",
+      "favorites": "收藏的",
+      "archived": "已归档"
+    }
+  },
+  "error": {
+    "memo": {
+      "createFailed": "Memo 创建失败",
+      "updateFailed": "Memo 编辑失败",
+      "deleteFailed": "Memo 删除失败",
+      "rateLimited": "发布过于频繁，请稍后再试",
+      "notFound": "Memo 不存在",
+      "forbidden": "无权操作此 Memo",
+      "privateForbidden": "此 Memo 为私密，不可点赞/收藏",
+      "shareOnlyPublic": "仅公开 Memo 可生成分享链接",
+      "versionNotFound": "版本不存在",
+      "tagNotFound": "标签不存在",
+      "invalidDate": "日期格式必须为 YYYY-MM-DD",
+      "rssMaintenance": "RSS 暂未实装，后续迭代上线",
+      "webdavMaintenance": "WebDAV 暂未实装，后续迭代上线",
+      "importMaintenance": "Memos 备份导入暂未实装，后续迭代上线"
+    }
+  },
+  "memoPage": {
+    "title": "随手笔记",
+    "intro": "碎片化思考的归宿。Markdown 随手记，#标签自动归档，时间线 + 日历双视图。",
+    "compose": "写点东西..."
+  },
+  "profileMemoTab": {
+    "empty": "还没有发布过 Memo",
+    "viewAll": "查看全部"
   }
 }

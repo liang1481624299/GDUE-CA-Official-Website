@@ -8,9 +8,10 @@ from functools import lru_cache
 from typing import Awaitable, Callable
 
 from fastapi import Request, Response
-from fastapi.responses import JSONResponse
 
+from app.core.bizcode import BizCode
 from app.core.config import get_settings
+from app.core.responses import fail
 
 logger = logging.getLogger("gdueca.middleware")
 
@@ -203,14 +204,18 @@ async def ip_rules_middleware(
                 if exp and now >= exp.timestamp():
                     continue
                 if _ip_hit_rule(ip, rule):
-                    body: dict = {"error": "banned", "reason": reason or ""}
+                    data: dict = {"reason": reason or ""}
                     if exp:
-                        body["expires_at"] = exp.isoformat(timespec="seconds").replace("+00:00", "Z")
-                        body["permanent"] = False
+                        data["expires_at"] = exp.isoformat(timespec="seconds").replace("+00:00", "Z")
+                        data["permanent"] = False
                     else:
-                        body["expires_at"] = None
-                        body["permanent"] = True
-                    return JSONResponse(status_code=403, content=body)
+                        data["expires_at"] = None
+                        data["permanent"] = True
+                    return fail(
+                        BizCode.BANNED_IP,
+                        params={"reason": reason or ""},
+                        data=data,
+                    )
 
     # Host 检查
     host = get_request_host(request)
@@ -254,11 +259,9 @@ async def rate_limit_middleware(
     bucket[1] = now
     if bucket[0] < 1:
         retry_after = max(1, int(60 / _RATE_PER_MIN))
-        return JSONResponse(
-            status_code=429,
-            content={"error": "rate_limited", "detail": "请求过于频繁，请稍后重试"},
-            headers={"Retry-After": str(retry_after)},
-        )
+        resp = fail(BizCode.RATE_LIMITED)
+        resp.headers["Retry-After"] = str(retry_after)
+        return resp
     bucket[0] -= 1
     return await call_next(request)
 

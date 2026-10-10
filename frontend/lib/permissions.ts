@@ -32,6 +32,8 @@ export const PERMISSION_MODULES = [
   "realname",
   "stats",
   "audit_logs",
+  // ---------- Phase 8 Memo 碎片笔记 ----------
+  "memo",
 ] as const;
 
 export type PermissionModule = (typeof PERMISSION_MODULES)[number];
