@@ -75,9 +75,10 @@ def test_unhandled_exception_returns_trace_id(app, caplog):
         r = client.get("/api/__boom_for_test")
     assert r.status_code == 500
     body = r.json()
-    assert body["trace_id"] == r.headers["x-trace-id"]
+    # 新响应壳：request_id（与响应头 X-Request-Id / X-Trace-Id 同值）
+    assert body["request_id"] == r.headers["x-request-id"] == r.headers["x-trace-id"]
     assert "boom" not in r.text  # 不向客户端泄露异常细节
-    assert any(rec.trace_id == body["trace_id"] and rec.exc_info for rec in caplog.records)
+    assert any(rec.trace_id == body["request_id"] and rec.exc_info for rec in caplog.records)
 
 
 def test_formatters():

@@ -20,6 +20,8 @@ from fastapi.exceptions import RequestValidationError
 
 from app.core.bizcode import BizCode
 from app.core.responses import BizException, EnvelopeJSONResponse, fail
+from app.core.log import trace_id_var
+from app.core.trace import REQUEST_ID_HEADER, TRACE_HEADER
 
 logger = logging.getLogger("gdueca.error")
 
@@ -31,11 +33,32 @@ def _request_id_from_state(request: Request) -> str | None:
 
 
 def _envelope_with_request_id(body: dict, request: Request, http_status: int) -> EnvelopeJSONResponse:
-    """构造带 request_id 的 EnvelopeJSONResponse（解决跨 task 的 contextvar 失效）。"""
+    """构造带 request_id 的 EnvelopeJSONResponse（解决跨 task 的 contextvar 失效）。
+
+    body.request_id 与响应头 X-Request-Id / X-Trace-Id 三处同值——
+    异常路径下 trace_middleware 来不及挂响应头，这里直接补上，保证 500 也有迹可循。
+    """
     rid = _request_id_from_state(request)
+    headers = None
     if rid:
         body["request_id"] = rid
-    return EnvelopeJSONResponse(content=body, status_code=http_status)
+        headers = {TRACE_HEADER: rid, REQUEST_ID_HEADER: rid}
+    return EnvelopeJSONResponse(content=body, status_code=http_status, headers=headers)
+
+
+def _safe_error_list(exc: RequestValidationError) -> list[dict]:
+    """exc.errors() 的 ctx 可能携带 ValueError 等不可序列化对象（如 PlainText 校验），逐个 str 化。"""
+    out = []
+    for err in exc.errors():
+        err = dict(err)
+        ctx = err.get("ctx")
+        if isinstance(ctx, dict):
+            err["ctx"] = {
+                k: v if isinstance(v, (str, int, float, bool, type(None))) else str(v)
+                for k, v in ctx.items()
+            }
+        out.append(err)
+    return out
 
 
 def register_exception_handlers(app: FastAPI) -> None:
@@ -43,7 +66,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def _validation_handler(request: Request, exc: RequestValidationError):
         body = {"code": BizCode.VALIDATION_FAILED,
                 "msg": {"key": "error.validation_failed"},
-                "data": {"errors": exc.errors()},
+                "data": {"errors": _safe_error_list(exc)},
                 "request_id": ""}
         return _envelope_with_request_id(body, request, http_status=422)
 
@@ -55,10 +78,16 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(Exception)
     async def _unhandled_handler(request: Request, exc: Exception):
         rid = _request_id_from_state(request)
-        logger.exception(
-            "未捕获异常：%s %s trace=%s",
-            request.method, request.url.path, rid or "-",
-        )
+        # 新 task 里 contextvar 是空的：先 seed，保证这条错误日志的 trace 与响应的 request_id 一致
+        token = trace_id_var.set(rid) if rid else None
+        try:
+            logger.exception(
+                "未捕获异常：%s %s trace=%s",
+                request.method, request.url.path, rid or "-",
+            )
+        finally:
+            if token is not None:
+                trace_id_var.reset(token)
         body = {"code": BizCode.INTERNAL_ERROR,
                 "msg": {"key": "error.internal"},
                 "data": None,

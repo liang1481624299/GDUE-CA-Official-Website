@@ -84,7 +84,7 @@ def test_login_sets_httponly_cookie_and_no_token_in_body(app):
 def test_write_without_csrf_token_rejected(app):
     client, headers = _admin_client(app)
     r = client.put("/api/auth/profile", json={"real_name": "测试"})
-    assert r.status_code == 403 and r.json()["code"] == "csrf_failed"
+    assert r.status_code == 403 and r.json()["code"] == 1008  # BizCode.CSRF_FAILED（新响应壳）
     r = client.put("/api/auth/profile", json={"real_name": "测试"},
                    headers={"X-CSRF-Token": "forged-token-value-forged-token-value"})
     assert r.status_code == 403
