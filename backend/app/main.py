@@ -64,6 +64,11 @@ async def _migrate_columns(conn):
             # Phase 3：活动开始/结束时间（状态自动识别 + 双必填校验）
             ("start_at", "DATETIME NULL"),
             ("end_at", "DATETIME NULL"),
+            # CMS 对接：列表短描述 / 前台标识 slug / 实际参与人数（markdown 历史数据迁移）
+            ("description", "VARCHAR(300) NOT NULL DEFAULT ''"),
+            # SQLite ADD COLUMN 不支持 UNIQUE，唯一性由下方部分唯一索引保证
+            ("slug", "VARCHAR(64) NULL"),
+            ("participants", "INTEGER NULL"),
         ],
         "registrations": [
             ("checked_in_at", "DATETIME NULL"),
@@ -104,6 +109,10 @@ async def _migrate_columns(conn):
                 await conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {ddl}"))
     await conn.execute(text(
         "CREATE INDEX IF NOT EXISTS ix_audit_logs_trace_id ON audit_logs (trace_id)"
+    ))
+    # 活动 slug 部分唯一索引（迁移自 markdown 的前台标识；NULL 不去重）
+    await conn.execute(text(
+        "CREATE UNIQUE INDEX IF NOT EXISTS ix_activities_slug ON activities (slug) WHERE slug IS NOT NULL"
     ))
 
 

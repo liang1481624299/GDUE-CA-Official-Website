@@ -222,6 +222,10 @@ export type ActivityStatus =
 export interface Activity {
   id: number;
   title: string;
+  /** 前台展示标识（历史数据迁移自 markdown slug；空 = 未设置） */
+  slug: string | null;
+  /** 列表短描述（前台活动列表 / 首页近期活动栏目展示） */
+  description: string;
   content: string;
   category: string | null;
   status: ActivityStatus;
@@ -232,6 +236,8 @@ export interface Activity {
   /** 活动结束时间（Phase 3：发布活动时双必填） */
   end_at: string | null;
   max_participants: number;
+  /** 实际参与人数（历史活动统计值；null = 未统计） */
+  participants: number | null;
   cover_url: string | null;
   checkin_open: boolean;
   created_at: string;
@@ -240,6 +246,8 @@ export interface Activity {
 
 export interface ActivityCreate {
   title: string;
+  slug?: string;
+  description?: string;
   content: string;
   category?: string;
   status?: ActivityStatus;
@@ -248,6 +256,7 @@ export interface ActivityCreate {
   start_at?: string;
   end_at?: string;
   max_participants?: number;
+  participants?: number | null;
   cover_url?: string;
 }
 

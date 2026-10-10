@@ -118,7 +118,12 @@ class Activity(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     title: Mapped[str] = mapped_column(String(200))
+    # 列表短描述（前台活动列表/首页栏目展示；content 为详情正文）
+    description: Mapped[str] = mapped_column(String(300), default="")
+    # 前台展示用标识（历史数据迁移自 markdown slug；唯一、可空）
+    slug: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True, index=True)
     content: Mapped[str] = mapped_column(Text)
+    # 分类：历史数据为 lecture/competition/recruitment/workshop；后台可自由扩展
     category: Mapped[str] = mapped_column(String(64))
     status: Mapped[ActivityStatus] = mapped_column(SAEnum(ActivityStatus), default=ActivityStatus.DRAFT)
     register_start: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
@@ -127,6 +132,8 @@ class Activity(Base):
     start_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
     end_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
     max_participants: Mapped[int] = mapped_column(Integer, default=0)  # 0 = 无上限
+    # 实际参与人数（历史活动统计值；报名制活动可为空=未统计）
+    participants: Mapped[int | None] = mapped_column(Integer, nullable=True)
     cover_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     # 签到开关：管理员在活动开始时手动开放，报名者凭回执码签到
     checkin_open: Mapped[bool] = mapped_column(Boolean, default=False)

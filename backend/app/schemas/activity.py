@@ -17,6 +17,10 @@ class ActivityStatus(str, Enum):
 
 class ActivityCreate(BaseModel):
     title: PlainText = Field(min_length=1, max_length=200)
+    # 前台展示标识（slug）：历史数据迁移自 markdown；留空则无 slug
+    slug: PlainText | None = Field(default=None, max_length=64)
+    # 列表短描述：前台活动列表 / 首页近期活动栏目展示
+    description: PlainText | None = Field(default=None, max_length=300)
     # Markdown 正文：前端用 react-markdown 渲染（不启用原始 HTML），这里只做清洗
     content: MultilineText = Field(max_length=50_000)
     category: PlainText | None = Field(default=None, max_length=64)
@@ -27,6 +31,8 @@ class ActivityCreate(BaseModel):
     start_at: UTCNaive | None = None
     end_at: UTCNaive | None = None
     max_participants: int = Field(default=0, ge=0, le=100_000)  # 0 = 无上限
+    # 实际参与人数（历史活动统计值；空 = 未统计）
+    participants: int | None = Field(default=None, ge=0, le=10_000_000)
     cover_url: SafeUrl | None = Field(default=None, max_length=512)
 
     @model_validator(mode="after")
@@ -49,6 +55,8 @@ class ActivityCreate(BaseModel):
 
 class ActivityUpdate(BaseModel):
     title: PlainText | None = Field(default=None, min_length=1, max_length=200)
+    slug: PlainText | None = Field(default=None, max_length=64)
+    description: PlainText | None = Field(default=None, max_length=300)
     content: MultilineText | None = Field(default=None, max_length=50_000)
     category: PlainText | None = Field(default=None, max_length=64)
     status: ActivityStatus | None = None
@@ -57,6 +65,7 @@ class ActivityUpdate(BaseModel):
     start_at: UTCNaive | None = None
     end_at: UTCNaive | None = None
     max_participants: int | None = Field(default=None, ge=0, le=100_000)
+    participants: int | None = Field(default=None, ge=0, le=10_000_000)
     cover_url: SafeUrl | None = Field(default=None, max_length=512)
     checkin_open: bool | None = None  # 签到开关
 
@@ -64,6 +73,8 @@ class ActivityUpdate(BaseModel):
 class ActivityOut(BaseModel):
     id: int
     title: str
+    slug: str | None
+    description: str
     content: str
     category: str | None
     status: ActivityStatus
@@ -72,6 +83,7 @@ class ActivityOut(BaseModel):
     start_at: UTCDatetime | None
     end_at: UTCDatetime | None
     max_participants: int
+    participants: int | None
     cover_url: str | None
     checkin_open: bool
     created_at: UTCDatetime

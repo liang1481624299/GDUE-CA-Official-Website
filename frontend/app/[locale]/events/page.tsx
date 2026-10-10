@@ -1,5 +1,6 @@
 import { getDictionary } from "@/i18n/dictionary";
 import { getAllEvents } from "@/lib/content";
+import { fetchClubEvents } from "@/lib/api/activities";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { DirectionalTransition } from "@/components/shared/DirectionalTransition";
 import { EventsChart } from "@/components/events/EventsChart";
@@ -7,7 +8,13 @@ import { EventsList } from "@/components/events/EventsList";
 
 /**
  * 活动页面 - 标题区（含场次 / 人次摘要）、类型筛选 + 表格式活动列表、参与人数统计图
+ *
+ * 数据源：活动 CMS（/api/activities?status_filter=archive），ISR 60s；
+ * 展示组件（EventsList/EventsChart）与交互逻辑不变。后端不可用时
+ * 自动回退到本地 markdown（frontend/content/events），页面仍完整渲染。
  */
+export const revalidate = 60;
+
 export default async function EventsPage({
   params,
 }: {
@@ -15,7 +22,7 @@ export default async function EventsPage({
 }) {
   const { locale } = await params;
   const dict = await getDictionary(locale);
-  const events = getAllEvents();
+  const events = await fetchClubEvents().catch(() => getAllEvents());
   const total = events.reduce((sum, e) => sum + e.participants, 0);
 
   return (

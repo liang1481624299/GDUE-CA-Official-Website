@@ -35,6 +35,8 @@ export function ActivityForm({
 }) {
   const { t } = useI18n();
   const [title, setTitle] = useState(initial?.title ?? "");
+  const [slug, setSlug] = useState(initial?.slug ?? "");
+  const [description, setDescription] = useState(initial?.description ?? "");
   const [content, setContent] = useState(initial?.content ?? "");
   const [category, setCategory] = useState(initial?.category ?? "");
   const [registerStart, setRegisterStart] = useState(
@@ -52,6 +54,10 @@ export function ActivityForm({
   );
   const [maxParticipants, setMaxParticipants] = useState<string>(
     initial ? String(initial.max_participants) : "0"
+  );
+  // 实际参与人数：留空 = 未统计（历史活动统计值）
+  const [participants, setParticipants] = useState<string>(
+    initial?.participants != null ? String(initial.participants) : ""
   );
   const [status, setStatus] = useState<ActivityStatus>(
     initial?.status ?? "draft"
@@ -79,6 +85,9 @@ export function ActivityForm({
     ) {
       next.maxParticipants = t("admin.activities.capacityInvalid");
     }
+    if (participants !== "" && (!Number.isInteger(Number(participants)) || Number(participants) < 0)) {
+      next.participants = t("admin.activities.capacityInvalid");
+    }
     if (registerStart && registerEnd) {
       const s = new Date(registerStart).getTime();
       const e = new Date(registerEnd).getTime();
@@ -102,6 +111,8 @@ export function ActivityForm({
     try {
       const payload = {
         title: title.trim(),
+        slug: slug.trim() || undefined,
+        description: description.trim(),
         content: content.trim(),
         category: category.trim(),
         register_start: new Date(registerStart).toISOString(),
@@ -110,6 +121,7 @@ export function ActivityForm({
         start_at: new Date(startAt).toISOString(),
         end_at: new Date(endAt).toISOString(),
         max_participants: Number(maxParticipants) || 0,
+        participants: participants === "" ? null : Number(participants),
         status,
         cover_url: coverUrl.trim() || undefined,
       };
@@ -138,6 +150,16 @@ export function ActivityForm({
         <Textarea id="content" rows={3} value={content} onChange={(e) => setContent(e.target.value)} />
         {fieldErrors.content && <p className="text-xs text-destructive">{fieldErrors.content}</p>}
       </div>
+      <div className="space-y-2">
+        <Label htmlFor="shortDescription">{t("admin.activities.shortDescription")}</Label>
+        <Textarea
+          id="shortDescription"
+          rows={2}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder={t("admin.activities.shortDescriptionPlaceholder")}
+        />
+      </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
           <Label htmlFor="category">{t("admin.activities.category")}</Label>
@@ -161,6 +183,34 @@ export function ActivityForm({
           />
           {fieldErrors.maxParticipants && (
             <p className="text-xs text-destructive">{fieldErrors.maxParticipants}</p>
+          )}
+        </div>
+      </div>
+      {/* 前台展示标识 + 实际参与人数（历史活动统计） */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-2">
+          <Label htmlFor="slug">{t("admin.activities.slug")}</Label>
+          <Input
+            id="slug"
+            value={slug}
+            onChange={(e) => setSlug(e.target.value)}
+            placeholder={t("admin.activities.slugPlaceholder")}
+          />
+          {fieldErrors.slug && <p className="text-xs text-destructive">{fieldErrors.slug}</p>}
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="participants">{t("admin.activities.participants")}</Label>
+          <Input
+            id="participants"
+            type="number"
+            min={0}
+            step={1}
+            value={participants}
+            onChange={(e) => setParticipants(e.target.value)}
+            placeholder={t("admin.activities.participantsPlaceholder")}
+          />
+          {fieldErrors.participants && (
+            <p className="text-xs text-destructive">{fieldErrors.participants}</p>
           )}
         </div>
       </div>

@@ -88,7 +88,7 @@ async def _refresh_status(a: Activity, db: AsyncSession) -> bool:
 # ---------- 公开：获取已发布活动（管理员可查看全部） ----------
 @router.get("", response_model=list[ActivityOut])
 async def list_activities(
-    status_filter: Literal["all", "published", "registration_open"] = "published",
+    status_filter: Literal["all", "published", "registration_open", "archive"] = "published",
     category: str | None = Query(default=None, max_length=64),
     user: dict | None = Depends(get_optional_user),
     db: AsyncSession = Depends(get_db),
@@ -100,6 +100,9 @@ async def list_activities(
         stmt = stmt.where(Activity.status.in_(["published", "registration_open"]))
     elif status_filter == "registration_open":
         stmt = stmt.where(Activity.status == "registration_open")
+    elif status_filter == "archive":
+        # 前台活动页：含历史已结束活动（草稿/归档仍不可见）
+        stmt = stmt.where(Activity.status.in_(_PUBLIC_STATUSES))
     if category:
         stmt = stmt.where(Activity.category == category)
     stmt = stmt.order_by(Activity.register_start.desc().nullslast(), Activity.id.desc())
@@ -130,6 +133,17 @@ async def get_activity(
 
 
 # ---------- 管理：创建 / 修改 / 删除 ----------
+async def _ensure_slug_free(db: AsyncSession, slug: str | None, exclude_id: int | None = None):
+    """slug 唯一性校验（旧库无唯一约束，由应用层兜底）。"""
+    if not slug:
+        return
+    stmt = select(Activity.id).where(Activity.slug == slug)
+    if exclude_id is not None:
+        stmt = stmt.where(Activity.id != exclude_id)
+    if (await db.execute(stmt)).scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="活动标识（slug）已存在")
+
+
 @router.post("", response_model=ActivityOut, status_code=status.HTTP_201_CREATED)
 async def create_activity(
     req: ActivityCreate,
@@ -137,6 +151,7 @@ async def create_activity(
     user: dict = Depends(require_permission("activities", "manage")),
     db: AsyncSession = Depends(get_db),
 ):
+    await _ensure_slug_free(db, req.slug)
     a = Activity(**req.model_dump(), created_by=int(user["user_id"]))
     db.add(a)
     await db.flush()
@@ -156,7 +171,10 @@ async def update_activity(
     a = await db.get(Activity, activity_id)
     if not a:
         raise HTTPException(status_code=404, detail="活动不存在")
-    for k, v in req.model_dump(exclude_unset=True).items():
+    dump = req.model_dump(exclude_unset=True)
+    if "slug" in dump:
+        await _ensure_slug_free(db, dump["slug"], exclude_id=activity_id)
+    for k, v in dump.items():
         setattr(a, k, v)
     a.updated_at = datetime.now(timezone.utc)
     _log(db, int(user["user_id"]), "activity.update", f"activity:{activity_id}",
