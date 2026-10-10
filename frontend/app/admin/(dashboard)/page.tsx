@@ -8,29 +8,29 @@ import Link from "next/link";
 import { useI18n } from "@/i18n/provider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CalendarDays, ClipboardList, Bug, Clock, Globe } from "lucide-react";
-import { listActivities } from "@/lib/api/activities";
 import { listRegistrations } from "@/lib/api/register";
 import { listBugReports } from "@/lib/api/bugReport";
-import { fetchAccessStats } from "@/lib/api/adminStats";
+import { fetchAccessStats, fetchOverview } from "@/lib/api/adminStats";
 import { FormattedUserActionTime } from "@/components/shared/FormattedUserActionTime";
-import type { Activity, Registration, BugReport, AccessStats } from "@/types/api";
+import type { Registration, BugReport, AccessStats, AdminOverview } from "@/types/api";
 
 export default function AdminDashboardPage() {
   const { t } = useI18n();
-  const [activities, setActivities] = useState<Activity[]>([]);
+  const [overview, setOverview] = useState<AdminOverview | null>(null);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [bugs, setBugs] = useState<BugReport[]>([]);
   const [access, setAccess] = useState<AccessStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // 计数走聚合接口；明细只取最新 5 条（后端已按时间倒序 + per_page 截断）
     Promise.all([
-      listActivities().catch(() => [] as Activity[]),
-      listRegistrations().catch(() => [] as Registration[]),
-      listBugReports().catch(() => [] as BugReport[]),
+      fetchOverview().catch(() => null),
+      listRegistrations({ per_page: 5 }).catch(() => [] as Registration[]),
+      listBugReports({ per_page: 5 }).catch(() => [] as BugReport[]),
       fetchAccessStats().catch(() => null),
-    ]).then(([a, r, b, st]) => {
-      setActivities(a);
+    ]).then(([o, r, b, st]) => {
+      setOverview(o);
       setRegistrations(r);
       setBugs(b);
       setAccess(st);
@@ -38,8 +38,8 @@ export default function AdminDashboardPage() {
     });
   }, []);
 
-  const pending = registrations.filter((r) => r.status === "pending").length;
-  const openBugs = bugs.filter((b) => !b.resolved).length;
+  const pending = overview?.registrations_pending ?? 0;
+  const openBugs = overview?.bugs_open ?? 0;
 
   /** IP 地区分类 → 本地化标签 */
   function regionLabel(region: string): string {
@@ -72,14 +72,14 @@ export default function AdminDashboardPage() {
   const stats = [
     {
       label: t("admin.dashboard.statsActivities"),
-      value: activities.length,
+      value: overview?.activities_total ?? 0,
       icon: CalendarDays,
       href: "/admin/activities",
       color: "bg-blue-500/10 text-blue-600",
     },
     {
       label: t("admin.dashboard.statsRegistrations"),
-      value: registrations.length,
+      value: overview?.registrations_total ?? 0,
       icon: ClipboardList,
       href: "/admin/review?tab=registrations",
       color: "bg-emerald-500/10 text-emerald-600",

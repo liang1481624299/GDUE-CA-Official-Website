@@ -49,6 +49,6 @@ def test_overview_shape(app):
     r = client.get("/api/admin-stats/overview", headers=headers)
     assert r.status_code == 200, r.text
     body = r.json()
-    for key in ("activities_total", "registrations_pending", "bugs_open", "resets_pending"):
+    for key in ("activities_total", "registrations_total", "registrations_pending", "bugs_open", "resets_pending"):
         assert key in body, f"missing {key}: {body}"
         assert isinstance(body[key], int)

@@ -116,6 +116,15 @@ export interface AccessStats {
   top_ips: IpSourceStat[];
 }
 
+/** 仪表盘聚合（GET /api/admin-stats/overview）：首屏待办计数 */
+export interface AdminOverview {
+  activities_total: number;
+  registrations_total: number;
+  registrations_pending: number;
+  bugs_open: number;
+  resets_pending: number;
+}
+
 export interface ChangePasswordRequest {
   old_password: string;
   new_password: string;

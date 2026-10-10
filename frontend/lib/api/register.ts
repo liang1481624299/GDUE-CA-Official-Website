@@ -33,11 +33,15 @@ export function listRegistrations(params?: {
   activity_id?: number;
   status?: RegistrationStatus;
   registration_type?: RegistrationType;
+  page?: number;
+  per_page?: number;
 }) {
   const qs = new URLSearchParams();
   if (params?.activity_id) qs.set("activity_id", String(params.activity_id));
   if (params?.status) qs.set("status", params.status);
   if (params?.registration_type) qs.set("registration_type", params.registration_type);
+  if (params?.page) qs.set("page", String(params.page));
+  if (params?.per_page) qs.set("per_page", String(params.per_page));
   const query = qs.toString();
   return apiFetch<Registration[]>(
     `/api/registrations${query ? `?${query}` : ""}`,

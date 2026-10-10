@@ -71,6 +71,7 @@ class OverviewOut(BaseModel):
     """仪表盘聚合：各模块待办计数（首屏单请求替代多全量列表）。"""
 
     activities_total: int
+    registrations_total: int
     registrations_pending: int
     bugs_open: int
     resets_pending: int
@@ -84,6 +85,9 @@ async def get_overview(
     """仪表盘待办聚合：SQL COUNT 直查，不拉全量列表。"""
     activities_total = (await db.execute(
         select(func.count()).select_from(Activity)
+    )).scalar_one()
+    registrations_total = (await db.execute(
+        select(func.count()).select_from(Registration)
     )).scalar_one()
     registrations_pending = (await db.execute(
         select(func.count()).select_from(Registration)
@@ -99,6 +103,7 @@ async def get_overview(
     )).scalar_one()
     return OverviewOut(
         activities_total=activities_total,
+        registrations_total=registrations_total,
         registrations_pending=registrations_pending,
         bugs_open=bugs_open,
         resets_pending=resets_pending,

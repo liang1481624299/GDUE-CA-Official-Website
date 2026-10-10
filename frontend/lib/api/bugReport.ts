@@ -13,10 +13,12 @@ export function submitBugReport(payload: BugReportCreate) {
   });
 }
 
-export function listBugReports(params?: { resolved?: boolean; keyword?: string }) {
+export function listBugReports(params?: { resolved?: boolean; keyword?: string; page?: number; per_page?: number }) {
   const qs = new URLSearchParams();
   if (params?.resolved !== undefined) qs.set("resolved", String(params.resolved));
   if (params?.keyword) qs.set("keyword", params.keyword);
+  if (params?.page) qs.set("page", String(params.page));
+  if (params?.per_page) qs.set("per_page", String(params.per_page));
   const query = qs.toString();
   return apiFetch<BugReport[]>(`/api/bugs${query ? `?${query}` : ""}`, {
     withAuth: true,
