@@ -39,9 +39,10 @@ export default async function BlogPage({
   let tags: BlogTag[] = [];
   try {
     // page_size 上限为后端限制的 50；超出部分由分页/搜索覆盖（博客首屏展示场景足够）
+    // lang=locale：后端按显示语言自动翻译文章标题/摘要与标签名（缓存加速，失败回退原文）
     const [postRes, tagRes] = await Promise.all([
-      listPublicPosts({ page_size: 50 }),
-      listPublicTags(),
+      listPublicPosts({ page_size: 50, lang: locale }),
+      listPublicTags(locale),
     ]);
     posts = postRes.items.map(toCardPost);
     tags = tagRes;

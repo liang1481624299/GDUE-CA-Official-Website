@@ -99,6 +99,12 @@ async def _migrate_columns(conn):
     await conn.execute(text(
         "UPDATE announcements SET category = 'HOME' WHERE category = 'CLUB'"
     ))
+    # 翻译缓存去重：缓存表无唯一约束，历史并发未命中可能产生重复行（按原文哈希+语言对保留最新一条）
+    await conn.execute(text(
+        "DELETE FROM translation_cache WHERE id NOT IN ("
+        "SELECT MAX(id) FROM translation_cache "
+        "GROUP BY source_hash, source_lang, target_lang)"
+    ))
     if conn.dialect.name != "sqlite":
         return
     for table, columns in expected.items():

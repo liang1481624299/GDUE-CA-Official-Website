@@ -17,27 +17,30 @@ import type {
 
 /* ---------- 公开接口 ---------- */
 
-/** 公开：已发布文章分页列表（tag 传标签 slug；q 搜索标题/摘要） */
+/** 公开：已发布文章分页列表（tag 传标签 slug；q 搜索标题/摘要；lang 传入时标题/摘要由后端自动翻译） */
 export function listPublicPosts(
-  params: { tag?: string; q?: string; page?: number; page_size?: number } = {}
+  params: { tag?: string; q?: string; page?: number; page_size?: number; lang?: string } = {}
 ) {
   const qs = new URLSearchParams();
   if (params.tag) qs.set("tag", params.tag);
   if (params.q) qs.set("q", params.q);
   if (params.page) qs.set("page", String(params.page));
   if (params.page_size) qs.set("page_size", String(params.page_size));
+  if (params.lang) qs.set("lang", params.lang);
   const query = qs.toString();
   return apiFetch<Paginated<BlogPost>>(`/api/blog${query ? `?${query}` : ""}`);
 }
 
-/** 公开：文章详情（含 content_md；非已发布一律 404） */
-export function getPublicPost(slug: string) {
-  return apiFetch<BlogPost>(`/api/blog/${encodeURIComponent(slug)}`);
+/** 公开：文章详情（含 content_md；非已发布一律 404；lang 传入时标题/摘要由后端自动翻译） */
+export function getPublicPost(slug: string, lang?: string) {
+  const langQs = lang ? `?lang=${encodeURIComponent(lang)}` : "";
+  return apiFetch<BlogPost>(`/api/blog/${encodeURIComponent(slug)}${langQs}`);
 }
 
-/** 公开：标签列表（含全部标签，供前台筛选） */
-export function listPublicTags() {
-  return apiFetch<BlogTag[]>("/api/blog/tags");
+/** 公开：标签列表（含全部标签，供前台筛选；lang 传入时标签名由后端自动翻译） */
+export function listPublicTags(lang?: string) {
+  const langQs = lang ? `?lang=${encodeURIComponent(lang)}` : "";
+  return apiFetch<BlogTag[]>(`/api/blog/tags${langQs}`);
 }
 
 /* ---------- 管理接口 ---------- */

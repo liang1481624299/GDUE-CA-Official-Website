@@ -15,8 +15,14 @@ import { DirectionalTransition } from "@/components/shared/DirectionalTransition
  */
 export const revalidate = 60;
 
-export default async function HomePage() {
-  const events = await fetchClubEvents()
+export default async function HomePage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  // lang=locale：后端按显示语言自动翻译活动标题/短描述（缓存加速，失败回退原文）
+  const events = await fetchClubEvents(locale)
     .then((list) => list.slice(0, 4))
     .catch(() => getAllEvents().slice(0, 4));
 

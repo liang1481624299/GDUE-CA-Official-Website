@@ -23,9 +23,10 @@ export async function generateMetadata({
 }: {
   params: Promise<{ locale: string; slug: string }>;
 }): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug, locale } = await params;
   try {
-    const post = await getPublicPost(slug);
+    // lang=locale：后端按显示语言自动翻译标题/摘要（正文 Markdown 不做机器翻译）
+    const post = await getPublicPost(slug, locale);
     return {
       title: post.title,
       description: post.excerpt ?? undefined,
@@ -45,7 +46,7 @@ export default async function BlogPostPage({
 
   let post;
   try {
-    post = await getPublicPost(slug);
+    post = await getPublicPost(slug, locale);
   } catch (e) {
     if (e instanceof ApiError && e.status === 404) notFound();
     throw e;

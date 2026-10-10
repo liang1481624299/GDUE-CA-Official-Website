@@ -13,9 +13,10 @@ export function listActivities() {
   return apiFetch<Activity[]>("/api/activities?status_filter=all");
 }
 
-/** 公开归档列表：含历史已结束活动（草稿/归档不可见），供前台活动页 */
-export function listArchivedActivities() {
-  return apiFetch<Activity[]>("/api/activities?status_filter=archive");
+/** 公开归档列表：含历史已结束活动（草稿/归档不可见），供前台活动页；lang 传入时标题/短描述由后端自动翻译 */
+export function listArchivedActivities(lang?: string) {
+  const langQs = lang ? `&lang=${encodeURIComponent(lang)}` : "";
+  return apiFetch<Activity[]>(`/api/activities?status_filter=archive${langQs}`);
 }
 
 /**
@@ -35,9 +36,9 @@ export function mapActivityToClubEvent(a: Activity): ClubEvent {
   };
 }
 
-/** 前台活动页数据：归档列表映射为 ClubEvent 并按活动日期降序（原 getAllEvents 语义） */
-export async function fetchClubEvents(): Promise<ClubEvent[]> {
-  const items = await listArchivedActivities();
+/** 前台活动页数据：归档列表映射为 ClubEvent 并按活动日期降序（原 getAllEvents 语义）；lang=显示语言自动翻译 */
+export async function fetchClubEvents(lang?: string): Promise<ClubEvent[]> {
+  const items = await listArchivedActivities(lang);
   return items
     .map(mapActivityToClubEvent)
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());

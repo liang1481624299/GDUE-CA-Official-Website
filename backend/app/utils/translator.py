@@ -1,12 +1,15 @@
-"""表单内容自动翻译服务。
+"""内容自动翻译服务。
 
 - 语言检测：日文假名 -> ja；汉字 -> zh-CN；其他 -> en
 - 翻译源：Google translate gtx（免费无 key）优先，MyMemory 兜底
 - 缓存：TranslationCache 表，避免重复调用外部接口
+- 内容翻译：translate_obj_fields 供公开内容接口按显示语言翻译 CMS 文本
 """
+import asyncio
 import hashlib
 import logging
 import re
+from typing import Sequence
 
 import httpx
 from sqlalchemy import select
@@ -44,7 +47,8 @@ def detect_lang(text: str) -> str:
 
 
 async def _translate_google(text: str, target_lang: str) -> str:
-    async with httpx.AsyncClient(timeout=10) as client:
+    # 超时 4s：gtx 在部分网络不可达时尽快回落 MyMemory，避免拖垮首次渲染
+    async with httpx.AsyncClient(timeout=4) as client:
         resp = await client.get(
             _GTX_URL,
             params={"client": "gtx", "sl": "auto", "tl": target_lang, "dt": "t", "q": text},
@@ -117,3 +121,97 @@ async def translate_text(
         ))
         return translated
     return None
+
+
+async def translate_obj_fields(
+    db: AsyncSession,
+    objs: Sequence,
+    fields: Sequence[str],
+    target_lang: str | None,
+) -> None:
+    """CMS 公开内容按显示语言翻译：就地翻译对象列表的指定文本字段。
+
+    仅供公开内容接口使用，必须传入 Pydantic Out 模型副本（禁止传 ORM 实体，
+    否则译文会随 get_db 的统一 commit 污染源数据表）。
+
+    行为：
+    - 目标语言为空 / 归一化后不支持：整体跳过（返回原文）
+    - 原文检测语言与目标语言相同：保留原文
+    - 译文缓存命中直接采用；未命中并行走外部接口（gtx → MyMemory），失败回退原文
+    - 任何异常不外抛，绝不阻塞内容接口
+    """
+    if not target_lang:
+        return
+    tl = normalize_lang(target_lang)
+    if tl not in SUPPORTED_LANGS:
+        return
+
+    # 收集待翻译字段
+    targets: list[tuple[object, str, str]] = []
+    for obj in objs:
+        for field in fields:
+            text = getattr(obj, field, None)
+            if isinstance(text, str) and text.strip():
+                targets.append((obj, field, text))
+    if not targets:
+        return
+
+    # 第一阶段：串行查缓存（AsyncSession 不允许并发操作）
+    misses: list[tuple[object, str, str]] = []
+    for obj, field, text in targets:
+        sl = normalize_lang(detect_lang(text))
+        if sl == tl:
+            continue  # 原文即目标语言，保留原文
+        h = hashlib.sha256(text.encode("utf-8")).hexdigest()
+        # 缓存表无唯一约束，并发未命中可能产生重复行：取最新一条，避免 MultipleResultsFound
+        row = (
+            await db.execute(
+                select(TranslationCache).where(
+                    TranslationCache.source_hash == h,
+                    TranslationCache.source_lang == sl,
+                    TranslationCache.target_lang == tl,
+                ).order_by(TranslationCache.id.desc()).limit(1)
+            )
+        ).scalar_one_or_none()
+        if row:
+            setattr(obj, field, row.translated_text)
+        else:
+            misses.append((obj, field, text))
+
+    # 第二阶段：未命中字段并行走外部接口（纯 HTTP，不触碰 session）；
+    # 同一文本只调用一次（如 title 与 content 相同的场景），避免重复外部请求与重复缓存行
+    unique_texts: list[str] = []
+    text_to_targets: dict[str, list[tuple[object, str]]] = {}
+    for obj, field, text in misses:
+        if text not in text_to_targets:
+            text_to_targets[text] = []
+            unique_texts.append(text)
+        text_to_targets[text].append((obj, field))
+
+    async def _external(text: str) -> str | None:
+        sl = normalize_lang(detect_lang(text))
+        try:
+            translated = await _translate_google(text, tl)
+        except Exception as e:
+            logger.warning("Google 翻译失败，改用 MyMemory：%s", e.__class__.__name__)
+            try:
+                translated = await _translate_mymemory(text, sl, tl)
+            except Exception as e2:
+                logger.warning("MyMemory 翻译失败，返回原文：%s", e2.__class__.__name__)
+                return None
+        if translated and translated.strip() and translated.strip() != text.strip():
+            db.add(TranslationCache(
+                source_hash=hashlib.sha256(text.encode("utf-8")).hexdigest(),
+                source_lang=sl,
+                target_lang=tl,
+                source_text=text[:2000],
+                translated_text=translated,
+            ))
+            return translated
+        return None
+
+    results = await asyncio.gather(*(_external(t) for t in unique_texts))
+    for text, translated in zip(unique_texts, results):
+        if translated:
+            for obj, field in text_to_targets[text]:
+                setattr(obj, field, translated)

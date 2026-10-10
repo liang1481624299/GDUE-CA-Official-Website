@@ -13,10 +13,13 @@ import type {
   Paginated,
 } from "@/types/api";
 
-/** 公开：当前生效中的公告（自动过滤过期/未启用） */
-export function listPublicAnnouncements(category?: AnnouncementCategory) {
-  const qs = category ? `?category=${category}` : "";
-  return apiFetch<Announcement[]>(`/api/announcements${qs}`);
+/** 公开：当前生效中的公告（自动过滤过期/未启用；lang 传入时标题/内容由后端自动翻译） */
+export function listPublicAnnouncements(category?: AnnouncementCategory, lang?: string) {
+  const qs = new URLSearchParams();
+  if (category) qs.set("category", category);
+  if (lang) qs.set("lang", lang);
+  const query = qs.toString();
+  return apiFetch<Announcement[]>(`/api/announcements${query ? `?${query}` : ""}`);
 }
 
 /** 管理：公告分页列表 */

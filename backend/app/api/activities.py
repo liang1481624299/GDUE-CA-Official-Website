@@ -24,6 +24,7 @@ from app.schemas.activity_stats import ActivityStatisticsOut
 from app.schemas.register import RegistrationOut
 from app.utils.crud import paginate
 from app.utils.export import to_csv, to_xlsx
+from app.utils.translator import translate_obj_fields
 
 router = APIRouter(prefix="/api/activities", tags=["activities"])
 admin_router = APIRouter(prefix="/api/admin/activities", tags=["activities-admin"])
@@ -90,6 +91,7 @@ async def _refresh_status(a: Activity, db: AsyncSession) -> bool:
 async def list_activities(
     status_filter: Literal["all", "published", "registration_open", "archive"] = "published",
     category: str | None = Query(default=None, max_length=64),
+    lang: str | None = Query(default=None, max_length=16, description="显示语言；传入时标题/短描述自动翻译（缓存加速，失败回退原文）"),
     user: dict | None = Depends(get_optional_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -115,12 +117,17 @@ async def list_activities(
             changed = True
     if changed:
         await db.commit()
-    return items
+    # 翻译 Out 副本而非 ORM 实体，避免译文随 get_db 统一 commit 污染源数据
+    outs = [ActivityOut.model_validate(a) for a in items]
+    if lang:
+        await translate_obj_fields(db, outs, ("title", "description"), lang)
+    return outs
 
 
 @router.get("/{activity_id}", response_model=ActivityOut)
 async def get_activity(
     activity_id: int,
+    lang: str | None = Query(default=None, max_length=16, description="显示语言；传入时标题/短描述自动翻译"),
     user: dict | None = Depends(get_optional_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -129,7 +136,10 @@ async def get_activity(
         raise HTTPException(status_code=404, detail="活动不存在")
     if await _refresh_status(a, db):
         await db.commit()
-    return a
+    out = ActivityOut.model_validate(a)
+    if lang:
+        await translate_obj_fields(db, [out], ("title", "description"), lang)
+    return out
 
 
 # ---------- 管理：创建 / 修改 / 删除 ----------

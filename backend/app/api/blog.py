@@ -42,6 +42,7 @@ from app.schemas.blog import (
     BlogUploadOut,
 )
 from app.utils.crud import apply_eq, apply_search, paginate
+from app.utils.translator import translate_obj_fields
 
 # 公开接口（无鉴权）
 public_router = APIRouter(prefix="/api/blog", tags=["blog-public"])
@@ -149,11 +150,17 @@ async def _ensure_slug_unique(db: AsyncSession, slug: str, exclude_id: int | Non
 # ==================== 公开接口 ====================
 
 @public_router.get("/tags", response_model=list[BlogTagOut])
-async def list_public_tags(db: AsyncSession = Depends(get_db)):
+async def list_public_tags(
+    lang: str | None = Query(default=None, max_length=16, description="显示语言；传入时标签名自动翻译"),
+    db: AsyncSession = Depends(get_db),
+):
     """公开标签列表（前端按标签筛选文章）。"""
     await _auto_publish_scheduled(db)
     result = await db.execute(select(BlogTag).order_by(BlogTag.id.asc()))
-    return result.scalars().all()
+    outs = [BlogTagOut.model_validate(t) for t in result.scalars().all()]
+    if lang:
+        await translate_obj_fields(db, outs, ("name",), lang)
+    return outs
 
 
 @public_router.get("", response_model=dict)
@@ -162,9 +169,13 @@ async def list_public_posts(
     q: str | None = Query(default=None, max_length=64),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=10, ge=1, le=50),
+    lang: str | None = Query(default=None, max_length=16, description="显示语言；传入时标题/摘要自动翻译（缓存加速，失败回退原文）"),
     db: AsyncSession = Depends(get_db),
 ):
-    """公开已发布文章列表：published_at 降序，支持标签筛选 + 标题/摘要搜索。"""
+    """公开已发布文章列表：published_at 降序，支持标签筛选 + 标题/摘要搜索。
+
+    正文为 Markdown 长文，不做机器翻译（避免破坏代码块/格式），仅翻译标题与摘要。
+    """
     await _auto_publish_scheduled(db)
     stmt = select(BlogPost).where(BlogPost.status == BlogPostStatus.PUBLISHED)
     if tag:
@@ -173,19 +184,33 @@ async def list_public_posts(
         ).where(BlogTag.slug == tag)
     stmt = apply_search(stmt, [BlogPost.title, BlogPost.excerpt], q)
     stmt = stmt.order_by(BlogPost.published_at.desc())
-    return await paginate(db, stmt, page, page_size, out_model=BlogPostBriefOut)
+    data = await paginate(db, stmt, page, page_size, out_model=BlogPostBriefOut)
+    if lang and data.get("items"):
+        await translate_obj_fields(db, data["items"], ("title", "excerpt"), lang)
+    return data
 
 
 @public_router.get("/{slug}", response_model=BlogPostOut)
-async def get_public_post(slug: str, db: AsyncSession = Depends(get_db)):
-    """公开单篇文章（含消毒 HTML）；非已发布状态一律 404。"""
+async def get_public_post(
+    slug: str,
+    lang: str | None = Query(default=None, max_length=16, description="显示语言；传入时标题/摘要自动翻译"),
+    db: AsyncSession = Depends(get_db),
+):
+    """公开单篇文章（含消毒 HTML）；非已发布状态一律 404。
+
+    正文为 Markdown 长文，不做机器翻译（避免破坏代码块/格式），仅翻译标题与摘要。
+    """
     await _auto_publish_scheduled(db)
     p = (await db.execute(
         select(BlogPost).where(BlogPost.slug == slug)
     )).scalar_one_or_none()
     if not p or p.status != BlogPostStatus.PUBLISHED:
         raise HTTPException(status_code=404, detail="文章不存在")
-    out = BlogPostOut.model_validate(p).model_dump(mode="json")
+    # 翻译 Out 副本而非 ORM 实体，避免译文随 get_db 统一 commit 污染源数据
+    out_obj = BlogPostOut.model_validate(p)
+    if lang:
+        await translate_obj_fields(db, [out_obj], ("title", "excerpt"), lang)
+    out = out_obj.model_dump(mode="json")
     out["content_html"] = _render_html(p.content_md)
     return out
 

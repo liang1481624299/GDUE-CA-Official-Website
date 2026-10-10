@@ -22,7 +22,8 @@ export default async function EventsPage({
 }) {
   const { locale } = await params;
   const dict = await getDictionary(locale);
-  const events = await fetchClubEvents().catch(() => getAllEvents());
+  // lang=locale：后端按显示语言自动翻译活动标题/短描述（缓存加速，失败回退原文）
+  const events = await fetchClubEvents(locale).catch(() => getAllEvents());
   const total = events.reduce((sum, e) => sum + e.participants, 0);
 
   return (

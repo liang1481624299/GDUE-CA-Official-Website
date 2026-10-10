@@ -21,6 +21,7 @@ from app.schemas.announcement import (
     AnnouncementUpdate,
 )
 from app.utils.crud import apply_eq, apply_search, paginate
+from app.utils.translator import translate_obj_fields
 
 # 公开接口（无鉴权）
 public_router = APIRouter(prefix="/api/announcements", tags=["announcements-public"])
@@ -45,6 +46,7 @@ def _is_in_effect(a: Announcement, now: datetime) -> bool:
 @public_router.get("", response_model=list[AnnouncementPublicOut])
 async def list_public_announcements(
     category: Literal["homepage", "home"] | None = Query(default=None),
+    lang: str | None = Query(default=None, max_length=16, description="显示语言；传入时标题/内容自动翻译（缓存加速，失败回退原文）"),
     db: AsyncSession = Depends(get_db),
 ):
     """前端公开接口：自动过滤【时间生效中 + 已启用】，按 priority 降序。"""
@@ -62,9 +64,16 @@ async def list_public_announcements(
         ((Announcement.start_at.is_(None)) | (Announcement.start_at <= now_naive))
         & ((Announcement.end_at.is_(None)) | (Announcement.end_at >= now_naive))
     )
-    stmt = stmt.order_by(Announcement.priority.desc(), Announcement.created_at.desc())
+    # 同优先级按公告日期（start_at）倒序，最新公告在前；未设生效时间的按创建时间兜底
+    stmt = stmt.order_by(
+        Announcement.priority.desc(), Announcement.start_at.desc(), Announcement.created_at.desc()
+    )
     result = await db.execute(stmt)
-    return result.scalars().all()
+    # 翻译 Out 副本而非 ORM 实体，避免译文随 get_db 统一 commit 污染源数据
+    outs = [AnnouncementPublicOut.model_validate(a) for a in result.scalars().all()]
+    if lang:
+        await translate_obj_fields(db, outs, ("title", "content"), lang)
+    return outs
 
 
 # ---------- 管理：分页列表 ----------
@@ -84,7 +93,8 @@ async def admin_list_announcements(
     if enabled is not None:
         stmt = apply_eq(stmt, Announcement.enabled, enabled)
     stmt = apply_search(stmt, [Announcement.title, Announcement.content], q)
-    stmt = stmt.order_by(Announcement.created_at.desc())
+    # 按公告日期（start_at）倒序，最新公告始终在最顶部；未设生效时间的按创建时间兜底
+    stmt = stmt.order_by(Announcement.start_at.desc(), Announcement.created_at.desc())
     return await paginate(db, stmt, page, page_size, out_model=AnnouncementOut)
 
 
