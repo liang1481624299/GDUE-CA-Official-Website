@@ -21,7 +21,14 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.permissions import require_permission
-from app.db.models import AuditLog, BugReport, Registration
+from app.db.models import (
+    Activity,
+    AuditLog,
+    BugReport,
+    PasswordResetRequest,
+    Registration,
+    RegistrationStatus,
+)
 from app.db.session import get_db
 from app.schemas.common import UTCDatetime
 
@@ -58,6 +65,44 @@ class AccessStatsOut(BaseModel):
     total_events: int
     unique_ips: int
     top_ips: list[IpSourceStat]
+
+
+class OverviewOut(BaseModel):
+    """仪表盘聚合：各模块待办计数（首屏单请求替代多全量列表）。"""
+
+    activities_total: int
+    registrations_pending: int
+    bugs_open: int
+    resets_pending: int
+
+
+@router.get("/overview", response_model=OverviewOut)
+async def get_overview(
+    user: Annotated[dict, Depends(require_permission("dashboard", "view"))],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    """仪表盘待办聚合：SQL COUNT 直查，不拉全量列表。"""
+    activities_total = (await db.execute(
+        select(func.count()).select_from(Activity)
+    )).scalar_one()
+    registrations_pending = (await db.execute(
+        select(func.count()).select_from(Registration)
+        .where(Registration.status == RegistrationStatus.PENDING)
+    )).scalar_one()
+    bugs_open = (await db.execute(
+        select(func.count()).select_from(BugReport)
+        .where(BugReport.resolved.is_(False))
+    )).scalar_one()
+    resets_pending = (await db.execute(
+        select(func.count()).select_from(PasswordResetRequest)
+        .where(PasswordResetRequest.status == "pending")
+    )).scalar_one()
+    return OverviewOut(
+        activities_total=activities_total,
+        registrations_pending=registrations_pending,
+        bugs_open=bugs_open,
+        resets_pending=resets_pending,
+    )
 
 
 @router.get("/access", response_model=AccessStatsOut)
