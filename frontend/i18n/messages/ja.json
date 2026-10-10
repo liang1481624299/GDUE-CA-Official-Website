@@ -991,6 +991,10 @@
       "permDefaultView": "ロール既定：閲覧",
       "permDefaultNone": "ロール既定：権限なし",
       "permSave": "権限を保存",
+      "batchEnable": "一括有効化",
+      "batchDisable": "一括無効化",
+      "batchSelected": "{count} 件のアカウントを選択中",
+      "batchDisableConfirm": "選択中の {count} 件のアカウントを無効化しますか？ログインセッションは直ちに無効になります",
       "roles": {
         "super_admin": "スーパー管理者",
         "admin": "管理者",

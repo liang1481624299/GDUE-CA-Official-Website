@@ -991,6 +991,10 @@
       "permDefaultView": "角色默认：查看",
       "permDefaultNone": "角色默认：无权限",
       "permSave": "保存权限",
+      "batchEnable": "批量启用",
+      "batchDisable": "批量停用",
+      "batchSelected": "已选 {count} 个账号",
+      "batchDisableConfirm": "确认停用选中的 {count} 个账号？其登录会话将立即下线",
       "roles": {
         "super_admin": "超级管理员",
         "admin": "管理员",

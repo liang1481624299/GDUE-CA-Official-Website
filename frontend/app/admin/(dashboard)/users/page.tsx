@@ -12,6 +12,8 @@ import {
   Trash2,
   Plus,
   Pencil,
+  Power,
+  PowerOff,
   ShieldCheck,
   Shield,
   UserPen,
@@ -30,10 +32,13 @@ import {
 } from "@/components/ui/card";
 import {
   listUsers,
+  batchUpdateUsers,
   deleteUser,
   updateUser,
   fetchProfile,
 } from "@/lib/api/auth";
+import { BatchBar } from "@/components/admin/review/BatchBar";
+import { useBatchSelection } from "@/components/admin/review/useBatchSelection";
 import { UserFilterBar, type UserFilters } from "@/components/admin/users/UserFilterBar";
 import { UserCreateDialog } from "@/components/admin/users/UserCreateDialog";
 import { ResetPasswordDialog } from "@/components/admin/users/ResetPasswordDialog";
@@ -205,6 +210,27 @@ export default function UsersPage() {
     isSuperAdmin && u.id !== myId && u.role !== "super_admin";
   const canToggleActive = (u: AdminUser) => isSuperAdmin && u.id !== myId;
 
+  // 批量启停：仅 super_admin 可选他人（自己不可选，后端同样拒绝含自己的请求）
+  const [batching, setBatching] = useState(false);
+  const selection = useBatchSelection(users, canToggleActive);
+
+  async function handleBatch(next: boolean) {
+    const ids = [...selection.selected];
+    if (ids.length === 0) return;
+    if (!next && !confirm(t("admin.users.batchDisableConfirm", { count: ids.length }))) return;
+    setBatching(true);
+    setError(null);
+    try {
+      await batchUpdateUsers(ids, next);
+      selection.clear();
+      await load(filters);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBatching(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -259,19 +285,43 @@ export default function UsersPage() {
               <table className="w-full table-fixed text-sm">
                 <thead className="border-b border-border bg-muted/30">
                   <tr className="text-left">
-                    <th className="px-3 py-3 font-medium text-muted-foreground w-[14%]">{t("admin.users.colDisplayName")}</th>
+                    {isSuperAdmin && (
+                      <th className="px-3 py-3 w-[4%]">
+                        <input
+                          type="checkbox"
+                          checked={selection.allSelected}
+                          onChange={selection.toggleAll}
+                          className="h-4 w-4 accent-primary cursor-pointer"
+                          aria-label={t("admin.users.batchSelected", { count: selection.selected.size })}
+                        />
+                      </th>
+                    )}
+                    <th className="px-3 py-3 font-medium text-muted-foreground w-[12%]">{t("admin.users.colDisplayName")}</th>
                     <th className="px-3 py-3 font-medium text-muted-foreground w-[11%]">{t("admin.users.colRealName")}</th>
                     <th className="px-3 py-3 font-medium text-muted-foreground w-[11%]">{t("admin.users.colStudentId")}</th>
                     <th className="px-3 py-3 font-medium text-muted-foreground w-[13%]">{t("admin.users.colPhone")}</th>
                     <th className="px-3 py-3 font-medium text-muted-foreground w-[15%]">{t("admin.users.colEmail")}</th>
                     <th className="px-3 py-3 font-medium text-muted-foreground w-[12%]">{t("admin.users.colRole")}</th>
                     <th className="px-3 py-3 font-medium text-muted-foreground w-[9%]">{t("admin.users.colStatus")}</th>
-                    <th className="px-3 py-3 font-medium text-muted-foreground text-right w-[15%]">{t("admin.users.colActions")}</th>
+                    <th className="px-3 py-3 font-medium text-muted-foreground text-right w-[13%]">{t("admin.users.colActions")}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {users.map((u) => (
                     <tr key={u.id} className="border-b border-border last:border-0 hover:bg-muted/20 align-top">
+                      {isSuperAdmin && (
+                        <td className="px-3 py-3">
+                          {editingId === u.id ? null : canToggleActive(u) ? (
+                            <input
+                              type="checkbox"
+                              checked={selection.selected.has(u.id)}
+                              onChange={() => selection.toggle(u.id)}
+                              className="h-4 w-4 accent-primary cursor-pointer"
+                              aria-label={u.username}
+                            />
+                          ) : null}
+                        </td>
+                      )}
                       {editingId === u.id ? (
                         /* 编辑行 */
                         <>
@@ -433,6 +483,20 @@ export default function UsersPage() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* 批量操作浮栏 */}
+      {selection.someSelected && (
+        <BatchBar
+          countLabel={t("admin.users.batchSelected", { count: selection.selected.size })}
+          loading={batching}
+          actions={[
+            { key: "enable", label: t("admin.users.batchEnable"), icon: Power, onClick: () => handleBatch(true) },
+            { key: "disable", label: t("admin.users.batchDisable"), icon: PowerOff, variant: "destructive", onClick: () => handleBatch(false) },
+          ]}
+          cancelLabel={t("admin.users.cancel")}
+          onCancel={selection.clear}
+        />
       )}
 
       {/* 新建账号弹窗 */}

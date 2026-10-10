@@ -991,6 +991,10 @@
       "permDefaultView": "Role default: view",
       "permDefaultNone": "Role default: none",
       "permSave": "Save permissions",
+      "batchEnable": "Enable selected",
+      "batchDisable": "Disable selected",
+      "batchSelected": "{count} accounts selected",
+      "batchDisableConfirm": "Disable the selected {count} accounts? Their sessions will be revoked immediately",
       "roles": {
         "super_admin": "Super Admin",
         "admin": "Admin",

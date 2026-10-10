@@ -211,6 +211,15 @@ export function updateUser(id: number, payload: UserUpdatePayload) {
   });
 }
 
+/** super_admin 批量启停账号（不能包含自己） */
+export function batchUpdateUsers(ids: number[], is_active: boolean) {
+  return apiFetch<{ updated: number; not_found: number[] }>("/api/auth/users/batch", {
+    method: "POST",
+    withAuth: true,
+    body: JSON.stringify({ ids, is_active }),
+  });
+}
+
 /** super_admin 重置账号密码：生成一次性临时密码，账号下次登录强制改密 */
 export function resetUserPassword(id: number) {
   return apiFetch<{ temp_password: string }>(

@@ -991,6 +991,10 @@
       "permDefaultView": "角色預設：檢視",
       "permDefaultNone": "角色預設：無權限",
       "permSave": "儲存權限",
+      "batchEnable": "批量啟用",
+      "batchDisable": "批量停用",
+      "batchSelected": "已選 {count} 個帳號",
+      "batchDisableConfirm": "確認停用選中的 {count} 個帳號？其登入會話將立即下線",
       "roles": {
         "super_admin": "超級管理員",
         "admin": "管理員",
