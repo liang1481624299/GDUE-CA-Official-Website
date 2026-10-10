@@ -599,6 +599,14 @@ TLS 1.0/1.1 与 SSL 2.0/3.0 不启用：已被 RFC 8996 废弃、PCI-DSS 禁止�
 - 报名人员无账号，无法登录后端
 - 报名系统明确区分活动报名和社团报名，分别使用不同表单和提交接口
 
+## 贡献者
+
+| 成员 | GitHub |
+| --- | --- |
+| past-ee | [@paperee](https://github.com/paperee) |
+| Dylan Liang | [@liang1481624299](https://github.com/liang1481624299) |
+| Yuki | [@binaryYuki](https://github.com/binaryYuki) |
+
 ## 版权声明
 
 © 广东第二师范学院计算机协会。本项目源代码仅供社团内部学习与运营使用，未经许可不得用于商业用途。
