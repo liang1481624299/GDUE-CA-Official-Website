@@ -44,5 +44,7 @@ def csrf(client) -> dict:
 @pytest.fixture(autouse=True)
 def _reset_rate_limit():
     from app.core import rate_limit
+    from app.core import middleware
     rate_limit.reset()
+    middleware._rate_buckets.clear()  # 全局 IP 令牌桶：不清会跨用例累积成 429
     yield
