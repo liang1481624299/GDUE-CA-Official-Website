@@ -1261,7 +1261,7 @@
       "templateBtn": "テンプレートをダウンロード",
       "importBtn": "一括インポート",
       "importTitle": "Excel からメンバーを一括インポート",
-      "importHint": "まず空白テンプレートをダウンロードして記入（名簿と同じ列構成）し、アップロードしてください。氏名で重複判定します。",
+      "importHint": "まず空白テンプレートをダウンロードして記入し、アップロードしてください。氏名で重複判定します。",
       "importModeSkip": "重複をスキップ",
       "importModeUpdate": "登録情報を更新",
       "importSubmit": "インポート開始",
@@ -1458,7 +1458,10 @@
         "approved": "承認",
         "rejected": "却下",
         "checkedIn": "チェックイン",
-        "generatedAt": "生成日時"
+        "generatedAt": "生成日時",
+        "liveTitle": "リアルタイム申込",
+        "liveEmpty": "アクティビティがありません",
+        "snapshotTitle": "スナップショット"
       },
       "recruitment": {
         "title": "リクルート統計",

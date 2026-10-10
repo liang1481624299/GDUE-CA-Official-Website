@@ -1261,7 +1261,7 @@
       "templateBtn": "下载导入模板",
       "importBtn": "批量导入",
       "importTitle": "Excel 批量导入成员",
-      "importHint": "先下载空白模板填写（表头与社团成员信息表一致），再上传。按姓名去重。",
+      "importHint": "先下载空白模板填写，再上传。按姓名去重。",
       "importModeSkip": "跳过重复成员",
       "importModeUpdate": "更新成员信息",
       "importSubmit": "开始导入",
@@ -1458,7 +1458,10 @@
         "approved": "通过",
         "rejected": "拒绝",
         "checkedIn": "签到",
-        "generatedAt": "统计生成时间"
+        "generatedAt": "统计生成时间",
+        "liveTitle": "实时报名",
+        "liveEmpty": "暂无活动",
+        "snapshotTitle": "历史快照"
       },
       "recruitment": {
         "title": "招新统计",

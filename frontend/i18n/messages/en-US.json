@@ -1458,7 +1458,10 @@
         "approved": "Approved",
         "rejected": "Rejected",
         "checkedIn": "Checked-in",
-        "generatedAt": "Generated at"
+        "generatedAt": "Generated at",
+        "liveTitle": "Live registrations",
+        "liveEmpty": "No activities",
+        "snapshotTitle": "Snapshots"
       },
       "recruitment": {
         "title": "Recruitment Statistics",

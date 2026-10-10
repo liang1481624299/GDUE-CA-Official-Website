@@ -1458,7 +1458,10 @@
         "approved": "通過",
         "rejected": "拒絕",
         "checkedIn": "簽到",
-        "generatedAt": "統計生成時間"
+        "generatedAt": "統計生成時間",
+        "liveTitle": "即時報名",
+        "liveEmpty": "暫無活動",
+        "snapshotTitle": "歷史快照"
       },
       "recruitment": {
         "title": "招新統計",

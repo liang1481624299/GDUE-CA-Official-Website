@@ -1261,7 +1261,7 @@
       "templateBtn": "下載匯入範本",
       "importBtn": "批次匯入",
       "importTitle": "Excel 批次匯入成員",
-      "importHint": "先下載空白範本填寫（表頭與社團成員資訊表一致），再上傳。按姓名去重。",
+      "importHint": "先下載空白範本填寫，再上傳。按姓名去重。",
       "importModeSkip": "略過重複成員",
       "importModeUpdate": "更新成員資訊",
       "importSubmit": "開始匯入",
@@ -1458,7 +1458,10 @@
         "approved": "通過",
         "rejected": "拒絕",
         "checkedIn": "簽到",
-        "generatedAt": "統計生成時間"
+        "generatedAt": "統計生成時間",
+        "liveTitle": "即時報名",
+        "liveEmpty": "暫無活動",
+        "snapshotTitle": "歷史快照"
       },
       "recruitment": {
         "title": "招新統計",

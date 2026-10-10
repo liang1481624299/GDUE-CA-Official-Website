@@ -33,6 +33,18 @@ class ActivityStatOut(BaseModel):
     generated_at: UTCDatetime | None = None
 
 
+class ActivityLiveStatOut(BaseModel):
+    """进行中活动的实时报名计数（直接聚合 registrations，非快照）。"""
+    activity_id: int
+    activity_name: str
+    status: str
+    total: int
+    pending: int
+    approved: int
+    rejected: int
+    checked_in: int
+
+
 @router.get("/activities")
 async def activity_statistics(
     user: dict = Depends(require_permission("stats", "view")),
@@ -52,6 +64,45 @@ async def activity_statistics(
             generated_at=s.generated_at,
         ).model_dump(mode="json")
         for s, name in rows
+    ]
+
+
+def _status_sum(status: RegistrationStatus):
+    """条件计数：SQLite/PostgreSQL 通用（bool cast + coalesce）。"""
+    return func.sum(func.coalesce(
+        func.cast(Registration.status == status, Integer), 0
+    ))
+
+
+@router.get("/activities/live", response_model=list[ActivityLiveStatOut])
+async def activity_live_statistics(
+    user: dict = Depends(require_permission("stats", "view")),
+    db: AsyncSession = Depends(get_db),
+):
+    """全部活动的实时报名计数（LEFT JOIN：无报名的活动也出现，便于进行中活动盯数）。"""
+    rows = (await db.execute(
+        select(
+            Activity.id,
+            Activity.title,
+            Activity.status,
+            func.count(Registration.id).label("total"),
+            _status_sum(RegistrationStatus.PENDING).label("pending"),
+            _status_sum(RegistrationStatus.APPROVED).label("approved"),
+            _status_sum(RegistrationStatus.REJECTED).label("rejected"),
+            _status_sum(RegistrationStatus.CHECKED_IN).label("checked_in"),
+        )
+        .outerjoin(Registration, Registration.activity_id == Activity.id)
+        .group_by(Activity.id)
+        .order_by(Activity.id.desc())
+        .limit(100)
+    )).all()
+    return [
+        ActivityLiveStatOut(
+            activity_id=i, activity_name=name, status=st.value,
+            total=int(t), pending=int(p or 0), approved=int(a or 0),
+            rejected=int(r or 0), checked_in=int(c or 0),
+        )
+        for i, name, st, t, p, a, r, c in rows
     ]
 
 

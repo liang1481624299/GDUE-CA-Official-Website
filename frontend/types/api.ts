@@ -700,6 +700,18 @@ export interface ActivityStatRow extends ActivityStatistics {
   activity_name: string;
 }
 
+/** 活动实时报名计数（GET /api/admin/stats/activities/live） */
+export interface ActivityLiveStatRow {
+  activity_id: number;
+  activity_name: string;
+  status: string;
+  total: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+  checked_in: number;
+}
+
 /** 招新统计分组计数 */
 export interface RecruitmentGroupStat {
   key: string;
