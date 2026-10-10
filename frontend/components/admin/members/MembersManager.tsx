@@ -4,11 +4,13 @@
  * 成员管理组件
  *
  * - 列表：搜索 / 届别筛选 / 归档筛选 / 服务端分页 / 头像+姓名+职务+徽章行
+ * - 批量勾选：全选本页 / 跨页保留，批量改届别与职务
+ * - Excel 导入：下载空白模板（表头复刻成员信息表），上传后按姓名去重（跳过/更新）
  * - 创建与编辑共用 Dialog：姓名、职务、届别、简介、排序、归档开关
  * - 头像上传：前端先校验格式（JPG/PNG/WEBP）与大小（≤5MB）再调用上传接口
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Loader2, Plus, Pencil, Trash2, UsersRound } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2, UsersRound, Download, Upload } from "lucide-react";
 import { useI18n } from "@/i18n/provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,8 +31,11 @@ import {
   adminUpdateMember,
   adminDeleteMember,
   adminUploadMemberAvatar,
+  adminDownloadMemberTemplate,
+  adminImportMembers,
+  adminBatchUpdateMembers,
 } from "@/lib/api/members";
-import type { Member, MemberTerm } from "@/types/api";
+import type { Member, MemberImportResult, MemberTerm } from "@/types/api";
 
 const PAGE_SIZE = 20;
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024; // 与后端限制一致：5MB
@@ -67,6 +72,23 @@ export function MembersManager() {
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  // 批量勾选（跨页保留 id）+ 批量改届别/职务
+  const [selected, setSelected] = useState<number[]>([]);
+  const [batchTerm, setBatchTerm] = useState<"" | MemberTerm>("");
+  const [batchRole, setBatchRole] = useState("");
+  const [batching, setBatching] = useState(false);
+
+  // Excel 导入
+  const [importOpen, setImportOpen] = useState(false);
+  const [importMode, setImportMode] = useState<"skip" | "update">("skip");
+  const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [importResult, setImportResult] = useState<MemberImportResult | null>(null);
+  const importFileRef = useRef<HTMLInputElement | null>(null);
+
+  // 模板下载
+  const [downloading, setDownloading] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -194,15 +216,121 @@ export function MembersManager() {
     try {
       await adminDeleteMember(id);
       setNotice(t("admin.members.deleted"));
+      setSelected((s) => s.filter((x) => x !== id));
       await load();
     } catch (e) {
       alert(e instanceof Error ? e.message : "Delete failed");
     }
   }
 
+  /** 下载空白 Excel 导入模板 */
+  async function handleDownloadTemplate() {
+    setDownloading(true);
+    try {
+      const blob = await adminDownloadMemberTemplate();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "members_template.xlsx";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Download failed");
+    } finally {
+      setDownloading(false);
+    }
+  }
+
+  function openImport() {
+    setImportMode("skip");
+    setImportError(null);
+    setImportResult(null);
+    if (importFileRef.current) importFileRef.current.value = "";
+    setImportOpen(true);
+  }
+
+  /** 执行 Excel 批量导入 */
+  async function handleImport() {
+    const file = importFileRef.current?.files?.[0];
+    if (!file) {
+      setImportError(t("admin.members.importSelectFile"));
+      return;
+    }
+    setImporting(true);
+    setImportError(null);
+    try {
+      const res = await adminImportMembers(file, importMode);
+      setImportResult(res);
+      setNotice(
+        t("admin.members.importResult")
+          .replace("{total}", String(res.total))
+          .replace("{created}", String(res.created))
+          .replace("{updated}", String(res.updated))
+          .replace("{skipped}", String(res.skipped))
+          .replace("{errors}", String(res.errors.length))
+      );
+      await load();
+    } catch (e) {
+      setImportError(e instanceof Error ? e.message : "Import failed");
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  function toggleSelect(id: number) {
+    setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
+  }
+
+  function toggleSelectPage() {
+    const pageIds = items.map((m) => m.id);
+    const allChecked = pageIds.length > 0 && pageIds.every((id) => selected.includes(id));
+    setSelected((s) =>
+      allChecked ? s.filter((id) => !pageIds.includes(id)) : [...s, ...pageIds.filter((id) => !s.includes(id))]
+    );
+  }
+
+  /** 批量修改届别 / 职务 */
+  async function handleBatchApply() {
+    if (!batchTerm && !batchRole.trim()) {
+      alert(t("admin.members.batchNeedChange"));
+      return;
+    }
+    setBatching(true);
+    try {
+      const res = await adminBatchUpdateMembers({
+        ids: selected,
+        term: batchTerm || undefined,
+        role_title: batchRole.trim() || undefined,
+      });
+      setNotice(t("admin.members.batchDone").replace("{count}", String(res.updated)));
+      setSelected([]);
+      setBatchTerm("");
+      setBatchRole("");
+      await load();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Batch update failed");
+    } finally {
+      setBatching(false);
+    }
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2 flex-wrap">
+        <Button variant="outline" onClick={handleDownloadTemplate} disabled={downloading}>
+          {downloading ? (
+            <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+          ) : (
+            <Download className="h-4 w-4 mr-1.5" />
+          )}
+          {downloading ? t("admin.members.downloading") : t("admin.members.templateBtn")}
+        </Button>
+        <Button variant="outline" onClick={openImport}>
+          <Upload className="h-4 w-4 mr-1.5" />
+          {t("admin.members.importBtn")}
+        </Button>
         <Button onClick={openCreate}>
           <Plus className="h-4 w-4 mr-1.5" />
           {t("admin.members.addBtn")}
@@ -213,6 +341,38 @@ export function MembersManager() {
         <p className="text-sm text-emerald-600 bg-emerald-500/10 px-3 py-2 rounded-md">
           {notice}
         </p>
+      )}
+
+      {/* 批量操作栏（勾选后出现）：改届别 / 职务 */}
+      {selected.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap rounded-md border border-border bg-card px-3 py-2">
+          <span className="text-sm font-medium">
+            {t("admin.members.batchSelected").replace("{count}", String(selected.length))}
+          </span>
+          <select
+            value={batchTerm}
+            onChange={(e) => setBatchTerm(e.target.value as "" | MemberTerm)}
+            className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+            aria-label={t("admin.members.colTerm")}
+          >
+            <option value="">{t("admin.members.batchTerm")}</option>
+            <option value="current">{t("admin.members.termCurrent")}</option>
+            <option value="former">{t("admin.members.termFormer")}</option>
+          </select>
+          <Input
+            placeholder={t("admin.members.batchRole")}
+            value={batchRole}
+            onChange={(e) => setBatchRole(e.target.value)}
+            className="max-w-52"
+          />
+          <Button size="sm" onClick={handleBatchApply} disabled={batching}>
+            {batching && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+            {t("admin.members.batchApply")}
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setSelected([])}>
+            {t("admin.members.batchClear")}
+          </Button>
+        </div>
       )}
 
       <Card>
@@ -272,11 +432,28 @@ export function MembersManager() {
             </p>
           ) : (
             <div className="space-y-2">
+              {/* 全选本页 */}
+              <label className="flex items-center gap-2 px-3 text-xs text-muted-foreground cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={items.length > 0 && items.every((m) => selected.includes(m.id))}
+                  onChange={toggleSelectPage}
+                  className="h-4 w-4 accent-primary cursor-pointer"
+                />
+                {t("admin.members.selectAll")}
+              </label>
               {items.map((m) => (
                 <div
                   key={m.id}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-md bg-muted/40 hover:bg-muted/60 transition-colors"
                 >
+                  <input
+                    type="checkbox"
+                    checked={selected.includes(m.id)}
+                    onChange={() => toggleSelect(m.id)}
+                    aria-label={m.name}
+                    className="h-4 w-4 accent-primary cursor-pointer shrink-0"
+                  />
                   {/* 头像：有 URL 显示图片，否则回退姓名首字 */}
                   {m.avatar_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -310,6 +487,22 @@ export function MembersManager() {
                     {m.bio && (
                       <p className="text-xs text-muted-foreground line-clamp-1">{m.bio}</p>
                     )}
+                    {/* 花名册信息（仅管理端可见，含电话） */}
+                    {(() => {
+                      const parts = [
+                        m.gender,
+                        m.grade,
+                        m.department,
+                        m.major_class,
+                        m.phone,
+                        m.political_status,
+                      ].filter(Boolean);
+                      return parts.length > 0 ? (
+                        <p className="text-xs text-muted-foreground line-clamp-1">
+                          {parts.join(" · ")}
+                        </p>
+                      ) : null;
+                    })()}
                   </div>
                   <div className="text-xs text-muted-foreground whitespace-nowrap hidden sm:block">
                     {t("admin.members.colDisplayOrder")}: {m.display_order}
@@ -479,6 +672,85 @@ export function MembersManager() {
               <Button onClick={handleSave} disabled={saving}>
                 {saving && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
                 {t("admin.members.saveBtn")}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 批量导入弹窗 */}
+      <Dialog open={importOpen} onOpenChange={setImportOpen}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{t("admin.members.importTitle")}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">{t("admin.members.importHint")}</p>
+            <div className="flex items-center gap-4 text-sm">
+              <label className="flex items-center gap-1.5 cursor-pointer">
+                <input
+                  type="radio"
+                  name="member-import-mode"
+                  checked={importMode === "skip"}
+                  onChange={() => setImportMode("skip")}
+                  className="h-4 w-4 accent-primary cursor-pointer"
+                />
+                {t("admin.members.importModeSkip")}
+              </label>
+              <label className="flex items-center gap-1.5 cursor-pointer">
+                <input
+                  type="radio"
+                  name="member-import-mode"
+                  checked={importMode === "update"}
+                  onChange={() => setImportMode("update")}
+                  className="h-4 w-4 accent-primary cursor-pointer"
+                />
+                {t("admin.members.importModeUpdate")}
+              </label>
+            </div>
+            <Input
+              ref={importFileRef}
+              type="file"
+              accept=".xlsx,.xlsm"
+              className="max-w-xs"
+            />
+            {importError && (
+              <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md">
+                {importError}
+              </p>
+            )}
+            {importResult && (
+              <div className="space-y-2 rounded-md border border-border p-3 text-sm">
+                <p>
+                  {t("admin.members.importResult")
+                    .replace("{total}", String(importResult.total))
+                    .replace("{created}", String(importResult.created))
+                    .replace("{updated}", String(importResult.updated))
+                    .replace("{skipped}", String(importResult.skipped))
+                    .replace("{errors}", String(importResult.errors.length))}
+                </p>
+                {importResult.errors.length > 0 && (
+                  <div className="space-y-1">
+                    <p className="font-medium">{t("admin.members.importErrorsTitle")}</p>
+                    <ul className="max-h-40 overflow-y-auto space-y-1 text-xs text-muted-foreground">
+                      {importResult.errors.map((e, i) => (
+                        <li key={i}>
+                          {t("admin.members.importRow").replace("{row}", String(e.row))}
+                          {e.name ? ` ${e.name}` : ""}：{e.reason}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setImportOpen(false)}>
+                {t("admin.members.cancelBtn")}
+              </Button>
+              <Button onClick={handleImport} disabled={importing}>
+                {importing && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+                {importing ? t("admin.members.importing") : t("admin.members.importSubmit")}
               </Button>
             </div>
           </div>

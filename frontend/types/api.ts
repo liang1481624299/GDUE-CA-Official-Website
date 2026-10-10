@@ -473,6 +473,15 @@ export interface Member {
   display_order: number;
   archived: boolean;
   created_at: string;
+  gender: string | null;
+  grade: string | null;
+  department: string | null;
+  major_class: string | null;
+  // 仅管理端返回
+  phone?: string | null;
+  wechat?: string | null;
+  political_status?: string | null;
+  is_intl_student?: boolean;
 }
 
 export interface MemberCreate {
@@ -483,6 +492,14 @@ export interface MemberCreate {
   avatar_url?: string;
   display_order?: number;
   archived?: boolean;
+  gender?: string;
+  grade?: string;
+  department?: string;
+  major_class?: string;
+  phone?: string;
+  wechat?: string;
+  political_status?: string;
+  is_intl_student?: boolean;
 }
 
 export interface MemberUpdate {
@@ -493,6 +510,28 @@ export interface MemberUpdate {
   avatar_url?: string;
   display_order?: number;
   archived?: boolean;
+  gender?: string;
+  grade?: string;
+  department?: string;
+  major_class?: string;
+  phone?: string;
+  wechat?: string;
+  political_status?: string;
+  is_intl_student?: boolean;
+}
+
+export interface MemberImportError {
+  row: number;
+  name: string;
+  reason: string;
+}
+
+export interface MemberImportResult {
+  total: number;
+  created: number;
+  updated: number;
+  skipped: number;
+  errors: MemberImportError[];
 }
 
 /* ---------- 招新信息（Phase 3） ---------- */

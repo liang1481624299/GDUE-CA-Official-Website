@@ -433,6 +433,15 @@ class Member(Base):
     name: Mapped[str] = mapped_column(String(64))
     # 职务（如「会长」「技术部部长」）
     role_title: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # 花名册扩展字段（Excel 批量导入；电话/微信仅管理端可见，不进公开接口）
+    gender: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    grade: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    department: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    major_class: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    phone: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    wechat: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    political_status: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    is_intl_student: Mapped[bool] = mapped_column(Boolean, default=False)
     term: Mapped[MemberTerm] = mapped_column(
         SAEnum(MemberTerm), default=MemberTerm.CURRENT, index=True
     )

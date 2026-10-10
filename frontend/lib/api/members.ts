@@ -8,6 +8,7 @@ import { API_BASE_URL } from "./client";
 import type {
   Member,
   MemberCreate,
+  MemberImportResult,
   MemberTerm,
   MemberUpdate,
   Paginated,
@@ -67,6 +68,59 @@ export function adminDeleteMember(id: number) {
   });
 }
 
+/** 管理：下载空白 Excel 导入模板 */
+export async function adminDownloadMemberTemplate(): Promise<Blob> {
+  const res = await secureFetch("/api/admin/members/template");
+  if (!res.ok) {
+    let detail: unknown = null;
+    try { detail = await res.json(); } catch { /* ignore */ }
+    const { ApiError } = await import("./client");
+    throw new ApiError(
+      res.status,
+      detail,
+      typeof detail === "string" ? detail : "模板下载失败"
+    );
+  }
+  return res.blob();
+}
+
+/** 管理：Excel 批量导入（mode=skip 跳过重复 / update 更新信息） */
+export async function adminImportMembers(
+  file: File,
+  mode: "skip" | "update" = "skip"
+): Promise<MemberImportResult> {
+  const fd = new FormData();
+  fd.append("file", file);
+  fd.append("mode", mode);
+  const res = await secureFetch("/api/admin/members/import", {
+    method: "POST",
+    body: fd,
+  });
+  if (!res.ok) {
+    let detail: unknown = null;
+    try { detail = await res.json(); } catch { /* ignore */ }
+    const { ApiError } = await import("./client");
+    throw new ApiError(
+      res.status,
+      detail,
+      typeof detail === "string" ? detail : "批量导入失败"
+    );
+  }
+  return res.json();
+}
+
+/** 管理：批量修改届别 / 职务（两项至少传一项） */
+export function adminBatchUpdateMembers(payload: {
+  ids: number[];
+  term?: MemberTerm;
+  role_title?: string;
+}): Promise<{ updated: number; not_found: number[] }> {
+  return apiFetch("/api/admin/members/batch", {
+    method: "POST",
+    withAuth: true,
+    body: JSON.stringify(payload),
+  });
+}
 /** 管理员上传成员头像（multipart/form-data，特殊：不能走 apiFetch JSON） */
 export async function adminUploadMemberAvatar(file: File): Promise<{ avatar_url: string }> {
   const fd = new FormData();

@@ -76,6 +76,17 @@ async def _migrate_columns(conn):
             ("source", "VARCHAR(16) NOT NULL DEFAULT 'form'"),
         ],
         "bug_reports": [("submit_ip", "VARCHAR(64) NULL")],
+        # 成员花名册扩展字段（Excel 批量导入；电话/微信仅管理端可见）
+        "members": [
+            ("gender", "VARCHAR(8) NULL"),
+            ("grade", "VARCHAR(32) NULL"),
+            ("department", "VARCHAR(64) NULL"),
+            ("major_class", "VARCHAR(64) NULL"),
+            ("phone", "VARCHAR(32) NULL"),
+            ("wechat", "VARCHAR(64) NULL"),
+            ("political_status", "VARCHAR(32) NULL"),
+            ("is_intl_student", "BOOLEAN DEFAULT 0"),
+        ],
         "login_sessions": [
             ("location_zh", "VARCHAR(128) NULL"),
             ("location_en", "VARCHAR(128) NULL"),
