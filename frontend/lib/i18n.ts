@@ -3,7 +3,7 @@
  * 定义支持的语言列表、默认语言、语言显示名称
  */
 
-export const locales = ["zh-CN", "zh-TW", "en", "ja"] as const;
+export const locales = ["zh-CN", "zh-TW", "zh-HK", "en-US", "en-GB", "ja"] as const;
 export type Locale = (typeof locales)[number];
 
 export const defaultLocale: Locale = "zh-CN";
@@ -11,8 +11,10 @@ export const defaultLocale: Locale = "zh-CN";
 /** 语言显示名称（用于语言切换下拉） */
 export const localeNames: Record<Locale, string> = {
   "zh-CN": "简体中文",
-  "zh-TW": "繁體中文",
-  en: "English",
+  "zh-TW": "繁體中文（台灣）",
+  "zh-HK": "繁體中文（香港）",
+  "en-US": "English (US)",
+  "en-GB": "English (UK)",
   ja: "日本語",
 };
 
@@ -20,7 +22,9 @@ export const localeNames: Record<Locale, string> = {
 export const localeHtmlLang: Record<Locale, string> = {
   "zh-CN": "zh-CN",
   "zh-TW": "zh-TW",
-  en: "en",
+  "zh-HK": "zh-HK",
+  "en-US": "en-US",
+  "en-GB": "en-GB",
   ja: "ja",
 };
 

@@ -145,21 +145,27 @@ export function SettingsDropdown() {
 
         <div className="-mx-1 my-1 h-px bg-muted" />
 
-        {/* 语言 */}
+        {/* 语言：列表限高滚动（滚轮菜单），语言增多时面板不会被撑爆 */}
         <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
           {t("nav.language")}
         </div>
-        {locales.map((loc) => (
-          <button
-            key={loc}
-            type="button"
-            onClick={() => switchLocale(loc)}
-            className="relative flex w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
-          >
-            {localeNames[loc]}
-            {loc === locale && <Check className="h-3.5 w-3.5 ml-auto text-primary" />}
-          </button>
-        ))}
+        <div
+          className="max-h-40 overflow-y-auto"
+          role="group"
+          aria-label={t("nav.language")}
+        >
+          {locales.map((loc) => (
+            <button
+              key={loc}
+              type="button"
+              onClick={() => switchLocale(loc)}
+              className="relative flex w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+            >
+              {localeNames[loc]}
+              {loc === locale && <Check className="h-3.5 w-3.5 ml-auto text-primary" />}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
+import { notFound } from "next/navigation";
 import Script from "next/script";
-import { locales, defaultLocale, localeHtmlLang, type Locale } from "@/lib/i18n";
+import { locales, defaultLocale, localeHtmlLang, isLocale, type Locale } from "@/lib/i18n";
 import { getDictionaryByLocale } from "@/i18n/dictionary";
 import { I18nProvider } from "@/i18n/provider";
 import { SessionHeartbeat } from "@/components/shared/SessionHeartbeat";
@@ -21,6 +22,8 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
+  // 非法语言前缀（如已下线的 /en、拼错的 /fr）→ 404，避免字典加载 KeyError
+  if (!isLocale(locale)) notFound();
   const dict = await getDictionaryByLocale(locale as Locale);
   return {
     title: {
@@ -77,7 +80,9 @@ export default async function LocaleLayout({
   params: Promise<{ locale: string }>;
 }) {
   const { locale: localeStr } = await params;
-  const locale = localeStr as Locale;
+  // 非法语言前缀（如已下线的 /en、拼错的 /fr）→ 404
+  if (!isLocale(localeStr)) notFound();
+  const locale: Locale = localeStr;
   const messages = await getDictionaryByLocale(locale);
   // proxy.ts 生成的 CSP nonce：手写内联脚本必须携带，否则会被 CSP 拦截
   const nonce = (await headers()).get("x-nonce") ?? undefined;

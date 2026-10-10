@@ -15,15 +15,16 @@ export type Messages = typeof import("@/i18n/messages/zh-CN.json");
 const dictionaries = {
   "zh-CN": () =>
     import("@/i18n/messages/zh-CN.json").then((m) => m.default),
-  "zh-TW": () =>
-    import("@/i18n/messages/zh-TW.json").then((m) => m.default),
-  en: () => import("@/i18n/messages/en.json").then((m) => m.default),
+  "zh-TW": () => import("@/i18n/messages/zh-TW.json").then((m) => m.default),
+  "zh-HK": () => import("@/i18n/messages/zh-HK.json").then((m) => m.default),
+  "en-US": () => import("@/i18n/messages/en-US.json").then((m) => m.default),
+  "en-GB": () => import("@/i18n/messages/en-GB.json").then((m) => m.default),
   ja: () => import("@/i18n/messages/ja.json").then((m) => m.default),
 } as const;
 
 /**
  * 从当前请求的 URL 路径中解析 locale 前缀
- * 例如：/zh-CN/about -> "zh-CN"，/en -> "en"
+ * 例如：/zh-CN/about -> "zh-CN"，/en-GB -> "en-GB"
  * 优先使用页面 params 传入的 locale（App Router / SSG 构建时 header 不可用，params 是唯一可靠来源）；
  * 未传时 fallback 到请求 header 推断，最后回退 defaultLocale
  */
@@ -39,7 +40,7 @@ export async function getLocale(paramLocale?: string): Promise<Locale> {
     headerList.get("referer") ??
     "";
   // 从路径中提取 locale 前缀
-  const match = path.match(/\/(zh-CN|zh-TW|en|ja)(?:\/|$)/);
+  const match = path.match(/\/(zh-CN|zh-TW|zh-HK|en-US|en-GB|ja)(?:\/|$)/);
   const loc = match?.[1] ?? defaultLocale;
   if (!isLocale(loc)) return defaultLocale;
   return loc;

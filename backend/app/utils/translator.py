@@ -18,6 +18,14 @@ logger = logging.getLogger("gdueca.translator")
 
 SUPPORTED_LANGS = {"zh-CN", "zh-TW", "en", "ja"}
 
+# 前端语言路由拆分后，翻译目标语言归一化（翻译服务不区分英语/繁体区域变体）
+_LANG_ALIASES = {"en-US": "en", "en-GB": "en", "zh-HK": "zh-TW"}
+
+
+def normalize_lang(lang: str) -> str:
+    """区域变体归一化：en-US / en-GB → en（翻译服务不区分英语区域变体）。"""
+    return _LANG_ALIASES.get(lang, lang)
+
 _GTX_URL = "https://translate.googleapis.com/translate_a/single"
 _MYMEMORY_URL = "https://api.mymemory.translated.net/get"
 
@@ -66,10 +74,11 @@ async def translate_text(
     """翻译单条文本；语言相同/翻译失败返回 None（调用方回退显示原文）。"""
     if not text or not text.strip():
         return None
+    target_lang = normalize_lang(target_lang)
     if target_lang not in SUPPORTED_LANGS:
         return None
 
-    sl = source_lang or detect_lang(text)
+    sl = normalize_lang(source_lang or detect_lang(text))
     if sl == target_lang:
         return None
 

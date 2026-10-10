@@ -13,13 +13,17 @@ import type { Locale } from "@/lib/i18n";
 import type { Messages } from "@/i18n/dictionary";
 import zhCN from "@/i18n/messages/zh-CN.json";
 import zhTW from "@/i18n/messages/zh-TW.json";
-import en from "@/i18n/messages/en.json";
+import zhHK from "@/i18n/messages/zh-HK.json";
+import enUS from "@/i18n/messages/en-US.json";
+import enGB from "@/i18n/messages/en-GB.json";
 import ja from "@/i18n/messages/ja.json";
 
 const DICTS: Record<Locale, Messages> = {
   "zh-CN": zhCN as unknown as Messages,
   "zh-TW": zhTW as unknown as Messages,
-  en: en as unknown as Messages,
+  "zh-HK": zhHK as unknown as Messages,
+  "en-US": enUS as unknown as Messages,
+  "en-GB": enGB as unknown as Messages,
   ja: ja as unknown as Messages,
 };
 

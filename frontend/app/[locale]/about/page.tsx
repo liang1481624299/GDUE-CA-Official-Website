@@ -21,17 +21,23 @@ export default async function AboutPage({
   const { locale } = await params;
   const dict = await getDictionary(locale);
 
-  /** 按当前语言取值，缺失时回退简体中文 */
-  const pick = (obj: Record<Locale, string>) => obj[locale as Locale] ?? obj["zh-CN"];
+  /** 按当前语言取值：en-GB 缺失回退 en-US，zh-HK 缺失回退 zh-TW，其余缺失回退简体中文 */
+  const pick = (obj: Partial<Record<Locale, string>>) => {
+    const direct = obj[locale as Locale];
+    if (direct) return direct;
+    if (locale === "en-GB") return obj["en-US"] ?? obj["zh-CN"];
+    if (locale === "zh-HK") return obj["zh-TW"] ?? obj["zh-CN"];
+    return obj["zh-CN"];
+  };
 
   /** 历史时间线数据（社史可考大事） */
-  const timeline: { year: string; event: Record<Locale, string> }[] = [
-    { year: "2008", event: { "zh-CN": "计算机协会成立（2008年5月31日，花都校区）", en: "Computer Association founded on May 31, 2008 (Huadu Campus)", "zh-TW": "計算機協會成立（2008年5月31日，花都校區）", ja: "コンピュータ協会設立（2008年5月31日、花都キャンパス）" } },
-    { year: "2013", event: { "zh-CN": "微软“创新之旅”校园巡讲，203 人到场", en: "Microsoft “Innovation Journey” campus tour with 203 attendees", "zh-TW": "微軟“創新之旅”校園巡講，203 人到場", ja: "マイクロソフト「イノベーションの旅」講演、203名が参加" } },
-    { year: "2017", event: { "zh-CN": "第四届 LOL 电竞比赛，冠军晋级花都区高校友谊赛", en: "4th LOL esports tournament; champions advanced to the Huadu inter-university friendly", "zh-TW": "第四屆 LOL 電競比賽，冠軍晉級花都區高校友誼賽", ja: "第4回LOL eスポーツ大会、優勝チームは花都区大学対抗戦へ進出" } },
-    { year: "2018", event: { "zh-CN": "首届“西普杯”网络安全技术挑战赛（实验楼 702）", en: "1st “Xipu Cup” cybersecurity challenge (Lab Building 702)", "zh-TW": "首屆“西普杯”網絡安全技術挑戰賽（實驗樓 702）", ja: "第1回「西普杯」サイバーセキュリティチャレンジ（実験棟702）" } },
-    { year: "2022", event: { "zh-CN": "网络安全知识竞赛“慧眼识骗 安全同行”", en: "“Sharp Eyes Against Fraud”", "zh-TW": "網絡安全知識競賽“慧眼識騙 安全同行”", ja: "「慧眼識騙・安全同行」コンテスト" } },
-    { year: "2024", event: { "zh-CN": "举办首个周年庆", en: "First anniversary held", "zh-TW": "舉辦首個週年慶", ja: "初の周年記念を開催" } },
+  const timeline: { year: string; event: Partial<Record<Locale, string>> }[] = [
+    { year: "2008", event: { "zh-CN": "计算机协会成立（2008年5月31日，花都校区）", "en-US": "Computer Association founded on May 31, 2008 (Huadu Campus)", "zh-TW": "計算機協會成立（2008年5月31日，花都校區）", ja: "コンピュータ協会設立（2008年5月31日、花都キャンパス）" } },
+    { year: "2013", event: { "zh-CN": "微软“创新之旅”校园巡讲，203 人到场", "en-US": "Microsoft “Innovation Journey” campus tour with 203 attendees", "zh-TW": "微軟“創新之旅”校園巡講，203 人到場", ja: "マイクロソフト「イノベーションの旅」講演、203名が参加" } },
+    { year: "2017", event: { "zh-CN": "第四届 LOL 电竞比赛，冠军晋级花都区高校友谊赛", "en-US": "4th LOL esports tournament; champions advanced to the Huadu inter-university friendly", "zh-TW": "第四屆 LOL 電競比賽，冠軍晉級花都區高校友誼賽", ja: "第4回LOL eスポーツ大会、優勝チームは花都区大学対抗戦へ進出" } },
+    { year: "2018", event: { "zh-CN": "首届“西普杯”网络安全技术挑战赛（实验楼 702）", "en-US": "1st “Xipu Cup” cybersecurity challenge (Lab Building 702)", "zh-TW": "首屆“西普杯”網絡安全技術挑戰賽（實驗樓 702）", ja: "第1回「西普杯」サイバーセキュリティチャレンジ（実験棟702）" } },
+    { year: "2022", event: { "zh-CN": "网络安全知识竞赛“慧眼识骗 安全同行”", "en-US": "“Sharp Eyes Against Fraud”", "zh-TW": "網絡安全知識競賽“慧眼識騙 安全同行”", ja: "「慧眼識騙・安全同行」コンテスト" } },
+    { year: "2024", event: { "zh-CN": "举办首个周年庆", "en-US": "First anniversary held", "zh-TW": "舉辦首個週年慶", ja: "初の周年記念を開催" } },
   ];
 
   /** 组织架构数据（现行“1 会长 + 1 副会长 + 5 职能理事”+ 义务维修队） */
@@ -45,17 +51,17 @@ export default async function AboutPage({
   ];
 
   /** 指导老师数据 */
-  const teachers: { name: Record<Locale, string>; title: Record<Locale, string> }[] = [
-    { name: { "zh-CN": "张谦", "zh-TW": "張謙", en: "Qian Zhang", ja: "張謙" }, title: { "zh-CN": "指导老师 · 网络工程教研室主任（2019 年起）", "zh-TW": "指導老師 · 網絡工程教研室主任（2019 年起）", en: "Advisor · Head of Network Engineering Teaching Office (since 2019)", ja: "指導教員 · ネットワーク工学教研室主任（2019年〜）" } },
-    { name: { "zh-CN": "张渝荣", "zh-TW": "張渝榮", en: "Yurong Zhang", ja: "張渝栄" }, title: { "zh-CN": "指导老师 · 计算机科学系（2013—2018 年）", "zh-TW": "指導老師 · 計算機科學系（2013—2018 年）", en: "Advisor · Computer Science Department (2013–2018)", ja: "指導教員 · コンピュータ科学系（2013〜2018年）" } },
+  const teachers: { name: Partial<Record<Locale, string>>; title: Partial<Record<Locale, string>> }[] = [
+    { name: { "zh-CN": "张谦", "zh-TW": "張謙", "en-US": "Qian Zhang", ja: "張謙" }, title: { "zh-CN": "指导老师 · 网络工程教研室主任（2019 年起）", "zh-TW": "指導老師 · 網絡工程教研室主任（2019 年起）", "en-US": "Advisor · Head of Network Engineering Teaching Office (since 2019)", ja: "指導教員 · ネットワーク工学教研室主任（2019年〜）" } },
+    { name: { "zh-CN": "张渝荣", "zh-TW": "張渝榮", "en-US": "Yurong Zhang", ja: "張渝栄" }, title: { "zh-CN": "指导老师 · 计算机科学系（2013—2018 年）", "zh-TW": "指導老師 · 計算機科學系（2013—2018 年）", "en-US": "Advisor · Computer Science Department (2013–2018)", ja: "指導教員 · コンピュータ科学系（2013〜2018年）" } },
   ];
 
   /** 荣誉数据 */
-  const honors: Record<Locale, string>[] = [
-    { "zh-CN": "网络安全知识竞赛获属地街道、派出所好评，申报校“十佳品牌活动”", "zh-TW": "網絡安全知識競賽獲屬地街道、派出所好評，申報校“十佳品牌活動”", en: "Anti-fraud contest praised by local authorities; nominated for Top-10 campus brand events", ja: "コンテストは地元当局から好評を得て、学十大ブランド活動に推薦" },
-    { "zh-CN": "单场知识竞赛报名破千，覆盖两校区 14 个院系", "zh-TW": "單場知識競賽報名破千，覆蓋兩校區 14 個院系", en: "A single knowledge contest drew 1,000+ registrations across 14 schools on two campuses", ja: "単一の知識コンテストで申込1,000名超、2キャンパス14学院をカバー" },
-    { "zh-CN": "LOL 电竞校队晋级花都区高校友谊赛与技嘉 GTL 联赛", "zh-TW": "LOL 電競校隊晉級花都區高校友誼賽與技嘉 GTL 聯賽", en: "LOL esports team advanced to the Huadu inter-university friendly and the Gigabyte GTL league", ja: "LOLチームは花都区大学対抗戦とGigabyte GTLリーグへ進出" },
-    { "zh-CN": "义务维修与二级备考课常年服务全校多院系同学", "zh-TW": "義務維修與二級備考課常年服務全校多院系同學", en: "Free repair clinics and NCRE prep courses serve students across many schools year-round", ja: "無料修理と二级試験対策講座は通年で多くの学院の学生を支援" },
+  const honors: Partial<Record<Locale, string>>[] = [
+    { "zh-CN": "网络安全知识竞赛获属地街道、派出所好评，申报校“十佳品牌活动”", "zh-TW": "網絡安全知識競賽獲屬地街道、派出所好評，申報校“十佳品牌活動”", "en-US": "Anti-fraud contest praised by local authorities; nominated for Top-10 campus brand events", ja: "コンテストは地元当局から好評を得て、学十大ブランド活動に推薦" },
+    { "zh-CN": "单场知识竞赛报名破千，覆盖两校区 14 个院系", "zh-TW": "單場知識競賽報名破千，覆蓋兩校區 14 個院系", "en-US": "A single knowledge contest drew 1,000+ registrations across 14 schools on two campuses", ja: "単一の知識コンテストで申込1,000名超、2キャンパス14学院をカバー" },
+    { "zh-CN": "LOL 电竞校队晋级花都区高校友谊赛与技嘉 GTL 联赛", "zh-TW": "LOL 電競校隊晉級花都區高校友誼賽與技嘉 GTL 聯賽", "en-US": "LOL esports team advanced to the Huadu inter-university friendly and the Gigabyte GTL league", ja: "LOLチームは花都区大学対抗戦とGigabyte GTLリーグへ進出" },
+    { "zh-CN": "义务维修与二级备考课常年服务全校多院系同学", "zh-TW": "義務維修與二級備考課常年服務全校多院系同學", "en-US": "Free repair clinics and NCRE prep courses serve students across many schools year-round", ja: "無料修理と二级試験対策講座は通年で多くの学院の学生を支援" },
   ];
 
   return (

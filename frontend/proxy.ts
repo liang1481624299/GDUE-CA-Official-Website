@@ -52,6 +52,13 @@ function localeRedirect(request: NextRequest): URL | null {
   // admin 后台不走 locale 前缀
   if (pathname === "/admin" || pathname.startsWith("/admin/")) return null;
 
+  // 旧 /en 前缀兼容重定向（英语拆分为 en-US / en-GB 之前的旧链接、收藏与搜索索引）
+  if (pathname === "/en" || pathname.startsWith("/en/")) {
+    const url = request.nextUrl.clone();
+    url.pathname = `/en-US${pathname.slice(3)}`;
+    return url;
+  }
+
   // 检查路径是否已包含语言前缀
   const pathnameHasLocale = locales.some(
     (loc) => pathname.startsWith(`/${loc}/`) || pathname === `/${loc}`
@@ -72,7 +79,12 @@ function localeRedirect(request: NextRequest): URL | null {
         .map((l) => l.trim().split(";")[0].toLowerCase());
       for (const l of langs) {
         if (l.startsWith("zh")) {
-          detectedLocale = l.includes("tw") || l.includes("hk") ? "zh-TW" : "zh-CN";
+          // tw → 台湾繁体；hk / mo（澳门）→ 香港繁体；其余 zh（zh / zh-CN / zh-SG 等）→ 简体
+          detectedLocale = l.includes("tw")
+            ? "zh-TW"
+            : l.includes("hk") || l.includes("mo")
+              ? "zh-HK"
+              : "zh-CN";
           break;
         }
         if (l.startsWith("ja")) {
@@ -80,7 +92,8 @@ function localeRedirect(request: NextRequest): URL | null {
           break;
         }
         if (l.startsWith("en")) {
-          detectedLocale = "en";
+          // en-GB 优先匹配英式英语，其余英语（en / en-US / en-CA 等）归入美式
+          detectedLocale = l.includes("gb") ? "en-GB" : "en-US";
           break;
         }
       }

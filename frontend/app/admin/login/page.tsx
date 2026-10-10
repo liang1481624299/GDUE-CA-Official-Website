@@ -24,6 +24,8 @@ import {
   LayoutGrid,
 } from "lucide-react";
 import { useI18n } from "@/i18n/provider";
+import { useAdminLocale } from "@/app/admin/AdminProviders";
+import { locales, localeNames, type Locale } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,6 +44,25 @@ import type { OAuthProvider } from "@/types/api";
 /** 登录后的落地页：管理员 → 后台；普通成员 → 前台个人资料 */
 function homeFor(role: string | undefined) {
   return isAdminRole(role) ? "/admin" : "/zh-CN/profile";
+}
+
+/** 语言切换：与后台顶栏同机制（localStorage 记忆，全后台即时生效） */
+function AdminLocaleSwitcher() {
+  const { locale, setLocale } = useAdminLocale();
+  return (
+    <select
+      value={locale}
+      onChange={(e) => setLocale(e.target.value as Locale)}
+      aria-label="Language"
+      className="h-8 rounded-md border border-input bg-background px-1.5 text-xs font-medium cursor-pointer"
+    >
+      {locales.map((l) => (
+        <option key={l} value={l}>
+          {localeNames[l]}
+        </option>
+      ))}
+    </select>
+  );
 }
 
 /** 第三方登录渠道品牌图标（仅展示用） */
@@ -120,7 +141,11 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-background to-muted/30">
+    <div className="relative min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-background to-muted/30">
+      {/* 语言切换：未登录也能切换后台界面语言 */}
+      <div className="absolute top-4 right-4">
+        <AdminLocaleSwitcher />
+      </div>
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
