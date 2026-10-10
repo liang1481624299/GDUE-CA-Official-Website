@@ -15,6 +15,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
+  Bell,
   CalendarDays,
   ClipboardList,
   UserCircle,
@@ -52,6 +53,7 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { BanModal } from "@/components/shared/BanModal";
 import { fetchMe } from "@/lib/api/auth";
+import { fetchOverview } from "@/lib/api/adminStats";
 import { ApiError } from "@/lib/api/client";
 import { clearLocalSession, isAdminRole, logout, saveSession, type AdminSession } from "@/lib/auth";
 import {
@@ -308,6 +310,7 @@ export default function AdminDashboardLayout({
             </span>
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
+            <PendingBadge />
             <ThemeToggle />
             <LocaleSelect />
             <Button asChild variant="ghost" size="sm">
@@ -327,6 +330,29 @@ export default function AdminDashboardLayout({
         <main className="flex-1 p-4 md:p-8">{children}</main>
       </div>
     </div>
+  );
+}
+
+/** 顶栏待办铃铛：待审报名 + 未关 Bug + 待处理重置，复用 overview 聚合（失败静默，点击直达审核中心） */
+function PendingBadge() {
+  const { t } = useI18n();
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    fetchOverview()
+      .then((o) => setCount(o.registrations_pending + o.bugs_open + o.resets_pending))
+      .catch(() => {});
+  }, []);
+  return (
+    <Button asChild variant="ghost" size="icon" aria-label={t("admin.dashboard.pendingTodos")}>
+      <Link href="/admin/review" className="relative">
+        <Bell className="h-4 w-4" />
+        {count > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-destructive-foreground">
+            {count > 99 ? "99+" : count}
+          </span>
+        )}
+      </Link>
+    </Button>
   );
 }
 

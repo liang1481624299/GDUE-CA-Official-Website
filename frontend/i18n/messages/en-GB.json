@@ -671,6 +671,7 @@
       "title": "Admin Console",
       "welcome": "Welcome back",
       "logout": "Log Out",
+      "pendingTodos": "Pending to-dos",
       "overview": "Overview",
       "announcements": "Notifications",
       "content": "Content",

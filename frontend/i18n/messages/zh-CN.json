@@ -671,6 +671,7 @@
       "title": "管理后台",
       "welcome": "欢迎回来",
       "logout": "退出登录",
+      "pendingTodos": "待办事项",
       "overview": "概览",
       "announcements": "信息通知",
       "content": "内容管理",
