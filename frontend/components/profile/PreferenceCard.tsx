@@ -60,6 +60,18 @@ export function PreferenceCard({ profile }: { profile: AdminUser | null }) {
     }
   }, []);
 
+  /** 跟随系统主题变化（未手动设置时高亮与实际主题保持一致，见 SettingsDropdown） */
+  useEffect(() => {
+    const mql = window.matchMedia("(prefers-color-scheme: dark)");
+    const handler = (e: MediaQueryListEvent) => {
+      if (!window.localStorage.getItem(THEME_KEY)) {
+        setTheme(e.matches ? "dark" : "light");
+      }
+    };
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }, []);
+
   function switchTheme(next: Theme) {
     setTheme(next);
     document.documentElement.classList.toggle("dark", next === "dark");

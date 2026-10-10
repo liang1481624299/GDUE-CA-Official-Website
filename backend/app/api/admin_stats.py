@@ -21,7 +21,15 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.permissions import require_permission
-from app.db.models import AuditLog, BugReport, Registration
+from app.core.ip_location import resolve_location
+from app.db.models import (
+    Activity,
+    AuditLog,
+    BugReport,
+    PasswordResetRequest,
+    Registration,
+    RegistrationStatus,
+)
 from app.db.session import get_db
 from app.schemas.common import UTCDatetime
 
@@ -52,12 +60,58 @@ class IpSourceStat(BaseModel):
     registrations: int
     bugs: int
     last_seen: UTCDatetime | None = None
+    # GeoIP 可读属地（离线库缺失/查不到时为 None，前端显示「地区未知」）
+    location_zh: str | None = None
+    location_en: str | None = None
 
 
 class AccessStatsOut(BaseModel):
     total_events: int
     unique_ips: int
     top_ips: list[IpSourceStat]
+
+
+class OverviewOut(BaseModel):
+    """仪表盘聚合：各模块待办计数（首屏单请求替代多全量列表）。"""
+
+    activities_total: int
+    registrations_total: int
+    registrations_pending: int
+    bugs_open: int
+    resets_pending: int
+
+
+@router.get("/overview", response_model=OverviewOut)
+async def get_overview(
+    user: Annotated[dict, Depends(require_permission("dashboard", "view"))],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    """仪表盘待办聚合：SQL COUNT 直查，不拉全量列表。"""
+    activities_total = (await db.execute(
+        select(func.count()).select_from(Activity)
+    )).scalar_one()
+    registrations_total = (await db.execute(
+        select(func.count()).select_from(Registration)
+    )).scalar_one()
+    registrations_pending = (await db.execute(
+        select(func.count()).select_from(Registration)
+        .where(Registration.status == RegistrationStatus.PENDING)
+    )).scalar_one()
+    bugs_open = (await db.execute(
+        select(func.count()).select_from(BugReport)
+        .where(BugReport.resolved.is_(False))
+    )).scalar_one()
+    resets_pending = (await db.execute(
+        select(func.count()).select_from(PasswordResetRequest)
+        .where(PasswordResetRequest.status == "pending")
+    )).scalar_one()
+    return OverviewOut(
+        activities_total=activities_total,
+        registrations_total=registrations_total,
+        registrations_pending=registrations_pending,
+        bugs_open=bugs_open,
+        resets_pending=resets_pending,
+    )
 
 
 @router.get("/access", response_model=AccessStatsOut)
@@ -114,7 +168,17 @@ async def get_access_stats(
                 registrations=e["registrations"],
                 bugs=e["bugs"],
                 last_seen=e["last_seen"],
+                location_zh=_geo(ip)[0],
+                location_en=_geo(ip)[1],
             )
             for ip, e in top
         ],
     )
+
+
+def _geo(ip: str) -> tuple[str | None, str | None]:
+    """单 IP 属地解析（GeoIP 失败时降级为 (None, None)，绝不抛 500）。"""
+    try:
+        return resolve_location(ip)
+    except Exception:
+        return (None, None)

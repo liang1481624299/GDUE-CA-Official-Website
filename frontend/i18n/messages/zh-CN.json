@@ -672,6 +672,7 @@
       "title": "管理后台",
       "welcome": "欢迎回来",
       "logout": "退出登录",
+      "pendingTodos": "待办事项",
       "overview": "概览",
       "announcements": "信息通知",
       "content": "内容管理",
@@ -887,11 +888,9 @@
     },
     "settings": {
       "title": "系统设置",
-      "ipBlacklist": "IP 黑名单",
-      "ipBlacklistDesc": "添加需要拦截的 IP 或 CIDR 段，每行一个",
-      "ipBlacklistPlaceholder": "如：192.168.1.1 或 10.0.0.0/24",
-      "addIp": "添加",
-      "removeIp": "移除",
+      "ipBlacklistMovedTitle": "IP 黑名单",
+      "ipBlacklistMovedDesc": "黑名单已迁移至统一 IP 规则管理（阻止/放行/有效期），此处不再直接编辑",
+      "gotoIpBlacklist": "前往 IP 黑名单管理",
       "domainWhitelist": "域名白名单",
       "domainWhitelistDesc": "CORS 允许的来源域名，每行一个",
       "domainWhitelistPlaceholder": "如：gdue-ca.paperee.guru",
@@ -992,6 +991,10 @@
       "permDefaultView": "角色默认：查看",
       "permDefaultNone": "角色默认：无权限",
       "permSave": "保存权限",
+      "batchEnable": "批量启用",
+      "batchDisable": "批量停用",
+      "batchSelected": "已选 {count} 个账号",
+      "batchDisableConfirm": "确认停用选中的 {count} 个账号？其登录会话将立即下线",
       "roles": {
         "super_admin": "超级管理员",
         "admin": "管理员",
@@ -1254,7 +1257,28 @@
       "deleted": "成员已删除",
       "avatarUploaded": "头像已上传",
       "errAvatarTooLarge": "文件大小不能超过 5MB",
-      "errAvatarFormat": "仅支持 JPG/PNG/WEBP 格式"
+      "errAvatarFormat": "仅支持 JPG/PNG/WEBP 格式",
+      "templateBtn": "下载导入模板",
+      "importBtn": "批量导入",
+      "importTitle": "Excel 批量导入成员",
+      "importHint": "先下载空白模板填写，再上传。按姓名去重。",
+      "importModeSkip": "跳过重复成员",
+      "importModeUpdate": "更新成员信息",
+      "importSubmit": "开始导入",
+      "importSelectFile": "请先选择 .xlsx 文件",
+      "importResult": "共 {total} 条：新增 {created}，更新 {updated}，跳过 {skipped}，失败 {errors}",
+      "importErrorsTitle": "失败明细",
+      "importRow": "第 {row} 行",
+      "batchSelected": "已选 {count} 人",
+      "batchTerm": "设为届别…",
+      "batchRole": "职务（留空不改）",
+      "batchApply": "批量应用",
+      "batchClear": "取消选择",
+      "batchNeedChange": "请至少指定届别或职务",
+      "batchDone": "已更新 {count} 人",
+      "selectAll": "全选本页",
+      "downloading": "下载中…",
+      "importing": "导入中…"
     },
     "recruitment": {
       "title": "招新管理",
@@ -1408,7 +1432,12 @@
       "action": "动作",
       "detail": "详情",
       "ip": "IP 地址",
-      "trace": "追踪 ID"
+      "trace": "追踪 ID",
+      "export": "导出 CSV",
+      "targetPlaceholder": "目标前缀，如 activity:5",
+      "userIdPlaceholder": "用户 ID",
+      "dateFrom": "开始日期",
+      "dateTo": "结束日期"
     },
     "stats": {
       "common": {
@@ -1429,7 +1458,10 @@
         "approved": "通过",
         "rejected": "拒绝",
         "checkedIn": "签到",
-        "generatedAt": "统计生成时间"
+        "generatedAt": "统计生成时间",
+        "liveTitle": "实时报名",
+        "liveEmpty": "暂无活动",
+        "snapshotTitle": "历史快照"
       },
       "recruitment": {
         "title": "招新统计",

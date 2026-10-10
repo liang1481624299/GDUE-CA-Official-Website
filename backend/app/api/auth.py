@@ -641,6 +641,41 @@ async def update_user(
     return u
 
 
+class UsersBatchUpdate(BaseModel):
+    ids: list[int]
+    is_active: bool
+
+
+@router.post("/users/batch")
+async def batch_update_users(
+    body: UsersBatchUpdate,
+    request: Request,
+    user: dict = Depends(require_role(Role.SUPER_ADMIN)),
+    db: AsyncSession = Depends(get_db),
+):
+    """批量启停账号：仅 super_admin；不能包含自己；停用即撤销其会话并审计。"""
+    me = int(user["user_id"])
+    if me in body.ids:
+        raise HTTPException(status_code=400, detail="不能批量操作自己的账号")
+    updated: list[int] = []
+    not_found: list[int] = []
+    for uid in body.ids:
+        u = await db.get(User, uid)
+        if not u:
+            not_found.append(uid)
+            continue
+        if u.is_active != body.is_active:
+            u.is_active = body.is_active
+            if not body.is_active:
+                await _revoke_user_sessions(db, uid)
+        updated.append(uid)
+    _log(db, me, "user.batch_update",
+         f"is_active={body.is_active} updated={updated} not_found={not_found}",
+         get_client_ip(request))
+    await db.commit()
+    return {"updated": len(updated), "not_found": not_found}
+
+
 def _generate_temp_password(username: str, email: str) -> str:
     """生成满足强口令策略的一次性临时密码。"""
     while True:

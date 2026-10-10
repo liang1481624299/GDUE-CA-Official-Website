@@ -72,15 +72,29 @@ GDUECA/
 │   │       ├── forgot-password/page.tsx    #     忘记密码申请表单（公开）
 │   │       ├── recover/page.tsx           #     安全问题紧急恢复（公开）
 │   │       ├── change-password/page.tsx   #     修改密码页
-│   │       └── (dashboard)/                 #     登录后路由组
-│   │           ├── layout.tsx              #       侧边栏 + 顶栏 + 路由守卫
-│   │           ├── page.tsx                #       仪表盘首页
+│   │       └── (dashboard)/                 #     登录后路由组（7 分组导航，见 layout.tsx navGroups）
+│   │           ├── layout.tsx              #       侧边栏 + 顶栏（含待办铃铛） + 路由守卫
+│   │           ├── page.tsx                #       仪表盘首页（聚合计数 + 最新报名/Bug + 访问来源）
 │   │           ├── profile/page.tsx        #       个人资料（显示名/真实姓名/学号/手机号/头像）
-│   │           ├── activities/page.tsx     #       活动管理
-│   │           ├── registrations/page.tsx  #       报名审阅 + 导出
-│   │           ├── bugs/page.tsx           #       Bug 反馈列表
-│   │           ├── password-resets/page.tsx #      忘记密码申请审核
-│   │           └── settings/page.tsx       #       系统设置
+│   │           ├── activities/page.tsx     #       活动管理（+ [id]/detail 详情）
+│   │           ├── announcements/page.tsx  #       信息通知管理
+│   │           ├── announcements/home/page.tsx #   主页公告管理
+│   │           ├── review/page.tsx         #       审核中心（报名审核 / Bug 反馈 / 密码重置三 Tab）
+│   │           ├── members/page.tsx        #       成员管理（分页/批量/Excel 导入）
+│   │           ├── recruitment/page.tsx    #       招新信息 + 报名名单
+│   │           ├── blog/page.tsx           #       博客管理（+ new 新建 / [id]/edit 编辑 / tags 标签 / comments 评论）
+│   │           ├── content/club-intro/page.tsx #  社团介绍内容块
+│   │           ├── media/page.tsx          #       文件资源管理
+│   │           ├── oauth/page.tsx          #       第三方登录渠道
+│   │           ├── sso/page.tsx            #       SSO 受信应用
+│   │           ├── realname-review/page.tsx #      实名审核
+│   │           ├── settings/page.tsx       #       系统设置（站点/签到/时区/域名/网络；黑名单跳转 IP 规则页）
+│   │           ├── security/network/page.tsx #     网络监听配置
+│   │           ├── security/ip-whitelist/page.tsx # IP 白名单（ip_rules）
+│   │           ├── security/ip-blacklist/page.tsx # IP 黑名单（ip_rules，真 enforcement 入口）
+│   │           ├── users/page.tsx          #       人员管理（账号批量启停）
+│   │           ├── audit-logs/page.tsx     #       操作日志（筛选 + CSV 导出）
+│   │           └── stats/visits|activities|recruitment/page.tsx # 数据统计（访问/活动实时+快照/招新）
 │   ├── components/                         # 全部可复用组件，按业务子文件夹分类
 │   │   ├── layout/                         #   布局类：导航栏 + 页脚
 │   │   │   ├── NavDesktop.tsx              #     桌面端导航栏（持有 mobileOpen 状态）
@@ -198,7 +212,7 @@ GDUECA/
 
 | 路径 | 说明 |
 | --- | --- |
-| `/zh-CN` `/zh-TW` `/en` `/ja` | 4 语言首页 |
+| `/zh-CN` `/zh-TW` `/zh-HK` `/en-US` `/en-GB` `/ja` | 6 语言首页（旧 `/en` 307 重定向至 `/en-US`） |
 | `/[locale]/about` | 社团介绍 |
 | `/[locale]/projects` | 项目展示 |
 | `/[locale]/events` | 活动公告 |
@@ -215,13 +229,23 @@ GDUECA/
 | `/admin/forgot-password` | 忘记密码申请表单 | 公开 |
 | `/admin/recover` | 安全问题紧急恢复 | 公开 |
 | `/admin/change-password` | 修改密码页（首次登录强制跳转） | 已登录 |
-| `/admin` | 仪表盘（统计概览） | 已登录 |
+| `/admin` | 仪表盘（聚合计数 + 待办铃铛） | 已登录 |
 | `/admin/profile` | 个人资料（统一编辑：显示名/真实姓名/学号/手机号/时区/三级行政区地区选择 + 账户安全 + 登录会话管理） | 已登录 |
 | `/admin/activities` | 活动 CRUD | editor+ |
-| `/admin/registrations` | 报名审阅 + CSV/Xlsx 导出 | admin+ |
-| `/admin/bugs` | Bug 反馈列表 + 标记已解决 | editor+ |
-| `/admin/password-resets` | 忘记密码申请审核 | admin+ |
-| `/admin/settings` | 系统配置（IP 黑名单 / CORS / 安全问题） | admin+ |
+| `/admin/announcements` + `/admin/announcements/home` | 信息通知 / 主页公告 | editor+ |
+| `/admin/review` | 审核中心（报名审核 / Bug 反馈 / 密码重置三 Tab + 批量操作） | admin+ |
+| `/admin/members` | 成员管理（分页/批量/Excel 导入） | editor+ |
+| `/admin/recruitment` | 招新信息 + 报名名单 | editor+ |
+| `/admin/blog`（+ new / [id]/edit / tags / comments） | 博客文章/标签/评论 | editor+ |
+| `/admin/content/club-intro` | 社团介绍内容块 | editor+ |
+| `/admin/media` | 文件资源管理 | editor+ |
+| `/admin/oauth` `/admin/sso` | 第三方登录渠道 / SSO 受信应用 | admin+（manage 限超管） |
+| `/admin/realname-review` | 实名审核 | admin+ |
+| `/admin/settings` | 系统配置（站点/签到/时区/域名/网络；黑名单跳转 IP 规则页） | admin+ |
+| `/admin/security/network` `/admin/security/ip-whitelist` `/admin/security/ip-blacklist` | 网络监听 / IP 白名单 / IP 黑名单（ip_rules 真 enforcement 入口） | admin+ |
+| `/admin/users` | 人员管理（账号批量启停/权限矩阵） | admin+（管理限超管） |
+| `/admin/audit-logs` | 操作日志（筛选 + CSV 导出） | admin+ |
+| `/admin/stats/visits` `/admin/stats/activities` `/admin/stats/recruitment` | 数据统计（访问属地/活动实时+快照/招新聚合） | 已登录 |
 
 ### 后端 API（FastAPI）
 
@@ -247,6 +271,7 @@ GDUECA/
 | PUT | `/api/auth/security-question` | 修改安全问题 | super_admin |
 | GET | `/api/auth/users` | 用户列表 | super_admin |
 | POST | `/api/auth/users` | 创建用户（含学号/真实姓名/手机号） | super_admin |
+| POST | `/api/auth/users/batch` | 批量启停账号（拒绝含自己，停用即撤会话） | super_admin |
 | DELETE | `/api/auth/users/{id}` | 删除用户 | super_admin |
 | GET | `/api/activities` | 活动列表 | 公开 |
 | POST | `/api/activities` | 创建活动 | editor+ |
@@ -267,7 +292,14 @@ GDUECA/
 | GET | `/api/system/settings` | 公开站点信息（站点名 / 页脚 / 备案 / 系统时区，不含安全配置） | 公开 |
 | GET | `/api/system/settings/admin` | 完整系统配置（IP 黑名单 / 域名 / 网络配置） | admin+ |
 | PUT | `/api/system/settings` | 修改系统配置 | admin+ |
-| POST/DELETE | `/api/system/ip-blacklist` | IP 黑名单 | admin+ |
+| POST/DELETE | `/api/system/ip-blacklist` | 旧版 IP 黑名单（已迁移至 ip_rules，中间件不再读取，仅兼容保留） | admin+ |
+| GET | `/api/admin-stats/overview` | 仪表盘聚合（活动/报名/待审/Bug/重置计数） | 已登录 |
+| GET | `/api/admin-stats/access` | 访问来源 IP 聚合 + GeoIP 属地 | 已登录 |
+| GET | `/api/admin/stats/activities` | 活动报名快照（已结束活动） | 已登录 |
+| GET | `/api/admin/stats/activities/live` | 全部活动实时报名计数 | 已登录 |
+| GET | `/api/admin/stats/recruitment` | 招新聚合（部门/学院/状态） | 已登录 |
+| GET | `/api/admin/audit-logs` | 操作日志分页（日期/用户/目标筛选） | admin+ |
+| GET | `/api/admin/audit-logs/export` | 操作日志 CSV 导出（上限 2000） | admin+ |
 | GET | `/uploads/avatars/{file}` | 头像静态文件 | 公开 |
 | GET | `/health` | 健康检查 | 公开 |
 
@@ -299,7 +331,7 @@ python run.py
 
 ### 忘记密码 / 账号恢复
 
-- **忘记密码**：登录页点击「忘记密码？」→ 填写联系邮箱 + 原因 → 提交申请 → 管理员在 `/admin/password-resets` 审核后手动联系
+- **忘记密码**：登录页点击「忘记密码？」→ 填写联系邮箱 + 原因 → 提交申请 → 管理员在 `/admin/review`（密码重置 Tab）审核后手动联系
 - **安全问题恢复**（仅内网可用，按 IP 限流）：所有管理员账号全部失能时，登录页点击「账号恢复」→ 回答安全问题 → 重置超管密码并重新启用（恢复后仍需首次登录改密）
 - 系统不再预置默认安全问题（旧版默认「2008」会在启动时被清除），需由 super_admin 在 `/admin/settings` 设置（PUT `/api/auth/security-question`）；答案以 bcrypt 哈希存储，至少 6 位
 

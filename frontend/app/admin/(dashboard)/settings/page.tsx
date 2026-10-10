@@ -11,22 +11,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TimezoneSelect } from "@/components/layout/TimezoneSelect";
 import {
-  addIpBlacklist,
   fetchNetworkConfigHistory,
   fetchSystemSettings,
-  removeIpBlacklist,
   updateSystemSettings,
 } from "@/lib/api/system";
 import type { NetworkConfigHistory, SystemSettings } from "@/types/api";
-import { Loader2, Plus, Trash2, Check, QrCode, Globe, Clock, History, AlertTriangle } from "lucide-react";
+import { Loader2, Check, QrCode, Globe, Clock, History, AlertTriangle, ShieldBan, ArrowUpRight } from "lucide-react";
 
 export default function SettingsPage() {
   const { t } = useI18n();
-  const [ipList, setIpList] = useState<string[]>([]);
-  const [newIp, setNewIp] = useState("");
   const [corsOrigins, setCorsOrigins] = useState("");
   const [allowedHosts, setAllowedHosts] = useState("");
   const [siteName, setSiteName] = useState("");
@@ -53,7 +50,6 @@ export default function SettingsPage() {
     setLoading(true);
     try {
       const s: SystemSettings = await fetchSystemSettings();
-      setIpList(s.ip_blacklist ?? []);
       setCorsOrigins((s.cors_origins ?? []).join("\n"));
       setAllowedHosts((s.allowed_hosts ?? []).join("\n"));
       setSiteName(s.site_name ?? "");
@@ -75,26 +71,6 @@ export default function SettingsPage() {
   useEffect(() => {
     refresh();
   }, []);
-
-  async function addIp() {
-    if (!newIp) return;
-    try {
-      const res = await addIpBlacklist(newIp);
-      setIpList(res.blacklist ?? []);
-      setNewIp("");
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "Add failed");
-    }
-  }
-
-  async function delIp(ip: string) {
-    try {
-      const res = await removeIpBlacklist(ip);
-      setIpList(res.blacklist ?? []);
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "Remove failed");
-    }
-  }
 
   // 切换社团报名签到开关（立即生效，无需保存）
   async function toggleClubCheckin() {
@@ -226,36 +202,20 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">{t("admin.settings.title")}</h1>
 
+      {/* IP 黑名单已迁移至 ip_rules 表（中间件只读该表）：此处仅跳转真入口，避免改到不生效的旧字段 */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">{t("admin.settings.ipBlacklist")}</CardTitle>
-          <p className="text-sm text-muted-foreground">{t("admin.settings.ipBlacklistDesc")}</p>
+          <CardTitle className="text-base">{t("admin.settings.ipBlacklistMovedTitle")}</CardTitle>
+          <p className="text-sm text-muted-foreground">{t("admin.settings.ipBlacklistMovedDesc")}</p>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex gap-2">
-            <Input
-              placeholder={t("admin.settings.ipBlacklistPlaceholder")}
-              value={newIp}
-              onChange={(e) => setNewIp(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addIp())}
-            />
-            <Button onClick={addIp}>
-              <Plus className="h-4 w-4 mr-1" />
-              {t("admin.settings.addIp")}
-            </Button>
-          </div>
-          {ipList.length > 0 && (
-            <ul className="space-y-1">
-              {ipList.map((ip) => (
-                <li key={ip} className="flex items-center justify-between text-sm px-3 py-2 rounded-md bg-muted/50">
-                  <span className="font-mono">{ip}</span>
-                  <Button size="icon" variant="ghost" onClick={() => delIp(ip)} aria-label="Remove">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          )}
+        <CardContent>
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/admin/security/ip-blacklist">
+              <ShieldBan className="h-4 w-4 mr-1" />
+              {t("admin.settings.gotoIpBlacklist")}
+              <ArrowUpRight className="h-3.5 w-3.5 ml-1" />
+            </Link>
+          </Button>
         </CardContent>
       </Card>
 

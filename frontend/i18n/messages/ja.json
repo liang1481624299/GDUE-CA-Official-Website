@@ -672,6 +672,7 @@
       "title": "管理コンソール",
       "welcome": "おかえりなさい",
       "logout": "ログアウト",
+      "pendingTodos": "未処理タスク",
       "overview": "概要",
       "announcements": "通知管理",
       "content": "コンテンツ管理",
@@ -887,11 +888,9 @@
     },
     "settings": {
       "title": "システム設定",
-      "ipBlacklist": "IP ブラックリスト",
-      "ipBlacklistDesc": "ブロックする IP または CIDR 範囲を 1 行 1 件で追加",
-      "ipBlacklistPlaceholder": "例：192.168.1.1 または 10.0.0.0/24",
-      "addIp": "追加",
-      "removeIp": "削除",
+      "ipBlacklistMovedTitle": "IP ブラックリスト",
+      "ipBlacklistMovedDesc": "ブラックリストは統合 IP ルール管理（ブロック/許可/有効期限）に移行済みのため、ここでは編集しません",
+      "gotoIpBlacklist": "IP ブラックリスト管理へ",
       "domainWhitelist": "ドメインホワイトリスト",
       "domainWhitelistDesc": "CORS 許可ドメイン、1 行 1 件",
       "domainWhitelistPlaceholder": "例：gdue-ca.paperee.guru",
@@ -992,6 +991,10 @@
       "permDefaultView": "ロール既定：閲覧",
       "permDefaultNone": "ロール既定：権限なし",
       "permSave": "権限を保存",
+      "batchEnable": "一括有効化",
+      "batchDisable": "一括無効化",
+      "batchSelected": "{count} 件のアカウントを選択中",
+      "batchDisableConfirm": "選択中の {count} 件のアカウントを無効化しますか？ログインセッションは直ちに無効になります",
       "roles": {
         "super_admin": "スーパー管理者",
         "admin": "管理者",
@@ -1254,7 +1257,28 @@
       "deleted": "メンバーを削除しました",
       "avatarUploaded": "アバターをアップロードしました",
       "errAvatarTooLarge": "ファイルサイズは 5MB を超えられません",
-      "errAvatarFormat": "JPG/PNG/WEBP 形式のみ対応しています"
+      "errAvatarFormat": "JPG/PNG/WEBP 形式のみ対応しています",
+      "templateBtn": "テンプレートをダウンロード",
+      "importBtn": "一括インポート",
+      "importTitle": "Excel からメンバーを一括インポート",
+      "importHint": "まず空白テンプレートをダウンロードして記入し、アップロードしてください。氏名で重複判定します。",
+      "importModeSkip": "重複をスキップ",
+      "importModeUpdate": "登録情報を更新",
+      "importSubmit": "インポート開始",
+      "importSelectFile": ".xlsx ファイルを選択してください",
+      "importResult": "全 {total} 件：新規 {created}、更新 {updated}、スキップ {skipped}、失敗 {errors}",
+      "importErrorsTitle": "失敗の明細",
+      "importRow": "{row} 行目",
+      "batchSelected": "{count} 人選択中",
+      "batchTerm": "期別を設定…",
+      "batchRole": "役職（空欄は変更なし）",
+      "batchApply": "一括適用",
+      "batchClear": "選択を解除",
+      "batchNeedChange": "期別または役職のいずれかを指定してください",
+      "batchDone": "{count} 人を更新しました",
+      "selectAll": "このページを全選択",
+      "downloading": "ダウンロード中…",
+      "importing": "インポート中…"
     },
     "recruitment": {
       "title": "新歓管理",
@@ -1408,7 +1432,12 @@
       "action": "操作",
       "detail": "詳細",
       "ip": "IP アドレス",
-      "trace": "トレース ID"
+      "trace": "トレース ID",
+      "export": "CSV をエクスポート",
+      "targetPlaceholder": "ターゲット接頭辞（例 activity:5）",
+      "userIdPlaceholder": "ユーザー ID",
+      "dateFrom": "開始日",
+      "dateTo": "終了日"
     },
     "stats": {
       "common": {
@@ -1429,7 +1458,10 @@
         "approved": "承認",
         "rejected": "却下",
         "checkedIn": "チェックイン",
-        "generatedAt": "生成日時"
+        "generatedAt": "生成日時",
+        "liveTitle": "リアルタイム申込",
+        "liveEmpty": "アクティビティがありません",
+        "snapshotTitle": "スナップショット"
       },
       "recruitment": {
         "title": "リクルート統計",

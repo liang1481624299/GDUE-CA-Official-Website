@@ -47,7 +47,25 @@ export function SettingsDropdown() {
   useEffect(() => {
     const initial = getInitialTheme();
     setTheme(initial);
+    // 与防 FOUC 脚本 / ThemeToggle 保持一致：挂载即把主题真正应用到 <html>，
+    // 避免状态显示 dark 而页面仍是 light 的分离
+    applyTheme(initial);
     setMounted(true);
+  }, []);
+
+  /** 跟随系统主题变化（当用户未手动设置偏好时自动切换，与 ThemeToggle 一致） */
+  useEffect(() => {
+    const mql = window.matchMedia("(prefers-color-scheme: dark)");
+    const handler = (e: MediaQueryListEvent) => {
+      // 仅当 localStorage 中无显式设置时跟随系统
+      if (!window.localStorage.getItem(THEME_KEY)) {
+        const next: Theme = e.matches ? "dark" : "light";
+        setTheme(next);
+        applyTheme(next);
+      }
+    };
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
   }, []);
 
   useEffect(() => {

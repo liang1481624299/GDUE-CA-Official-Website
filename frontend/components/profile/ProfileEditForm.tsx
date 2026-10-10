@@ -61,6 +61,14 @@ export function ProfileEditForm() {
       if (stored === "light" || stored === "dark") setTheme(stored);
       else setTheme(window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
     }
+    const mql = window.matchMedia("(prefers-color-scheme: dark)");
+    const handler = (e: MediaQueryListEvent) => {
+      if (!window.localStorage.getItem(THEME_KEY)) {
+        setTheme(e.matches ? "dark" : "light");
+      }
+    };
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
   }, [t]);
 
   function switchTheme(next: Theme) {

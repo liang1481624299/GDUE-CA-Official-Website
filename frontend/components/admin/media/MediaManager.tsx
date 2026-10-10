@@ -32,6 +32,8 @@ export function MediaManager() {
   const [page, setPage] = useState(1);
   const [category, setCategory] = useState<MediaCategory | "all">("all");
   const [q, setQ] = useState("");
+  const [query, setQuery] = useState("");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +45,7 @@ export function MediaManager() {
     try {
       const res = await adminListMedia({
         category: category === "all" ? undefined : category,
-        q: q.trim() || undefined,
+        q: query.trim() || undefined,
         page,
         page_size: PAGE_SIZE,
       });
@@ -54,11 +56,23 @@ export function MediaManager() {
     } finally {
       setLoading(false);
     }
-  }, [category, q, page, t]);
+  }, [category, query, page, t]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  // 搜索防抖（300ms）：与 MembersManager 一致，变更时回到第一页
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setQuery(q);
+      setPage(1);
+    }, 300);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [q]);
 
   async function handleUpload(file: File) {
     setUploading(true);

@@ -107,6 +107,9 @@ export interface IpSourceStat {
   bugs: number;
   /** 带大写 Z 的 UTC ISO 字符串 */
   last_seen: string | null;
+  /** GeoIP 可读属地（查不到为 null，前端显示「未知」） */
+  location_zh: string | null;
+  location_en: string | null;
 }
 
 /** 访问来源统计（后台概览） */
@@ -114,6 +117,15 @@ export interface AccessStats {
   total_events: number;
   unique_ips: number;
   top_ips: IpSourceStat[];
+}
+
+/** 仪表盘聚合（GET /api/admin-stats/overview）：首屏待办计数 */
+export interface AdminOverview {
+  activities_total: number;
+  registrations_total: number;
+  registrations_pending: number;
+  bugs_open: number;
+  resets_pending: number;
 }
 
 export interface ChangePasswordRequest {
@@ -473,6 +485,15 @@ export interface Member {
   display_order: number;
   archived: boolean;
   created_at: string;
+  gender: string | null;
+  grade: string | null;
+  department: string | null;
+  major_class: string | null;
+  // 仅管理端返回
+  phone?: string | null;
+  wechat?: string | null;
+  political_status?: string | null;
+  is_intl_student?: boolean;
 }
 
 export interface MemberCreate {
@@ -483,6 +504,14 @@ export interface MemberCreate {
   avatar_url?: string;
   display_order?: number;
   archived?: boolean;
+  gender?: string;
+  grade?: string;
+  department?: string;
+  major_class?: string;
+  phone?: string;
+  wechat?: string;
+  political_status?: string;
+  is_intl_student?: boolean;
 }
 
 export interface MemberUpdate {
@@ -493,6 +522,28 @@ export interface MemberUpdate {
   avatar_url?: string;
   display_order?: number;
   archived?: boolean;
+  gender?: string;
+  grade?: string;
+  department?: string;
+  major_class?: string;
+  phone?: string;
+  wechat?: string;
+  political_status?: string;
+  is_intl_student?: boolean;
+}
+
+export interface MemberImportError {
+  row: number;
+  name: string;
+  reason: string;
+}
+
+export interface MemberImportResult {
+  total: number;
+  created: number;
+  updated: number;
+  skipped: number;
+  errors: MemberImportError[];
 }
 
 /* ---------- 招新信息（Phase 3） ---------- */
@@ -647,6 +698,18 @@ export interface AuditLogInfo {
 /** 活动报名统计快照（含活动名，GET /api/admin/stats/activities） */
 export interface ActivityStatRow extends ActivityStatistics {
   activity_name: string;
+}
+
+/** 活动实时报名计数（GET /api/admin/stats/activities/live） */
+export interface ActivityLiveStatRow {
+  activity_id: number;
+  activity_name: string;
+  status: string;
+  total: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+  checked_in: number;
 }
 
 /** 招新统计分组计数 */

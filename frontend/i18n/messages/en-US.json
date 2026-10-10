@@ -672,6 +672,7 @@
       "title": "Admin Console",
       "welcome": "Welcome back",
       "logout": "Log Out",
+      "pendingTodos": "Pending to-dos",
       "overview": "Overview",
       "announcements": "Notifications",
       "content": "Content",
@@ -887,11 +888,9 @@
     },
     "settings": {
       "title": "System Settings",
-      "ipBlacklist": "IP Blacklist",
-      "ipBlacklistDesc": "Add IPs or CIDR ranges to block, one per line",
-      "ipBlacklistPlaceholder": "e.g., 192.168.1.1 or 10.0.0.0/24",
-      "addIp": "Add",
-      "removeIp": "Remove",
+      "ipBlacklistMovedTitle": "IP Blacklist",
+      "ipBlacklistMovedDesc": "The blacklist now lives in unified IP rules (block/allow/expiry) and is no longer edited here",
+      "gotoIpBlacklist": "Go to IP blacklist",
       "domainWhitelist": "Domain Whitelist",
       "domainWhitelistDesc": "CORS allowed origins, one per line",
       "domainWhitelistPlaceholder": "e.g., gdue-ca.paperee.guru",
@@ -992,6 +991,10 @@
       "permDefaultView": "Role default: view",
       "permDefaultNone": "Role default: none",
       "permSave": "Save permissions",
+      "batchEnable": "Enable selected",
+      "batchDisable": "Disable selected",
+      "batchSelected": "{count} accounts selected",
+      "batchDisableConfirm": "Disable the selected {count} accounts? Their sessions will be revoked immediately",
       "roles": {
         "super_admin": "Super Admin",
         "admin": "Admin",
@@ -1254,7 +1257,28 @@
       "deleted": "Member deleted",
       "avatarUploaded": "Avatar uploaded",
       "errAvatarTooLarge": "File size cannot exceed 5MB",
-      "errAvatarFormat": "Only JPG/PNG/WEBP formats are supported"
+      "errAvatarFormat": "Only JPG/PNG/WEBP formats are supported",
+      "templateBtn": "Download Template",
+      "importBtn": "Bulk Import",
+      "importTitle": "Bulk Import Members from Excel",
+      "importHint": "Download the blank template first, fill it in, then upload. Duplicates are matched by name.",
+      "importModeSkip": "Skip duplicates",
+      "importModeUpdate": "Update existing info",
+      "importSubmit": "Start Import",
+      "importSelectFile": "Please select an .xlsx file first",
+      "importResult": "{total} rows: {created} created, {updated} updated, {skipped} skipped, {errors} failed",
+      "importErrorsTitle": "Failure details",
+      "importRow": "Row {row}",
+      "batchSelected": "{count} selected",
+      "batchTerm": "Set term…",
+      "batchRole": "Role (blank = no change)",
+      "batchApply": "Apply to Selected",
+      "batchClear": "Clear Selection",
+      "batchNeedChange": "Specify at least a term or a role",
+      "batchDone": "{count} members updated",
+      "selectAll": "Select page",
+      "downloading": "Downloading…",
+      "importing": "Importing…"
     },
     "recruitment": {
       "title": "Recruitment Management",
@@ -1408,7 +1432,12 @@
       "action": "Action",
       "detail": "Detail",
       "ip": "IP",
-      "trace": "Trace ID"
+      "trace": "Trace ID",
+      "export": "Export CSV",
+      "targetPlaceholder": "Target prefix, e.g. activity:5",
+      "userIdPlaceholder": "User ID",
+      "dateFrom": "From",
+      "dateTo": "To"
     },
     "stats": {
       "common": {
@@ -1429,7 +1458,10 @@
         "approved": "Approved",
         "rejected": "Rejected",
         "checkedIn": "Checked-in",
-        "generatedAt": "Generated at"
+        "generatedAt": "Generated at",
+        "liveTitle": "Live registrations",
+        "liveEmpty": "No activities",
+        "snapshotTitle": "Snapshots"
       },
       "recruitment": {
         "title": "Recruitment Statistics",
