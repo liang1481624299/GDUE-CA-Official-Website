@@ -1428,7 +1428,12 @@
       "action": "Action",
       "detail": "Detail",
       "ip": "IP",
-      "trace": "Trace ID"
+      "trace": "Trace ID",
+      "export": "Export CSV",
+      "targetPlaceholder": "Target prefix, e.g. activity:5",
+      "userIdPlaceholder": "User ID",
+      "dateFrom": "From",
+      "dateTo": "To"
     },
     "stats": {
       "common": {

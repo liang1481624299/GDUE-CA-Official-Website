@@ -1428,7 +1428,12 @@
       "action": "动作",
       "detail": "详情",
       "ip": "IP 地址",
-      "trace": "追踪 ID"
+      "trace": "追踪 ID",
+      "export": "导出 CSV",
+      "targetPlaceholder": "目标前缀，如 activity:5",
+      "userIdPlaceholder": "用户 ID",
+      "dateFrom": "开始日期",
+      "dateTo": "结束日期"
     },
     "stats": {
       "common": {

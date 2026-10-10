@@ -1428,7 +1428,12 @@
       "action": "操作",
       "detail": "詳細",
       "ip": "IP アドレス",
-      "trace": "トレース ID"
+      "trace": "トレース ID",
+      "export": "CSV をエクスポート",
+      "targetPlaceholder": "ターゲット接頭辞（例 activity:5）",
+      "userIdPlaceholder": "ユーザー ID",
+      "dateFrom": "開始日",
+      "dateTo": "終了日"
     },
     "stats": {
       "common": {
