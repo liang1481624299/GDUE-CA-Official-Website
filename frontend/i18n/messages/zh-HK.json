@@ -996,7 +996,11 @@
         "admin": "管理員",
         "editor": "編輯",
         "member": "一般成員"
-      }
+      },
+      "batchEnable": "批量啟用",
+      "batchDisable": "批量停用",
+      "batchSelected": "已選 {count} 個帳號",
+      "batchDisableConfirm": "確認停用選中的 {count} 個帳號？其登入會話將立即下線"
     },
     "permissions": {
       "moduleCol": "模組",
@@ -1253,7 +1257,28 @@
       "deleted": "成員已刪除",
       "avatarUploaded": "頭像已上傳",
       "errAvatarTooLarge": "檔案大小不能超過 5MB",
-      "errAvatarFormat": "僅支援 JPG/PNG/WEBP 格式"
+      "errAvatarFormat": "僅支援 JPG/PNG/WEBP 格式",
+      "templateBtn": "下載匯入範本",
+      "importBtn": "批次匯入",
+      "importTitle": "Excel 批次匯入成員",
+      "importHint": "先下載空白範本填寫，再上傳。按姓名去重。",
+      "importModeSkip": "略過重複成員",
+      "importModeUpdate": "更新成員資訊",
+      "importSubmit": "開始匯入",
+      "importSelectFile": "請先選擇 .xlsx 檔案",
+      "importResult": "共 {total} 筆：新增 {created}，更新 {updated}，略過 {skipped}，失敗 {errors}",
+      "importErrorsTitle": "失敗明細",
+      "importRow": "第 {row} 列",
+      "batchSelected": "已選 {count} 人",
+      "batchTerm": "設為屆別…",
+      "batchRole": "職務（留空不改）",
+      "batchApply": "批次套用",
+      "batchClear": "取消選擇",
+      "batchNeedChange": "請至少指定屆別或職務",
+      "batchDone": "已更新 {count} 人",
+      "selectAll": "全選本頁",
+      "downloading": "下載中…",
+      "importing": "匯入中…"
     },
     "recruitment": {
       "title": "招新管理",
@@ -1407,7 +1432,12 @@
       "action": "動作",
       "detail": "詳情",
       "ip": "IP 位址",
-      "trace": "追蹤 ID"
+      "trace": "追蹤 ID",
+      "export": "匯出 CSV",
+      "targetPlaceholder": "目標前綴，如 activity:5",
+      "userIdPlaceholder": "用戶 ID",
+      "dateFrom": "開始日期",
+      "dateTo": "結束日期"
     },
     "stats": {
       "common": {

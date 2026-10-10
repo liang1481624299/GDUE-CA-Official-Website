@@ -1261,7 +1261,7 @@
       "templateBtn": "Download Template",
       "importBtn": "Bulk Import",
       "importTitle": "Bulk Import Members from Excel",
-      "importHint": "Download the blank template first (same columns as the roster sheet), fill it in, then upload. Duplicates are matched by name.",
+      "importHint": "Download the blank template first, fill it in, then upload. Duplicates are matched by name.",
       "importModeSkip": "Skip duplicates",
       "importModeUpdate": "Update existing info",
       "importSubmit": "Start Import",
