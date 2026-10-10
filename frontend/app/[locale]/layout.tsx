@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import Script from "next/script";
-import { locales, defaultLocale, localeHtmlLang, isLocale, type Locale } from "@/lib/i18n";
+import { locales, localeHtmlLang, isLocale, type Locale } from "@/lib/i18n";
 import { getDictionaryByLocale } from "@/i18n/dictionary";
 import { I18nProvider } from "@/i18n/provider";
 import { SessionHeartbeat } from "@/components/shared/SessionHeartbeat";
@@ -15,42 +15,7 @@ export async function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }
 
-/** 动态 metadata */
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}): Promise<Metadata> {
-  const { locale } = await params;
-  // 非法语言前缀（如已下线的 /en、拼错的 /fr）→ 404，避免字典加载 KeyError
-  if (!isLocale(locale)) notFound();
-  const dict = await getDictionaryByLocale(locale as Locale);
-  return {
-    title: {
-      default: dict.meta.title,
-      template: `%s | ${dict.meta.title}`,
-    },
-    description: dict.meta.description,
-    keywords: dict.meta.keywords.split(","),
-    openGraph: {
-      title: dict.meta.title,
-      description: dict.meta.description,
-      type: "website",
-    },
-  };
-}
-
-/** 序列化为可安全嵌入 <script> 的 JSON：转义 < > & 与行分隔符，防止 </script> 截断注入 */
-function safeJsonForScript(value: unknown): string {
-  return JSON.stringify(value)
-    .replace(/</g, "\\u003c")
-    .replace(/>/g, "\\u003e")
-    .replace(/&/g, "\\u0026")
-    .replace(/\u2028/g, "\\u2028")
-    .replace(/\u2029/g, "\\u2029");
-}
-
-/** schema.org EducationalOrganization JSON-LD */
+/** schema.org EducationalOrganization JSON-LD（与 locale 无关，全站统一） */
 const orgJsonLd = {
   "@context": "https://schema.org",
   "@type": "EducationalOrganization",
@@ -72,6 +37,36 @@ const orgJsonLd = {
     "广东第二师范学院（花都校区）计算机协会 - 学生计算机社团",
 };
 
+/** 动态 metadata：同时注入 hreflang alternates */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale: localeStr } = await params;
+  if (!isLocale(localeStr)) notFound();
+  const locale: Locale = localeStr;
+  const dict = await getDictionaryByLocale(locale);
+  return {
+    title: {
+      default: dict.meta.title,
+      template: `%s | ${dict.meta.title}`,
+    },
+    description: dict.meta.description,
+    keywords: dict.meta.keywords.split(","),
+    openGraph: {
+      title: dict.meta.title,
+      description: dict.meta.description,
+      type: "website",
+    },
+    alternates: {
+      languages: Object.fromEntries(
+        locales.map((l) => [l, `/${l}`])
+      ),
+    },
+  };
+}
+
 export default async function LocaleLayout({
   children,
   params,
@@ -80,30 +75,40 @@ export default async function LocaleLayout({
   params: Promise<{ locale: string }>;
 }) {
   const { locale: localeStr } = await params;
-  // 非法语言前缀（如已下线的 /en、拼错的 /fr）→ 404
   if (!isLocale(localeStr)) notFound();
   const locale: Locale = localeStr;
   const messages = await getDictionaryByLocale(locale);
-  // proxy.ts 生成的 CSP nonce：手写内联脚本必须携带，否则会被 CSP 拦截
   const nonce = (await headers()).get("x-nonce") ?? undefined;
-
-  // 同步设置 <html lang>（根 layout 默认 zh-CN，此处按当前 locale 修正）
-  if (typeof window === "undefined") {
-    // 服务端：通过 setLang 在客户端首次渲染前修正
-  }
+  const htmlLang = localeHtmlLang[locale];
 
   return (
     <>
-      {/* 设置当前 locale 对应的 html lang（客户端 script 在 hydration 前修正） */}
-      <script
+      {/*
+        设置 <html lang>：在 hydration 前执行，覆盖根 layout 默认 zh-CN。
+        使用 next/script（而非原生 <script>）避免 Next 16 的 React component 警告。
+      */}
+      <Script
+        id="gdueca-html-lang"
+        strategy="beforeInteractive"
         nonce={nonce}
-        dangerouslySetInnerHTML={{
-          __html: `document.documentElement.lang=${JSON.stringify(
-            localeHtmlLang[locale] || "zh-CN"
-          )};`,
-        }}
-      />
-      {/* Umami 网站统计脚本（非 Google Analytics） */}
+      >
+        {`document.documentElement.lang=${JSON.stringify(htmlLang)};`}
+      </Script>
+
+      {/*
+        schema.org EducationalOrganization JSON-LD。
+        next/script 会自动处理 idempotency，type="application/ld+json" 直接生效。
+      */}
+      <Script
+        id="gdueca-schema-org"
+        type="application/ld+json"
+        strategy="afterInteractive"
+        nonce={nonce}
+      >
+        {JSON.stringify(orgJsonLd)}
+      </Script>
+
+      {/* Umami 网站统计脚本（非 Google Analytics）—— next/script 自动挂到 head */}
       {process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID &&
         process.env.NEXT_PUBLIC_UMAMI_SRC && (
           <Script
@@ -115,13 +120,6 @@ export default async function LocaleLayout({
             fetchPriority="low"
           />
         )}
-
-      {/* schema.org EducationalOrganization 结构化数据 */}
-      <script
-        type="application/ld+json"
-        nonce={nonce}
-        dangerouslySetInnerHTML={{ __html: safeJsonForScript(orgJsonLd) }}
-      />
 
       <I18nProvider locale={locale} messages={messages}>
         <SessionHeartbeat />
