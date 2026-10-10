@@ -15,7 +15,7 @@ import { FormattedUserActionTime } from "@/components/shared/FormattedUserAction
 import type { Registration, BugReport, AccessStats, AdminOverview } from "@/types/api";
 
 export default function AdminDashboardPage() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [overview, setOverview] = useState<AdminOverview | null>(null);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [bugs, setBugs] = useState<BugReport[]>([]);
@@ -67,6 +67,15 @@ export default function AdminDashboardPage() {
       default:
         return "bg-amber-500/10 text-amber-600";
     }
+  }
+
+  /** 可读属地：zh 系语言用 location_zh，其余用 location_en；特殊枚举走 i18n（同评论属地） */
+  function locationLabel(s: { location_zh: string | null; location_en: string | null }): string {
+    const raw = locale.startsWith("zh") ? s.location_zh : s.location_en;
+    if (!raw) return t("admin.dashboard.accessRegionInvalid");
+    if (raw === "local") return t("comments.locLocal");
+    if (raw === "intranet") return t("comments.locIntranet");
+    return raw;
   }
 
   const stats = [
@@ -163,7 +172,7 @@ export default function AdminDashboardPage() {
         </Card>
       </div>
 
-      {/* 访问来源：后台操作 + 游客表单提交的 IP 聚合与地区分类（GeoIP 完整属地待接入） */}
+      {/* 访问来源：后台操作 + 游客表单提交的 IP 聚合、地区分类与 GeoIP 可读属地 */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle className="text-base flex items-center gap-2">
@@ -204,6 +213,7 @@ export default function AdminDashboardPage() {
                         <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${regionBadgeClass(s.region)}`}>
                           {regionLabel(s.region)}
                         </span>
+                        <span className="ml-1.5 text-xs text-muted-foreground">{locationLabel(s)}</span>
                       </td>
                       <td className="py-2 pr-4">
                         <div className="flex flex-wrap gap-1.5 text-xs text-muted-foreground">

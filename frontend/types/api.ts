@@ -107,6 +107,9 @@ export interface IpSourceStat {
   bugs: number;
   /** 带大写 Z 的 UTC ISO 字符串 */
   last_seen: string | null;
+  /** GeoIP 可读属地（查不到为 null，前端显示「未知」） */
+  location_zh: string | null;
+  location_en: string | null;
 }
 
 /** 访问来源统计（后台概览） */

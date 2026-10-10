@@ -21,6 +21,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.permissions import require_permission
+from app.core.ip_location import resolve_location
 from app.db.models import (
     Activity,
     AuditLog,
@@ -59,6 +60,9 @@ class IpSourceStat(BaseModel):
     registrations: int
     bugs: int
     last_seen: UTCDatetime | None = None
+    # GeoIP 可读属地（离线库缺失/查不到时为 None，前端显示「地区未知」）
+    location_zh: str | None = None
+    location_en: str | None = None
 
 
 class AccessStatsOut(BaseModel):
@@ -164,7 +168,17 @@ async def get_access_stats(
                 registrations=e["registrations"],
                 bugs=e["bugs"],
                 last_seen=e["last_seen"],
+                location_zh=_geo(ip)[0],
+                location_en=_geo(ip)[1],
             )
             for ip, e in top
         ],
     )
+
+
+def _geo(ip: str) -> tuple[str | None, str | None]:
+    """单 IP 属地解析（GeoIP 失败时降级为 (None, None)，绝不抛 500）。"""
+    try:
+        return resolve_location(ip)
+    except Exception:
+        return (None, None)
